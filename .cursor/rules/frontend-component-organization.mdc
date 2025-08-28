@@ -1,0 +1,85 @@
+---
+globs: *.ts, *.tsx, *.js, *.jsx
+alwaysApply: false
+---
+# Frontend Component Organization
+
+## Component Structure Strategy
+
+Follow a **balanced approach** between local sub-components and separate files. Prioritize maintainability and readability over arbitrary line counts.
+
+### Local Sub-Components Pattern
+
+Use local sub-components (as variables) for **simple, non-reusable UI sections** that improve readability without warranting separate files.
+
+**When to use local sub-components:**
+- Simple UI sections (10-30 lines of JSX)
+- Component-specific layouts that won't be reused
+- Conditional rendering blocks
+- Dialog/modal content that's tightly coupled to the parent
+- Header/footer sections specific to one component
+
+**Pattern Example:**
+```tsx
+export function MyComponent() {
+  // State and handlers here...
+  
+  const ComponentHeader = (
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Page Title
+      </Typography>
+    </Box>
+  );
+
+  const ErrorAlert = state.error && (
+    <Alert severity="error" sx={{ mb: 3 }}>
+      {state.error}
+    </Alert>
+  );
+
+  return (
+    <Container maxWidth="xl">
+      {ComponentHeader}
+      {ErrorAlert}
+      {/* Other sections */}
+    </Container>
+  );
+}
+```
+
+### Separate File Sub-Components
+
+Extract components to separate files when they meet any of these criteria:
+- Component logic exceeds 40-60 lines of JSX
+- Component has its own complex state management
+- Component could be reused elsewhere
+- Component has complex event handlers or business logic
+- Component needs its own types/interfaces
+- Main component becomes difficult to navigate or understand
+
+### Naming Conventions
+
+**Local Sub-Components:**
+- Use **PascalCase** for variable names
+- Names should clearly describe the **purpose** or **content** of the section
+- Be specific but concise (e.g., `PipelinesTabHeader` not just `Header`)
+
+**Separate File Sub-Components:**
+- Use **PascalCase** for component and file names
+- File name should match component name exactly
+- Include parent context in name if not reusable (e.g., `PipelineDashboardCard`)
+
+### Organization Principles Over Line Limits
+
+**Good organization indicators:**
+- Clear logical sections with descriptive comments
+- Related functionality grouped together
+- Consistent patterns throughout the component
+- Easy to locate specific functionality
+- Minimal cognitive load when reading
+
+**Remember:** A well-organized 400-line component following our patterns is better than a poorly structured 150-line component. Focus on structure, clarity, and maintainability first.
+globs: *.tsx,*.ts
+description: Frontend component organization and structure guidelines
+---

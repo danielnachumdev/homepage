@@ -1,0 +1,19 @@
+---
+globs: *.py
+description: Error handling strategy and exception hierarchy for backend tools and services.
+---
+
+# Backend Error Handling
+
+- Each tool and service must validate inputs before execution.
+- Use structured exceptions: `ToolError`, `InputValidationError`, `ExecutionError`, `ExternalServiceError`.
+- Log errors with context and provide recovery mechanisms where possible.
+- For FastAPI endpoints, raise `HTTPException` with clear messages.
+- See [system-architecture/design.md](mdc:.kiro/specs/system-architecture/design.md) for error handling patterns and [requirements.md](mdc:.kiro/specs/system-architecture/requirements.md) for requirements.
+
+Example:
+```python
+class ToolError(Exception): ...
+class InputValidationError(ToolError): ...
+class ExecutionError(ToolError): ...
+```

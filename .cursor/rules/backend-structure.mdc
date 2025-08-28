@@ -1,0 +1,23 @@
+---
+globs: *.py
+description: Directory structure, naming conventions, and import order for backend code.
+---
+
+# Backend Directory & Naming Conventions
+
+- Main package: `danielmusicil/`
+- Internal code: `danielmusicil/internal/`
+- Tools: `danielmusicil/internal/tools/`
+- Server code: `danielmusicil/internal/server/`
+- Tests: `tests/`
+- Use `snake_case.py` for files, `PascalCase` for classes, `snake_case` for functions/variables, `UPPER_SNAKE_CASE` for constants.
+- Standard library imports first, then external, then internal.
+- Every file should have `__all__ = [...]` at the bottom.
+- See [structure.md](mdc:.kiro/steering/structure.md) for full directory and naming details.
+
+Example import order:
+```python
+import os
+import numpy as np
+from danielmusicil.internal.tools.src import SomeTool
+```

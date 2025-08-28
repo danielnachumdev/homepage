@@ -1,0 +1,43 @@
+---
+globs: *.py
+description: How to structure and use imports
+---
+# Backend Import & Export Rules
+
+## __all__ Export Pattern
+Each file that is intended to export some functionality should define at the end `__all__ = []` array and write only the stuff to export in double string quotes, one item per line. The exported items must be only stuff that is defined in this file. Specifically, if something is imported to a file at the top, it cannot be exported using `__all__`.
+
+## __init__.py Files
+`__init__.py` files should export from all RELEVANT files/folders in the same hierarchy using relative export as `from .file import *`. This will work nicely because we explicitly defined the `__all__` variable in each file.
+
+## Import Order
+1. Standard library imports first
+2. External library imports second  
+3. Absolute internal imports
+4. Relative internal imports from longest to shortest
+
+## Example
+```python
+# file: src/services/v1/audio_service.py
+import os
+import subprocess
+from typing import Optional
+from ...schemas.v1.audio import AudioRequest, AudioResponse
+
+class AudioService:
+    def process_audio(self, request: AudioRequest) -> AudioResponse:
+        # implementation
+        pass
+
+
+__all__ = [
+    "AudioService"
+]
+```
+
+```python
+# file: src/services/v1/__init__.py
+from .audio_service import *
+from .video_service import *
+
+```

@@ -1,0 +1,29 @@
+---
+alwaysApply: true
+description: Code formatting rules for line length and readability
+---
+
+# Code Formatting Rules
+
+## Line Length Preference
+- Default maximum line length: 120 characters
+- Do NOT perform line wrapping unless a line exceeds 120 characters
+- Only break code intentionally when it increases readability, even for lines shorter than 120 characters
+
+## Readability Priority
+- When a line is under 120 characters, keep it on one line unless breaking it significantly improves readability
+- Examples of when to break shorter lines:
+  - Long function calls with many parameters
+  - Complex nested expressions
+  - Long conditional statements
+  - When breaking makes the code structure clearer
+
+## Enforcement
+- This rule applies to all code I write or modify
+- Do not automatically wrap lines that are 120 characters or less
+- Only wrap when explicitly needed for readability or when exceeding 120 characters
+
+## Exceptions
+- Follow language-specific conventions when they conflict with this rule
+- Respect existing codebase formatting if modifying existing files
+- Use common sense - if a line is 119 characters but would be much clearer broken, break it

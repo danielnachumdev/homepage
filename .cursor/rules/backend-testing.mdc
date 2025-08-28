@@ -1,0 +1,21 @@
+---
+globs: *.py
+description: Testing strategy for backend tools, services, and integration.
+---
+
+# Backend Testing Strategy
+
+- Write unit tests for all tools and service classes.
+- Add integration tests for API endpoints and workflows.
+- Use mocks for external services.
+- End-to-end tests should cover complete user scenarios.
+- See [system-architecture/design.md](mdc:.kiro/specs/system-architecture/design.md) and [tasks.md](mdc:.kiro/specs/system-architecture/tasks.md) for test structure and examples.
+
+Example:
+```python
+def test_audio_downloader():
+    downloader = AudioDownloader()
+    with mock_youtube_api():
+        result = downloader.execute("https://youtube.com/example", "./output")
+        assert os.path.exists(result)
+```

@@ -1,0 +1,99 @@
+---
+globs: *.ts, *.tsx, *.js, *.jsx
+alwaysApply: false
+---
+# TypeScript Guidelines
+
+## Props Interfaces
+
+```typescript
+interface ComponentProps {
+  // Required props first
+  data: DataType[];
+  onAction: (item: DataType) => void;
+  
+  // Optional props after
+  loading?: boolean;
+  error?: string;
+  className?: string;
+}
+```
+
+## Event Handlers
+
+```typescript
+// Prefer specific handler types
+const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+  // Handle submit
+};
+
+const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  // Handle click
+};
+```
+
+## State Management
+
+### Local State
+Use `useState` for component-specific state:
+
+```typescript
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
+```
+
+### Context Usage
+Use contexts for shared state across multiple components:
+
+```typescript
+const { state, actions } = useContext(MyContext);
+```
+
+## Error Handling
+
+### Safe Data Access
+Always handle potentially undefined data:
+
+```typescript
+// Safe progress calculation
+const progress = typeof instance.progress === 'number' && !isNaN(instance.progress) 
+  ? Math.round(instance.progress) 
+  : 0;
+
+// Safe date formatting
+const formatDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Unknown';
+    }
+    return date.toLocaleString();
+  } catch {
+    return 'Unknown';
+  }
+};
+```
+
+## Performance Guidelines
+
+### Memoization
+Use `React.memo` for components that receive stable props:
+
+```typescript
+export const ExpensiveComponent = React.memo<Props>(({ data }) => {
+  // Component implementation
+});
+```
+
+### Callback Optimization
+Use `useCallback` for event handlers passed to child components:
+
+```typescript
+const handleAction = useCallback((item: DataType) => {
+  // Handle action
+}, [dependency]);
+```
+globs: *.tsx,*.ts
+description: TypeScript guidelines for frontend development
+---

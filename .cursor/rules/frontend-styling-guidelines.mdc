@@ -1,0 +1,89 @@
+---
+globs: *.ts, *.tsx, *.js, *.jsx
+alwaysApply: false
+---
+# Styling Guidelines
+
+## Material-UI sx Prop
+Prefer the `sx` prop for component-specific styles:
+
+```typescript
+<Box sx={{ 
+  display: 'flex', 
+  justifyContent: 'space-between', 
+  mb: 2 
+}}>
+```
+
+## Responsive Design
+Use Material-UI's Grid system with responsive breakpoints:
+
+```typescript
+<Grid size={{ xs: 12, sm: 6, md: 4 }}>
+```
+
+## Folder Structure
+
+```
+src/
+├── components/
+│   ├── ComponentName/
+│   │   ├── index.ts                    // Clean exports
+│   │   ├── ComponentName.tsx           // Main component
+│   │   ├── SubComponent1.tsx           // Related sub-components
+│   │   ├── SubComponent2.tsx
+│   │   └── types.ts                    // Component-specific types
+│   └── shared/                         // Reusable components
+├── contexts/                           // React contexts
+├── hooks/                              // Custom hooks
+├── api/                                // API client code
+├── types/                              // Global type definitions
+└── utils/                              // Utility functions
+```
+
+## Import/Export Patterns
+
+### Index Files
+Always create `index.ts` files for clean imports:
+
+```typescript
+// components/Dashboard/index.ts
+export { Dashboard } from './Dashboard';
+export { DashboardCard } from './DashboardCard';
+export { DashboardGrid } from './DashboardGrid';
+```
+
+### Usage
+```typescript
+// Clean imports
+import { Dashboard, DashboardCard } from './components/Dashboard';
+
+// Instead of
+import { Dashboard } from './components/Dashboard/Dashboard';
+import { DashboardCard } from './components/Dashboard/DashboardCard';
+```
+
+## Hierarchical Component Structure
+
+For components with clear hierarchical relationships and multiple sub-components, use encapsulated folder structure:
+
+```
+ComponentFolder/
+├── index.ts                    // Exports only the main component
+├── MainComponent/
+│   ├── index.ts               // Exports MainComponent
+│   ├── MainComponent.tsx      // Main component implementation
+│   ├── SubComponentA.tsx      // Related sub-component
+│   ├── SubComponentB.tsx      // Related sub-component
+│   └── types.ts               // Component-specific types
+└── ReusableComponent.tsx      // Truly reusable across multiple parents
+```
+
+**When to use hierarchical structure:**
+- Component has multiple related sub-components (3+ files)
+- Sub-components are only relevant to the main component
+- Clear parent-child relationship exists
+- Want to prevent directory pollution while maintaining organization
+globs: *.tsx,*.ts
+description: Frontend styling and Material-UI guidelines
+---

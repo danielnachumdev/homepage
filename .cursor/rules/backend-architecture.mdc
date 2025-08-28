@@ -1,0 +1,19 @@
+---
+globs: *.py
+description: High-level backend architecture, tool pattern, and component organization for DanielMusicIL.
+---
+
+# Backend Architecture & Tool Pattern
+
+- The backend is modular, extensible, and follows a Tool pattern.
+- Each tool inherits from a base `Tool` class and implements `execute`, `validate`, and `get_metadata` methods.
+- Tools are organized by domain (audio, midi, sheet, video, product, etc.) and accessed via a unified CLI or API interface.
+- The backend is structured into clear subsystems: audio processing, MIDI, sheet music, video, product management, and distribution.
+- For details, see [system-architecture/design.md](mdc:.kiro/specs/system-architecture/design.md) and [structure.md](mdc:.kiro/steering/structure.md).
+
+## Key Patterns
+- Use abstract base classes for extensibility.
+- Each tool provides metadata and input validation.
+- Subsystems are decoupled and communicate via well-defined interfaces.
+
+See: [system-architecture/design.md](mdc:.kiro/specs/system-architecture/design.md)

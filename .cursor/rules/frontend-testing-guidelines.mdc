@@ -1,0 +1,83 @@
+---
+globs: *.ts, *.tsx, *.js, *.jsx
+alwaysApply: false
+---
+# Testing and Code Review Guidelines
+
+## Component Structure for Testing
+
+The single-responsibility sub-components pattern makes testing easier:
+
+```typescript
+// Easy to test individual sections
+const { getByTestId } = render(<Component />);
+expect(getByTestId('component-header')).toBeInTheDocument();
+```
+
+## Test IDs
+Add test IDs to important elements:
+
+```typescript
+<Box data-testid="component-header">
+  {/* Content */}
+</Box>
+```
+
+## Code Review Checklist
+
+### Component Organization
+- [ ] Component is well-organized with clear sections and logical flow
+- [ ] Local sub-components are used for simple UI sections (10-40 lines)
+- [ ] Complex sub-components (60+ lines) are extracted to separate files when beneficial
+- [ ] Local sub-components enhance readability (typically 3-6 per component)
+- [ ] Reusable components are in separate files
+- [ ] Component organization follows the balanced approach guidelines
+- [ ] Maintainability and readability are prioritized over line count limits
+
+### Code Quality
+- [ ] Sub-components have clear, descriptive names
+- [ ] Props are properly typed with TypeScript
+- [ ] Error handling is implemented for data access
+- [ ] Responsive design is considered
+- [ ] Index files are created for clean imports
+- [ ] Event handlers have proper types
+- [ ] State management follows guidelines
+- [ ] Performance considerations are addressed
+
+### Maintainability
+- [ ] Component structure is easy to navigate and understand
+- [ ] Related functionality is grouped logically
+- [ ] File structure supports future growth and changes
+- [ ] Components can be easily tested and debugged
+
+## Error Boundaries
+Implement error boundaries for critical components:
+
+```typescript
+class ErrorBoundary extends React.Component {
+  // Error boundary implementation
+}
+```
+
+## Performance Considerations
+
+### Memoization
+Use `React.memo` for components that receive stable props:
+
+```typescript
+export const ExpensiveComponent = React.memo<Props>(({ data }) => {
+  // Component implementation
+});
+```
+
+### Callback Optimization
+Use `useCallback` for event handlers passed to child components:
+
+```typescript
+const handleAction = useCallback((item: DataType) => {
+  // Handle action
+}, [dependency]);
+```
+globs: *.tsx,*.ts
+description: Frontend testing and code review guidelines
+---

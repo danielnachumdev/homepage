@@ -1,0 +1,20 @@
+---
+globs: *.py
+description: How to extend the backend with new tools, models, and features.
+---
+
+# Backend Extension Points
+
+- To add a new tool:
+  1. Create a new class in the appropriate subdirectory, inheriting from `Tool`.
+  2. Register it in the module.
+  3. Add tests in `tests/test_tools/`.
+  4. Update documentation if needed.
+  5. Follow CLI integration patterns in `tools_cli.py`.
+- For new models, use dataclasses or Pydantic models as appropriate.
+- See [structure.md](mdc:.kiro/steering/structure.md) and [system-architecture/design.md](mdc:.kiro/specs/system-architecture/design.md).
+
+Example:
+```python
+class MyNewTool(Tool): ...
+```
