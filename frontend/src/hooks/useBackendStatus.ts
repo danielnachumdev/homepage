@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { API_CONFIG, buildApiUrl } from '../config/api';
+import { api } from '../lib/api';
 
 interface BackendStatus {
     isConnected: boolean;
@@ -7,7 +7,7 @@ interface BackendStatus {
     error: string | null;
 }
 
-export const useBackendStatus = (checkInterval: number = API_CONFIG.HEALTH_CHECK_INTERVAL) => {
+export const useBackendStatus = (checkInterval: number = 5000) => {
     const [status, setStatus] = useState<BackendStatus>({
         isConnected: false,
         lastChecked: null,
@@ -17,34 +17,19 @@ export const useBackendStatus = (checkInterval: number = API_CONFIG.HEALTH_CHECK
     useEffect(() => {
         const checkBackendStatus = async () => {
             try {
-                // Try to connect to the backend using the configured endpoint
-                const response = await fetch(buildApiUrl(API_CONFIG.HEALTH_CHECK), {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    // Add a timeout to prevent hanging requests
-                    signal: AbortSignal.timeout(API_CONFIG.REQUEST_TIMEOUT)
-                });
+                // Use the new API instance to check backend health
+                const response = await api.get('/health');
 
-                if (response.ok) {
-                    setStatus({
-                        isConnected: true,
-                        lastChecked: new Date(),
-                        error: null
-                    });
-                } else {
-                    setStatus({
-                        isConnected: false,
-                        lastChecked: new Date(),
-                        error: `HTTP ${response.status}: ${response.statusText}`
-                    });
-                }
-            } catch (error) {
+                setStatus({
+                    isConnected: true,
+                    lastChecked: new Date(),
+                    error: null
+                });
+            } catch (error: any) {
                 setStatus({
                     isConnected: false,
                     lastChecked: new Date(),
-                    error: error instanceof Error ? error.message : 'Unknown error'
+                    error: error.message || 'Unknown error'
                 });
             }
         };
