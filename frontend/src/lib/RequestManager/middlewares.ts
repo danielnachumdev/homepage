@@ -97,7 +97,7 @@ export const errorResponseLoggingMiddleware: ResponseMiddleware = (response: Res
 /**
  * Refreshes auth token on 401 responses
  */
-export const tokenRefreshMiddleware: ResponseMiddleware = async (response: Response, config: RequestConfig) => {
+export const tokenRefreshMiddleware: ResponseMiddleware = async (response: Response, _config: RequestConfig) => {
     if (response.status === 401) {
         // Try to refresh the token
         try {
@@ -115,15 +115,6 @@ export const tokenRefreshMiddleware: ResponseMiddleware = async (response: Respo
                 const { accessToken } = await refreshResponse.json();
                 localStorage.setItem('authToken', accessToken);
 
-                // Retry the original request
-                const retryConfig = {
-                    ...config,
-                    headers: {
-                        ...config.headers,
-                        'Authorization': `Bearer ${accessToken}`
-                    }
-                };
-
                 // Note: This would need to be handled differently in a real implementation
                 // as we can't retry from within the middleware
                 console.log('Token refreshed, retry the request manually');
@@ -140,7 +131,7 @@ export const tokenRefreshMiddleware: ResponseMiddleware = async (response: Respo
 /**
  * Handles rate limiting responses
  */
-export const rateLimitMiddleware: ResponseMiddleware = (response: Response, config: RequestConfig) => {
+export const rateLimitMiddleware: ResponseMiddleware = (response: Response, _config: RequestConfig) => {
     if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After');
         const delay = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
@@ -174,7 +165,7 @@ export const errorLoggingMiddleware: ErrorMiddleware = (error, config: RequestCo
 /**
  * Handles network errors gracefully
  */
-export const networkErrorMiddleware: ErrorMiddleware = (error, config: RequestConfig) => {
+export const networkErrorMiddleware: ErrorMiddleware = (error, _config: RequestConfig) => {
     if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
         return {
             ...error,
@@ -187,7 +178,7 @@ export const networkErrorMiddleware: ErrorMiddleware = (error, config: RequestCo
 /**
  * Converts common HTTP errors to user-friendly messages
  */
-export const userFriendlyErrorMiddleware: ErrorMiddleware = (error, config: RequestConfig) => {
+export const userFriendlyErrorMiddleware: ErrorMiddleware = (error, _config: RequestConfig) => {
     const userFriendlyMessages: Record<number, string> = {
         400: 'Invalid request. Please check your input and try again.',
         401: 'You are not authorized to perform this action. Please log in.',
