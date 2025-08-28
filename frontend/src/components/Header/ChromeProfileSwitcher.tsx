@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Button,
@@ -10,44 +10,17 @@ import {
     Alert,
 } from '@mui/material';
 import { KeyboardArrowDown } from '@mui/icons-material';
-import { chromeService, type ChromeProfile } from '../../services';
+import { useChromeProfiles } from '../../hooks';
+import { type ChromeProfile } from '../../services';
+import styles from './ChromeProfileSwitcher.module.css';
 
 interface ChromeProfileSwitcherProps {
     className?: string;
 }
 
 export function ChromeProfileSwitcher({ className }: ChromeProfileSwitcherProps) {
-    const [profiles, setProfiles] = useState<ChromeProfile[]>([]);
-    const [activeProfile, setActiveProfile] = useState<ChromeProfile | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { profiles, activeProfile, loading, error, loadChromeProfiles, switchProfile } = useChromeProfiles();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-    // Load Chrome profiles on component mount
-    useEffect(() => {
-        loadChromeProfiles();
-    }, []);
-
-    const loadChromeProfiles = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const response = await chromeService.getChromeProfiles();
-            if (response.success) {
-                setProfiles(response.profiles);
-                // Set the first active profile as default
-                const active = response.profiles.find(p => p.is_active) || response.profiles[0];
-                setActiveProfile(active);
-            } else {
-                setError(response.message || 'Failed to load Chrome profiles');
-            }
-        } catch (err) {
-            setError('Failed to connect to backend for Chrome profiles');
-            console.error('Error loading Chrome profiles:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
@@ -58,44 +31,15 @@ export function ChromeProfileSwitcher({ className }: ChromeProfileSwitcherProps)
     };
 
     const handleProfileSelect = async (profile: ChromeProfile) => {
-        if (profile.id === activeProfile?.id) {
-            handleProfileMenuClose();
-            return;
-        }
-
-        try {
-            // Get current URL and open it in the new profile
-            const currentUrl = window.location.href;
-            const response = await chromeService.openUrlInProfile({
-                url: currentUrl,
-                profile_id: profile.id,
-            });
-
-            if (response.success) {
-                console.log(`Switched to profile: ${profile.name}`);
-                setActiveProfile(profile);
-                // Update the profiles list to reflect the new active state
-                setProfiles(prev => prev.map(p => ({
-                    ...p,
-                    is_active: p.id === profile.id
-                })));
-            } else {
-                console.error('Failed to switch profile:', response.message);
-                setError(`Failed to switch profile: ${response.message}`);
-            }
-        } catch (err) {
-            console.error('Error switching profile:', err);
-            setError('Failed to communicate with backend');
-        }
-
+        await switchProfile(profile);
         handleProfileMenuClose();
     };
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box className={styles.loadingContainer}>
                 <CircularProgress size={16} sx={{ color: 'white' }} />
-                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                <Typography variant="body2" className={styles.loadingText}>
                     Loading profiles...
                 </Typography>
             </Box>
@@ -104,13 +48,13 @@ export function ChromeProfileSwitcher({ className }: ChromeProfileSwitcherProps)
 
     if (error) {
         return (
-            <Alert severity="warning" sx={{ py: 0, backgroundColor: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.3)' }}>
-                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            <Alert severity="warning" className={styles.errorAlert}>
+                <Typography variant="body2" className={styles.errorText}>
                     {error}
                     <Button
                         size="small"
                         onClick={loadChromeProfiles}
-                        sx={{ ml: 1, color: 'rgba(255, 255, 255, 0.8)' }}
+                        className={styles.retryButton}
                     >
                         Retry
                     </Button>
@@ -121,13 +65,13 @@ export function ChromeProfileSwitcher({ className }: ChromeProfileSwitcherProps)
 
     if (profiles.length === 0) {
         return (
-            <Alert severity="info" sx={{ py: 0, backgroundColor: 'rgba(33, 150, 243, 0.1)', border: '1px solid rgba(33, 150, 243, 0.3)' }}>
-                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            <Alert severity="info" className={styles.infoAlert}>
+                <Typography variant="body2" className={styles.infoText}>
                     No Chrome profiles detected
                     <Button
                         size="small"
                         onClick={loadChromeProfiles}
-                        sx={{ ml: 1, color: 'rgba(255, 255, 255, 0.8)' }}
+                        className={styles.retryButton}
                     >
                         Retry
                     </Button>
@@ -143,41 +87,22 @@ export function ChromeProfileSwitcher({ className }: ChromeProfileSwitcherProps)
                 size="small"
                 onClick={handleProfileMenuOpen}
                 startIcon={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box className={styles.profileButtonStartIconContainer}>
                         <span>{activeProfile?.icon || '👤'}</span>
                         {activeProfile?.is_active && (
                             <Chip
                                 label="Active"
                                 size="small"
                                 color="primary"
-                                sx={{ height: 16, fontSize: '0.7rem' }}
+                                className={styles.activeChip}
                             />
                         )}
                     </Box>
                 }
                 endIcon={<KeyboardArrowDown />}
-                sx={{
-                    minWidth: 'auto',
-                    px: 1.5,
-                    py: 0.5,
-                    textTransform: 'none',
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    color: 'white',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    '&:hover': {
-                        borderColor: 'rgba(255, 255, 255, 0.6)',
-                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                    },
-                    '& .MuiButton-startIcon': {
-                        color: 'white',
-                    },
-                    '& .MuiButton-endIcon': {
-                        color: 'rgba(255, 255, 255, 0.7)',
-                    }
-                }}
+                className={styles.profileButton}
             >
-                <Typography variant="body2" noWrap sx={{ color: 'white', fontWeight: 500 }}>
+                <Typography variant="body2" noWrap className={styles.profileButtonText}>
                     {activeProfile?.name || 'Select Profile'}
                 </Typography>
             </Button>
@@ -187,14 +112,11 @@ export function ChromeProfileSwitcher({ className }: ChromeProfileSwitcherProps)
                 open={Boolean(anchorEl)}
                 onClose={handleProfileMenuClose}
                 PaperProps={{
-                    sx: {
-                        minWidth: 200,
-                        mt: 1,
-                    }
+                    className: styles.profileMenuPaper
                 }}
             >
-                <MenuItem disabled>
-                    <Typography variant="subtitle2" color="text.secondary">
+                <MenuItem disabled className={styles.profileMenuHeaderItem}>
+                    <Typography variant="subtitle2" className={styles.profileMenuHeaderTextOverride}>
                         Switch to profile:
                     </Typography>
                 </MenuItem>
@@ -203,16 +125,26 @@ export function ChromeProfileSwitcher({ className }: ChromeProfileSwitcherProps)
                         key={profile.id}
                         onClick={() => handleProfileSelect(profile)}
                         selected={profile.id === activeProfile?.id}
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            py: 1,
-                        }}
+                        disabled={profile.is_active}
+                        className={`${styles.profileMenuItemBase} ${profile.is_active
+                            ? styles.profileMenuItemActiveOverride
+                            : styles.profileMenuItemInactiveOverride
+                            } ${profile.id === activeProfile?.id
+                                ? styles.profileMenuItemSelectedOverride
+                                : ''
+                            } ${profile.is_active
+                                ? styles.profileMenuItemDisabledOverride
+                                : ''
+                            }`}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-                            <span>{profile.icon || '👤'}</span>
-                            <Typography variant="body2">
+                        <Box className={styles.profileMenuItem}>
+                            <span className={profile.is_active ? styles.profileIconActiveOverride : styles.profileIconOverride}>
+                                {profile.icon || '👤'}
+                            </span>
+                            <Typography
+                                variant="body2"
+                                className={profile.is_active ? styles.profileNameActiveOverride : styles.profileNameOverride}
+                            >
                                 {profile.name}
                             </Typography>
                         </Box>
@@ -221,7 +153,7 @@ export function ChromeProfileSwitcher({ className }: ChromeProfileSwitcherProps)
                                 label="Active"
                                 size="small"
                                 color="primary"
-                                sx={{ height: 16, fontSize: '0.7rem' }}
+                                className={styles.activeChipOverride}
                             />
                         )}
                     </MenuItem>

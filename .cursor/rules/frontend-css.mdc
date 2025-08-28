@@ -1,0 +1,5 @@
+---
+globs: *.ts, *.tsx, *.js, *.jsx, *.css
+alwaysApply: false
+---
+Always write the css for a component in a COMPONENT.module.css file.

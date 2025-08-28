@@ -1,0 +1,253 @@
+/* ChromeProfileSwitcher Component Styles */
+
+.profileButton {
+    min-width: auto;
+    padding: 6px 12px;
+    text-transform: none;
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.profileButton:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.profileButtonStartIcon {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.profileButtonStartIconContainer {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.profileButtonEndIcon {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.profileButtonText {
+    color: white;
+    font-weight: 500;
+}
+
+/* Material-UI button icon overrides */
+.profileButton :global(.MuiButton-startIcon) {
+    color: white;
+}
+
+.profileButton :global(.MuiButton-endIcon) {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.profileMenu {
+    min-width: 200px;
+    margin-top: 8px;
+    background-color: #2d1b69;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.profileMenuHeader {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.profileMenuHeaderText {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+}
+
+.profileMenuItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    flex-grow: 1;
+}
+
+.profileMenuItemActive {
+    color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.profileMenuItemActive:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.profileMenuItemInactive {
+    color: rgba(255, 255, 255, 0.9);
+    background-color: transparent;
+}
+
+.profileMenuItemInactive:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profileMenuItemSelected {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profileMenuItemSelected:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profileMenuItemDisabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.profileIcon {
+    opacity: 1;
+}
+
+.profileIconActive {
+    opacity: 0.6;
+}
+
+.profileName {
+    color: inherit;
+    font-weight: 500;
+}
+
+.profileNameActive {
+    color: inherit;
+    font-weight: 400;
+}
+
+.activeChip {
+    height: 16px;
+    font-size: 0.7rem;
+    background-color: rgba(33, 150, 243, 0.8);
+    color: white;
+}
+
+.loadingContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.loadingText {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.errorAlert {
+    padding: 0;
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.errorText {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.retryButton {
+    margin-left: 8px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.infoAlert {
+    padding: 0;
+    background-color: rgba(33, 150, 243, 0.1);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+.infoText {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Additional styles for Material-UI overrides */
+.profileButtonStartIconOverride {
+    color: white;
+}
+
+.profileButtonEndIconOverride {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.profileMenuPaper {
+    min-width: 200px;
+    margin-top: 8px;
+    background-color: #2d1b69;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.profileMenuHeaderItem {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.profileMenuHeaderTextOverride {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+}
+
+.profileMenuItemBase {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.profileMenuItemActiveOverride {
+    color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.profileMenuItemActiveOverride:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.profileMenuItemInactiveOverride {
+    color: rgba(255, 255, 255, 0.9);
+    background-color: transparent;
+}
+
+.profileMenuItemInactiveOverride:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profileMenuItemSelectedOverride {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profileMenuItemSelectedOverride:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profileMenuItemDisabledOverride {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.profileIconOverride {
+    opacity: 1;
+}
+
+.profileIconActiveOverride {
+    opacity: 0.6;
+}
+
+.profileNameOverride {
+    color: inherit;
+    font-weight: 500;
+}
+
+.profileNameActiveOverride {
+    color: inherit;
+    font-weight: 400;
+}
+
+.activeChipOverride {
+    height: 16px;
+    font-size: 0.7rem;
+    background-color: rgba(33, 150, 243, 0.8);
+    color: white;
+}
