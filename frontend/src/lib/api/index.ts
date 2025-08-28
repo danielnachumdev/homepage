@@ -2,8 +2,7 @@ import { RequestManager } from '../RequestManager/RequestManager';
 import {
     authMiddleware,
     requestIdMiddleware,
-    loggingMiddleware,
-    responseLoggingMiddleware,
+    errorResponseLoggingMiddleware,
     errorLoggingMiddleware,
     userFriendlyErrorMiddleware,
     networkErrorMiddleware
@@ -23,11 +22,11 @@ export const api = new RequestManager({
     // Add common middlewares
     requestMiddlewares: [
         requestIdMiddleware,    // Add unique request ID
-        loggingMiddleware,      // Log outgoing requests
+        // loggingMiddleware,      // Log outgoing requests
         authMiddleware,         // Add auth token if available
     ],
     responseMiddlewares: [
-        responseLoggingMiddleware, // Log incoming responses
+        errorResponseLoggingMiddleware, // Log only error responses
     ],
     errorMiddlewares: [
         errorLoggingMiddleware,        // Log all errors

@@ -18,7 +18,7 @@ export const useBackendStatus = (checkInterval: number = 5000) => {
         const checkBackendStatus = async () => {
             try {
                 // Use the new API instance to check backend health
-                const response = await api.get('/health');
+                await api.get('/health');
 
                 setStatus({
                     isConnected: true,

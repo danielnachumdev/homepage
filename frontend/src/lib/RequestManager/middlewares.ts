@@ -81,6 +81,20 @@ export const responseLoggingMiddleware: ResponseMiddleware = (response: Response
 };
 
 /**
+ * Logs only error responses (4xx and 5xx status codes)
+ */
+export const errorResponseLoggingMiddleware: ResponseMiddleware = (response: Response, config: RequestConfig) => {
+    if (response.status >= 400) {
+        console.error(`❌ [${config.method}] ${config.url} - Error Response`, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries())
+        });
+    }
+    return response;
+};
+
+/**
  * Refreshes auth token on 401 responses
  */
 export const tokenRefreshMiddleware: ResponseMiddleware = async (response: Response, config: RequestConfig) => {
