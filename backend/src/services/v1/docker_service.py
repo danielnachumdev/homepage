@@ -7,6 +7,7 @@ from ...schemas.v1.docker import (
     ContainerRedeployResponse, ContainerStatus, HealthStatus, DockerPsEntry
 )
 from ...schemas.v1.system import CommandResponse
+import asyncio
 
 
 class DockerService:
@@ -15,12 +16,12 @@ class DockerService:
     def __init__(self):
         self.system_gateway = SystemGateway()
 
-    def get_container_info(self, container_name: str) -> ContainerInfoResponse:
+    async def get_container_info(self, container_name: str) -> ContainerInfoResponse:
         """Get detailed information about a specific Docker container."""
         try:
             # Get detailed container information using docker inspect with JSON format
             command = f"docker inspect {container_name} --format json"
-            result = self.system_gateway.execute_command(command)
+            result = await self.system_gateway.execute_command(command)
 
             if result.success:
                 try:
@@ -270,12 +271,12 @@ class DockerService:
 
         return " ".join(cmd_parts)
 
-    def list_containers(self, all_containers: bool = False) -> ContainerListResponse:
+    async def list_containers(self, all_containers: bool = False) -> ContainerListResponse:
         """List all Docker containers."""
         try:
             flag = "-a" if all_containers else ""
             command = f"docker ps {flag} --format json"
-            result = self.system_gateway.execute_command(command)
+            result = await self.system_gateway.execute_command(command)
 
             if result.success:
                 # Parse JSON output for each container
@@ -307,10 +308,24 @@ class DockerService:
 
                 # Convert to response format
                 containers = []
-                for container in docker_entries:
-                    # Get additional details for each container
-                    container_details = self._get_container_details(
-                        container.ID, container.Names)
+
+                # Get container details concurrently for better performance
+                container_details_tasks = [
+                    self._get_container_details(container.ID, container.Names)
+                    for container in docker_entries
+                ]
+                container_details_results = await asyncio.gather(*container_details_tasks, return_exceptions=True)
+
+                for i, container in enumerate(docker_entries):
+                    # Get container details (handle any exceptions)
+                    container_details = {}
+                    if i < len(container_details_results):
+                        result = container_details_results[i]
+                        if isinstance(result, Exception):
+                            # If getting details failed, continue with basic info
+                            pass
+                        else:
+                            container_details = result
 
                     # Parse compose information from labels
                     compose_info = self._parse_compose_labels(container.Labels)
@@ -406,7 +421,7 @@ class DockerService:
                 error=str(e)
             )
 
-    def _get_container_details(self, container_id: str, names: str) -> dict:
+    async def _get_container_details(self, container_id: str, names: str) -> dict:
         """Get additional container details using docker inspect"""
         details = {}
 
@@ -430,26 +445,26 @@ class DockerService:
 
             # Get additional details using docker inspect
             inspect_command = f"docker inspect {container_id}"
-            inspect_result = self.system_gateway.execute_command(
+            inspect_result = await self.system_gateway.execute_command(
                 inspect_command)
 
             if inspect_result.success:
                 # Extract image tag
                 image_tag_cmd = f"docker inspect --format='{{{{.Config.Image}}}}' {container_id}"
-                image_result = self.system_gateway.execute_command(
+                image_result = await self.system_gateway.execute_command(
                     image_tag_cmd)
                 if image_result.success:
                     details["image_tag"] = image_result.output.strip()
 
                 # Extract health status
                 health_cmd = f"docker inspect --format='{{{{.State.Health.Status}}}}' {container_id}"
-                health_result = self.system_gateway.execute_command(health_cmd)
+                health_result = await self.system_gateway.execute_command(health_cmd)
                 if health_result.success and health_result.output.strip():
                     details["health_status"] = health_result.output.strip()
 
                 # Extract size information
                 size_cmd = f"docker inspect --format='{{{{.Size}}}}' {container_id}"
-                size_result = self.system_gateway.execute_command(size_cmd)
+                size_result = await self.system_gateway.execute_command(size_cmd)
                 if size_result.success:
                     try:
                         size_bytes = int(size_result.output.strip())
@@ -459,13 +474,13 @@ class DockerService:
 
                 # Extract mount information
                 mounts_cmd = f"docker inspect --format='{{{{range .Mounts}}{{.Source}}:{{.Destination}} {{end}}}}' {container_id}"
-                mounts_result = self.system_gateway.execute_command(mounts_cmd)
+                mounts_result = await self.system_gateway.execute_command(mounts_cmd)
                 if mounts_result.success and mounts_result.output.strip():
                     details["mounts"] = mounts_result.output.strip().split()
 
                 # Extract network information
                 networks_cmd = f"docker inspect --format='{{{{range $key, $value := .NetworkSettings.Networks}}{{$key}} {{end}}}}' {container_id}"
-                networks_result = self.system_gateway.execute_command(
+                networks_result = await self.system_gateway.execute_command(
                     networks_cmd)
                 if networks_result.success and networks_result.output.strip():
                     details["networks"] = networks_result.output.strip().split()
@@ -602,11 +617,11 @@ class DockerService:
             size_bytes /= 1024.0
         return f"{size_bytes:.1f} TB"
 
-    def stop_container(self, container_name: str) -> ContainerOperationResponse:
+    async def stop_container(self, container_name: str) -> ContainerOperationResponse:
         """Stop a running Docker container by name."""
         try:
             command = f"docker stop {container_name}"
-            result = self.system_gateway.execute_command(command)
+            result = await self.system_gateway.execute_command(command)
 
             if result.success:
                 return ContainerOperationResponse(
@@ -635,11 +650,11 @@ class DockerService:
                 error=str(e)
             )
 
-    def start_container(self, container_name: str) -> ContainerOperationResponse:
+    async def start_container(self, container_name: str) -> ContainerOperationResponse:
         """Start a stopped Docker container by name."""
         try:
             command = f"docker start {container_name}"
-            result = self.system_gateway.execute_command(command)
+            result = await self.system_gateway.execute_command(command)
 
             if result.success:
                 return ContainerOperationResponse(
@@ -668,11 +683,11 @@ class DockerService:
                 error=str(e)
             )
 
-    def restart_container(self, container_name: str) -> ContainerOperationResponse:
+    async def restart_container(self, container_name: str) -> ContainerOperationResponse:
         """Restart a Docker container by name."""
         try:
             command = f"docker restart {container_name}"
-            result = self.system_gateway.execute_command(command)
+            result = await self.system_gateway.execute_command(command)
 
             if result.success:
                 return ContainerOperationResponse(
@@ -701,12 +716,12 @@ class DockerService:
                 error=str(e)
             )
 
-    def health_check_container(self, container_name: str) -> ContainerHealthResponse:
+    async def health_check_container(self, container_name: str) -> ContainerHealthResponse:
         """Check the health status of a Docker container."""
         try:
             # First check if container exists and get its status
             inspect_command = f"docker inspect --format='{{{{.State.Health.Status}}}}' {container_name}"
-            result = self.system_gateway.execute_command(inspect_command)
+            result = await self.system_gateway.execute_command(inspect_command)
 
             if result.success:
                 health_status_str = result.output.strip()
@@ -750,11 +765,11 @@ class DockerService:
                 error=str(e)
             )
 
-    def get_container_logs(self, container_name: str, tail_lines: int = 100) -> ContainerLogsResponse:
+    async def get_container_logs(self, container_name: str, tail_lines: int = 100) -> ContainerLogsResponse:
         """Get recent logs from a Docker container."""
         try:
             command = f"docker logs --tail {tail_lines} {container_name}"
-            result = self.system_gateway.execute_command(command)
+            result = await self.system_gateway.execute_command(command)
 
             if result.success:
                 logs = result.output.strip().split('\n') if result.output.strip() else []
@@ -781,12 +796,12 @@ class DockerService:
                 error=str(e)
             )
 
-    def remove_container(self, container_name: str, force: bool = False) -> ContainerRemoveResponse:
+    async def remove_container(self, container_name: str, force: bool = False) -> ContainerRemoveResponse:
         """Remove a Docker container by name."""
         try:
             flag = "-f" if force else ""
             command = f"docker rm {flag} {container_name}".strip()
-            result = self.system_gateway.execute_command(command)
+            result = await self.system_gateway.execute_command(command)
 
             if result.success:
                 return ContainerRemoveResponse(
@@ -816,11 +831,11 @@ class DockerService:
                 error=str(e)
             )
 
-    def redeploy_container(self, request: RedeployRequest) -> ContainerRedeployResponse:
+    async def redeploy_container(self, request: RedeployRequest) -> ContainerRedeployResponse:
         """Redeploy a container with new configuration."""
         try:
             # Get current container info
-            current_info = self.get_container_info(request.container_name)
+            current_info = await self.get_container_info(request.container_name)
             if not current_info.success:
                 return ContainerRedeployResponse(
                     success=False,
@@ -844,7 +859,7 @@ class DockerService:
                 )
 
             # Stop and remove the old container
-            stop_result = self.stop_container(request.container_name)
+            stop_result = await self.stop_container(request.container_name)
             if not stop_result.success:
                 return ContainerRedeployResponse(
                     success=False,
@@ -854,7 +869,7 @@ class DockerService:
                     error=stop_result.error
                 )
 
-            remove_result = self.remove_container(
+            remove_result = await self.remove_container(
                 request.container_name, force=True)
             if not remove_result.success:
                 return ContainerRedeployResponse(
@@ -869,7 +884,7 @@ class DockerService:
             deploy_command = self._build_redeploy_command(request, new_image)
 
             # Run the new container
-            run_result = self.system_gateway.execute_command(deploy_command)
+            run_result = await self.system_gateway.execute_command(deploy_command)
             if not run_result.success:
                 return ContainerRedeployResponse(
                     success=False,
@@ -883,7 +898,7 @@ class DockerService:
                 )
 
             # Get the new container ID
-            new_id_result = self.system_gateway.execute_command(
+            new_id_result = await self.system_gateway.execute_command(
                 f"docker inspect --format='{{{{.Id}}}}' {request.container_name}")
             new_container_id = new_id_result.output.strip() if new_id_result.success else None
 
@@ -934,6 +949,58 @@ class DockerService:
         cmd_parts.append(image)
 
         return " ".join(cmd_parts)
+
+    async def execute_multiple_commands(self, commands: list[str]) -> list[CommandResponse]:
+        """Execute multiple Docker commands concurrently for better performance."""
+        return await self.system_gateway.execute_multiple_commands(commands)
+
+    async def batch_container_operations(self, container_names: list[str], operation: str) -> list[ContainerOperationResponse]:
+        """Execute the same operation on multiple containers concurrently."""
+        if operation == "stop":
+            commands = [f"docker stop {name}" for name in container_names]
+        elif operation == "start":
+            commands = [f"docker start {name}" for name in container_names]
+        elif operation == "restart":
+            commands = [f"docker restart {name}" for name in container_names]
+        else:
+            raise ValueError(f"Unsupported operation: {operation}")
+
+        results = await self.execute_multiple_commands(commands)
+
+        responses = []
+        for i, result in enumerate(results):
+            if operation == "stop":
+                responses.append(ContainerOperationResponse(
+                    success=result.success,
+                    container_name=container_names[i],
+                    operation=operation,
+                    previous_status=ContainerStatus.RUNNING,
+                    current_status=ContainerStatus.STOPPED if result.success else None,
+                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
+                    error=result.error
+                ))
+            elif operation == "start":
+                responses.append(ContainerOperationResponse(
+                    success=result.success,
+                    container_name=container_names[i],
+                    operation=operation,
+                    previous_status=ContainerStatus.STOPPED,
+                    current_status=ContainerStatus.RUNNING if result.success else None,
+                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
+                    error=result.error
+                ))
+            elif operation == "restart":
+                responses.append(ContainerOperationResponse(
+                    success=result.success,
+                    container_name=container_names[i],
+                    operation=operation,
+                    previous_status=ContainerStatus.RUNNING,
+                    current_status=ContainerStatus.RUNNING if result.success else None,
+                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
+                    error=result.error
+                ))
+
+        return responses
 
 
 __all__ = [

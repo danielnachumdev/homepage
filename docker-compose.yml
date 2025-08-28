@@ -1,30 +1,22 @@
-version: '3.8'
+name: homepage
 
 services:
-  backend:
+  homepage-backend:
     build: ./backend
+    container_name: homepage-backend
     ports:
       - "8000:8000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    privileged: true
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
-  frontend:
+  homepage-frontend:
     build: ./frontend
+    container_name: homepage-frontend
     ports:
       - "3000:3000"
     depends_on:
-      backend:
-        condition: service_healthy
+      - homepage-backend
     restart: unless-stopped
     environment:
       - REACT_APP_API_URL=http://localhost:8000

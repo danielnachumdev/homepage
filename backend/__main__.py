@@ -3,12 +3,10 @@ import uvicorn
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
-try:
-    from .src.api import router as api_router
-    APP_PATH = "backend.__main__:app"
-except ImportError:
-    from backend.src.api import router as api_router
-    APP_PATH = "__main__:app"
+
+# Import the API router directly since we're running this file directly
+from src.api import router as api_router
+APP_PATH = "__main__:app"
 
 # Create FastAPI app instance
 app = FastAPI(
