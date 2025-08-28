@@ -1,0 +1,167 @@
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.75rem 1rem;
+    border-radius: 16px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    min-width: 140px;
+}
+
+.status-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.status-badge__icon {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    min-width: 24px;
+    text-align: center;
+}
+
+.status-badge__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.status-badge__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.25rem;
+}
+
+.status-badge__value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.status-badge__trend {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.trend-icon {
+    font-size: 0.8rem;
+}
+
+.trend-value {
+    opacity: 0.9;
+}
+
+/* Color variants */
+.status-badge--primary {
+    border-color: rgba(100, 149, 237, 0.4);
+}
+
+.status-badge--primary:hover {
+    border-color: rgba(100, 149, 237, 0.6);
+    box-shadow: 0 6px 20px rgba(100, 149, 237, 0.2);
+}
+
+.status-badge--success {
+    border-color: rgba(76, 175, 80, 0.4);
+}
+
+.status-badge--success:hover {
+    border-color: rgba(76, 175, 80, 0.6);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.2);
+}
+
+.status-badge--warning {
+    border-color: rgba(255, 193, 7, 0.4);
+}
+
+.status-badge--warning:hover {
+    border-color: rgba(255, 193, 7, 0.6);
+    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.2);
+}
+
+.status-badge--error {
+    border-color: rgba(244, 67, 54, 0.4);
+}
+
+.status-badge--error:hover {
+    border-color: rgba(244, 67, 54, 0.6);
+    box-shadow: 0 6px 20px rgba(244, 67, 54, 0.2);
+}
+
+.status-badge--info {
+    border-color: rgba(33, 150, 243, 0.4);
+}
+
+.status-badge--info:hover {
+    border-color: rgba(33, 150, 243, 0.6);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.2);
+}
+
+/* Trend colors */
+.trend--up {
+    color: #4caf50;
+}
+
+.trend--down {
+    color: #f44336;
+}
+
+.trend--stable {
+    color: #ff9800;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .status-badge {
+        padding: 0.6rem 0.8rem;
+        min-width: 120px;
+    }
+
+    .status-badge__icon {
+        font-size: 1rem;
+        min-width: 20px;
+    }
+
+    .status-badge__label {
+        font-size: 0.7rem;
+    }
+
+    .status-badge__value {
+        font-size: 1rem;
+    }
+
+    .status-badge__trend {
+        font-size: 0.65rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .status-badge {
+        min-width: 100px;
+        padding: 0.5rem 0.7rem;
+    }
+
+    .status-badge__icon {
+        font-size: 0.9rem;
+        min-width: 18px;
+    }
+
+    .status-badge__label {
+        font-size: 0.65rem;
+    }
+
+    .status-badge__value {
+        font-size: 0.9rem;
+    }
+}
