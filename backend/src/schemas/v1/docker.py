@@ -1,10 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
 
 class ContainerStatus(str, Enum):
-    """Container status enumeration"""
+    """Container status enumeration."""
     RUNNING = "running"
     STOPPED = "stopped"
     PAUSED = "paused"
@@ -16,45 +16,83 @@ class ContainerStatus(str, Enum):
 
 
 class HealthStatus(str, Enum):
-    """Container health status enumeration"""
+    """Container health status enumeration."""
     HEALTHY = "healthy"
     UNHEALTHY = "unhealthy"
     STARTING = "starting"
     NONE = "none"
 
 
-# Base request schemas
+class PlatformInfo(BaseModel):
+    """Platform information for a container."""
+    architecture: str
+    os: str
+
+
+class DockerPsEntry(BaseModel):
+    """Represents a single container entry from docker ps --format json."""
+    ID: str = Field(..., description="Container ID")
+    Image: str = Field(..., description="Container image")
+    Command: str = Field(..., description="Container command")
+    CreatedAt: str = Field(..., description="Container creation time")
+    State: str = Field(...,
+                       description="Container state (running, exited, etc.)")
+    Status: str = Field(..., description="Container status description")
+    Ports: str = Field(..., description="Port mappings")
+    Names: str = Field(..., description="Container names")
+    Labels: str = Field(..., description="Container labels")
+    LocalVolumes: str = Field(..., description="Number of local volumes")
+    Mounts: str = Field(..., description="Volume mounts")
+    Networks: str = Field(..., description="Network connections")
+    Platform: PlatformInfo = Field(..., description="Platform information")
+    RunningFor: str = Field(...,
+                            description="How long container has been running")
+    Size: str = Field(..., description="Container size")
+
+
+# Legacy schemas for backward compatibility
+class DockerRequest(BaseModel):
+    """Legacy Docker request schema."""
+    container_name: str
+
+
+class DockerResponse(BaseModel):
+    """Legacy Docker response schema."""
+    success: bool
+    message: str
+    error: Optional[str] = None
+
+
+# Request schemas
 class ContainerNameRequest(BaseModel):
-    """Base request for operations that need a container name"""
+    """Request schema for container operations by name."""
     container_name: str
 
 
 class LogsRequest(BaseModel):
-    """Request for getting container logs"""
+    """Request schema for getting container logs."""
     container_name: str
     tail_lines: int = 100
-    follow: bool = False
 
 
 class RemoveContainerRequest(BaseModel):
-    """Request for removing a container"""
+    """Request schema for removing a container."""
     container_name: str
     force: bool = False
 
 
 class RedeployRequest(BaseModel):
-    """Request for redeploying a container"""
+    """Request schema for redeploying a container."""
     container_name: str
-    image: Optional[str] = None  # If not provided, use current image
-    force_rebuild: bool = False
+    image: Optional[str] = None
     environment_vars: Optional[Dict[str, str]] = None
     ports: Optional[Dict[str, str]] = None
     volumes: Optional[List[str]] = None
 
 
-# Response schemas for specific operations
+# Response schemas
 class ContainerInfoResponse(BaseModel):
-    """Response for container information"""
+    """Response schema for container information."""
     success: bool
     container_name: str
     container_id: Optional[str] = None
@@ -62,35 +100,38 @@ class ContainerInfoResponse(BaseModel):
     image: Optional[str] = None
     image_id: Optional[str] = None
     created: Optional[str] = None
-    ports: Optional[List[str]] = None
-    mounts: Optional[List[str]] = None
+    ports: Optional[List[Dict[str, Any]]] = None
+    mounts: Optional[List[Dict[str, Any]]] = None
     networks: Optional[List[str]] = None
     health_status: Optional[HealthStatus] = None
     environment_vars: Optional[Dict[str, str]] = None
-    command: Optional[str] = None
-    entrypoint: Optional[str] = None
+    command: Optional[List[str]] = None
+    entrypoint: Optional[List[str]] = None
     working_dir: Optional[str] = None
     user: Optional[str] = None
-    # Redeployment information
     deploy_command: Optional[str] = None
     compose_file: Optional[str] = None
     compose_service: Optional[str] = None
     restart_policy: Optional[str] = None
+    message: Optional[str] = None
     error: Optional[str] = None
 
 
 class ContainerListResponse(BaseModel):
-    """Response for listing containers"""
+    """Response schema for container list."""
     success: bool
-    containers: List[Dict[str, Any]] = []
-    total_count: int = 0
-    running_count: int = 0
-    stopped_count: int = 0
+    containers: List[Dict[str, Any]]
+    total_count: int
+    running_count: int
+    stopped_count: int
+    compose_projects: List[str]
+    unique_images: List[str]
+    total_size: Optional[str] = None
     error: Optional[str] = None
 
 
 class ContainerOperationResponse(BaseModel):
-    """Response for container operations (start, stop, restart)"""
+    """Response schema for container operations."""
     success: bool
     container_name: str
     operation: str
@@ -101,38 +142,35 @@ class ContainerOperationResponse(BaseModel):
 
 
 class ContainerHealthResponse(BaseModel):
-    """Response for container health check"""
+    """Response schema for container health check."""
     success: bool
     container_name: str
     health_status: HealthStatus
-    last_check: Optional[str] = None
-    failure_count: Optional[int] = None
-    log: Optional[List[str]] = None
     error: Optional[str] = None
 
 
 class ContainerLogsResponse(BaseModel):
-    """Response for container logs"""
+    """Response schema for container logs."""
     success: bool
     container_name: str
-    logs: List[str] = []
-    total_lines: int = 0
-    tail_lines: int = 100
+    logs: List[str]
+    total_lines: Optional[int] = None
+    tail_lines: Optional[int] = None
     error: Optional[str] = None
 
 
 class ContainerRemoveResponse(BaseModel):
-    """Response for container removal"""
+    """Response schema for container removal."""
     success: bool
     container_name: str
-    removed: bool = False
-    force_used: bool = False
+    removed: bool
+    force_used: bool
     message: str
     error: Optional[str] = None
 
 
 class ContainerRedeployResponse(BaseModel):
-    """Response for container redeployment"""
+    """Response schema for container redeployment."""
     success: bool
     container_name: str
     old_container_id: Optional[str] = None
@@ -144,22 +182,12 @@ class ContainerRedeployResponse(BaseModel):
     error: Optional[str] = None
 
 
-# Legacy schemas for backward compatibility (can be removed later)
-class DockerRequest(BaseModel):
-    """Legacy request schema - deprecated"""
-    container_name: str
-
-
-class DockerResponse(BaseModel):
-    """Legacy response schema - deprecated"""
-    success: bool
-    message: str
-    error: Optional[str] = None
-
-
 __all__ = [
     "ContainerStatus",
     "HealthStatus",
+    "DockerPsEntry",
+    "DockerRequest",  # Legacy
+    "DockerResponse",  # Legacy
     "ContainerNameRequest",
     "LogsRequest",
     "RemoveContainerRequest",
@@ -171,6 +199,4 @@ __all__ = [
     "ContainerLogsResponse",
     "ContainerRemoveResponse",
     "ContainerRedeployResponse",
-    "DockerRequest",  # Legacy
-    "DockerResponse"  # Legacy
 ]
