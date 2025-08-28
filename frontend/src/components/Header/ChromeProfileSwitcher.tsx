@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import {
     Box,
     Button,
-    Menu,
-    MenuItem,
     Typography,
     Chip,
     CircularProgress,
@@ -12,13 +10,10 @@ import {
 import { KeyboardArrowDown } from '@mui/icons-material';
 import { useChromeProfiles } from '../../hooks';
 import { type ChromeProfile } from '../../services';
+import { ProfileMenu } from '../shared';
 import styles from './ChromeProfileSwitcher.module.css';
 
-interface ChromeProfileSwitcherProps {
-    className?: string;
-}
-
-export function ChromeProfileSwitcher({ className }: ChromeProfileSwitcherProps) {
+export function ChromeProfileSwitcher() {
     const { profiles, activeProfile, loading, error, loadChromeProfiles, switchProfile } = useChromeProfiles();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -107,58 +102,16 @@ export function ChromeProfileSwitcher({ className }: ChromeProfileSwitcherProps)
                 </Typography>
             </Button>
 
-            <Menu
+            <ProfileMenu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleProfileMenuClose}
-                PaperProps={{
-                    className: styles.profileMenuPaper
-                }}
-            >
-                <MenuItem disabled className={styles.profileMenuHeaderItem}>
-                    <Typography variant="subtitle2" className={styles.profileMenuHeaderTextOverride}>
-                        Switch to profile:
-                    </Typography>
-                </MenuItem>
-                {profiles.map(profile => (
-                    <MenuItem
-                        key={profile.id}
-                        onClick={() => handleProfileSelect(profile)}
-                        selected={profile.id === activeProfile?.id}
-                        disabled={profile.is_active}
-                        className={`${styles.profileMenuItemBase} ${profile.is_active
-                            ? styles.profileMenuItemActiveOverride
-                            : styles.profileMenuItemInactiveOverride
-                            } ${profile.id === activeProfile?.id
-                                ? styles.profileMenuItemSelectedOverride
-                                : ''
-                            } ${profile.is_active
-                                ? styles.profileMenuItemDisabledOverride
-                                : ''
-                            }`}
-                    >
-                        <Box className={styles.profileMenuItem}>
-                            <span className={profile.is_active ? styles.profileIconActiveOverride : styles.profileIconOverride}>
-                                {profile.icon || '👤'}
-                            </span>
-                            <Typography
-                                variant="body2"
-                                className={profile.is_active ? styles.profileNameActiveOverride : styles.profileNameOverride}
-                            >
-                                {profile.name}
-                            </Typography>
-                        </Box>
-                        {profile.is_active && (
-                            <Chip
-                                label="Active"
-                                size="small"
-                                color="primary"
-                                className={styles.activeChipOverride}
-                            />
-                        )}
-                    </MenuItem>
-                ))}
-            </Menu>
+                profiles={profiles}
+                onProfileSelect={handleProfileSelect}
+                title="Switch to profile:"
+                selectedProfileId={activeProfile?.id}
+                showActiveIndicator={true}
+            />
         </Box>
     );
 }

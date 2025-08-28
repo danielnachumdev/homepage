@@ -6,15 +6,13 @@ import {
   CardContent,
   Typography,
   IconButton,
-  Menu,
-  MenuItem,
-  Chip,
   Collapse,
   Button,
   TextField,
   InputAdornment,
   Alert,
   CircularProgress,
+  Chip,
 } from '@mui/material';
 import {
   ExpandMore,
@@ -27,6 +25,9 @@ import {
 import type { Section, LinkItem } from '../../types/homepage';
 import { chromeService } from '../../services';
 import type { ChromeProfile } from '../../services';
+import { useChromeProfiles } from '../../hooks';
+import { ProfileMenu } from '../shared';
+import styles from './Homepage.module.css';
 
 interface HomepageProps {
   data?: {
@@ -123,35 +124,17 @@ const demoSections: Section[] = [
 
 export function Homepage({ data }: HomepageProps) {
   const [sections, setSections] = useState<Section[]>(data?.sections || demoSections);
-  const [chromeProfiles, setChromeProfiles] = useState<ChromeProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedLink, setSelectedLink] = useState<LinkItem | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // Use the useChromeProfiles hook
+  const { profiles: chromeProfiles, loading, error, loadChromeProfiles } = useChromeProfiles();
 
   // Load Chrome profiles on component mount
   useEffect(() => {
     loadChromeProfiles();
-  }, []);
-
-  const loadChromeProfiles = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await chromeService.getChromeProfiles();
-      if (response.success) {
-        setChromeProfiles(response.profiles);
-      } else {
-        setError(response.message || 'Failed to load Chrome profiles');
-      }
-    } catch (err) {
-      setError('Failed to connect to backend for Chrome profiles');
-      console.error('Error loading Chrome profiles:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [loadChromeProfiles]);
 
   const handleSectionToggle = (sectionId: string) => {
     setSections(prev =>
@@ -185,11 +168,9 @@ export function Homepage({ data }: HomepageProps) {
           console.log(`Successfully opened ${selectedLink.url} in profile: ${profile.name}`);
         } else {
           console.error('Failed to open URL in profile:', response.message);
-          setError(`Failed to open URL in profile: ${response.message}`);
         }
       } catch (err) {
         console.error('Error opening URL in profile:', err);
-        setError('Failed to communicate with backend');
       }
     }
     handleProfileMenuClose();
@@ -205,8 +186,8 @@ export function Homepage({ data }: HomepageProps) {
   })).filter(section => section.links.length > 0);
 
   const SectionHeader = ({ section }: { section: Section }) => (
-    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-      <Typography variant="h5" component="h2" sx={{ flexGrow: 1 }}>
+    <Box className={styles.sectionHeader}>
+      <Typography variant="h5" component="h2" className={styles.sectionTitle}>
         {section.title}
       </Typography>
       {section.isCollapsible && (
@@ -221,19 +202,19 @@ export function Homepage({ data }: HomepageProps) {
   );
 
   const LinkCard = ({ link }: { link: LinkItem }) => (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <CardContent sx={{ flexGrow: 1, p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6" component="h3" gutterBottom>
+    <Card className={styles.linkCard}>
+      <CardContent className={styles.linkCardContent}>
+        <Box className={styles.linkHeader}>
+          <Box className={styles.linkInfo}>
+            <Typography variant="h6" component="h3" className={styles.linkTitle}>
               {link.title}
             </Typography>
             {link.description && (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              <Typography variant="body2" className={styles.linkDescription}>
                 {link.description}
               </Typography>
             )}
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+            <Box className={styles.linkTags}>
               {link.tags?.map(tag => (
                 <Chip
                   key={tag}
@@ -248,7 +229,7 @@ export function Homepage({ data }: HomepageProps) {
           <IconButton
             size="small"
             onClick={(e) => handleProfileMenuOpen(e, link)}
-            sx={{ ml: 1 }}
+            className={styles.linkMenuButton}
             disabled={chromeProfiles.length === 0}
           >
             <MoreVert />
@@ -259,7 +240,7 @@ export function Homepage({ data }: HomepageProps) {
           size="small"
           startIcon={<LinkIcon />}
           onClick={() => window.open(link.url, '_blank')}
-          fullWidth
+          className={styles.linkButton}
         >
           Open Link
         </Button>
@@ -268,7 +249,7 @@ export function Homepage({ data }: HomepageProps) {
   );
 
   const SearchBar = (
-    <Box sx={{ mb: 4 }}>
+    <Box className={styles.searchSection}>
       <TextField
         fullWidth
         placeholder="Search links, descriptions, or tags..."
@@ -281,26 +262,26 @@ export function Homepage({ data }: HomepageProps) {
             </InputAdornment>
           ),
         }}
-        sx={{ maxWidth: 600 }}
+        className={styles.searchField}
       />
     </Box>
   );
 
   const ChromeProfilesStatus = (
-    <Box sx={{ mb: 3 }}>
+    <Box className={styles.chromeProfilesStatus}>
       {loading && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box className={styles.loadingContainer}>
           <CircularProgress size={16} />
           <Typography variant="body2">Loading Chrome profiles...</Typography>
         </Box>
       )}
       {error && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
+        <Alert severity="warning" className={styles.errorAlert}>
           {error}
         </Alert>
       )}
       {chromeProfiles.length > 0 && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box className={styles.profilesInfo}>
           <Typography variant="body2" color="text.secondary">
             Chrome profiles available: {chromeProfiles.length}
           </Typography>
@@ -312,51 +293,20 @@ export function Homepage({ data }: HomepageProps) {
     </Box>
   );
 
-  const ProfileMenu = (
-    <Menu
-      anchorEl={anchorEl}
-      open={Boolean(anchorEl)}
-      onClose={handleProfileMenuClose}
-    >
-      <MenuItem disabled>
-        <Typography variant="subtitle2">Open with profile:</Typography>
-      </MenuItem>
-      {chromeProfiles.map(profile => (
-        <MenuItem
-          key={profile.id}
-          onClick={() => handleProfileSelect(profile)}
-          selected={profile.is_active}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <span>{profile.icon || '👤'}</span>
-            <Typography>{profile.name}</Typography>
-            {profile.is_active && (
-              <Chip label="Active" size="small" color="primary" />
-            )}
-          </Box>
-        </MenuItem>
-      ))}
-    </Menu>
-  );
-
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" className={styles.container}>
       {SearchBar}
       {ChromeProfilesStatus}
 
-      <Box sx={{ mt: 4 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box className={styles.mainContent}>
+        <Box className={styles.sectionsContainer}>
           {filteredSections.map(section => (
             <Box key={section.id}>
-              <Card sx={{ p: 3 }}>
+              <Card className={styles.sectionCard}>
                 <SectionHeader section={section} />
 
                 <Collapse in={!section.isCollapsed}>
-                  <Box sx={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: 2
-                  }}>
+                  <Box className={styles.linksGrid}>
                     {section.links.map(link => (
                       <Box key={link.id}>
                         <LinkCard link={link} />
@@ -370,7 +320,14 @@ export function Homepage({ data }: HomepageProps) {
         </Box>
       </Box>
 
-      {ProfileMenu}
+      <ProfileMenu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleProfileMenuClose}
+        profiles={chromeProfiles}
+        onProfileSelect={handleProfileSelect}
+        title="Open with profile:"
+      />
     </Container>
   );
 }
