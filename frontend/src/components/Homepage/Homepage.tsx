@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
-  Grid,
   Card,
   CardContent,
   Typography,
@@ -26,8 +25,8 @@ import {
   Tag,
 } from '@mui/icons-material';
 import type { Section, LinkItem } from '../../types/homepage';
-import { chromeApiService } from '../../lib/api/chrome';
-import type { ChromeProfile } from '../../lib/api/chrome';
+import { chromeService } from '../../services';
+import type { ChromeProfile } from '../../services';
 
 interface HomepageProps {
   data?: {
@@ -140,7 +139,7 @@ export function Homepage({ data }: HomepageProps) {
     try {
       setLoading(true);
       setError(null);
-      const response = await chromeApiService.getChromeProfiles();
+      const response = await chromeService.getChromeProfiles();
       if (response.success) {
         setChromeProfiles(response.profiles);
       } else {
@@ -177,7 +176,7 @@ export function Homepage({ data }: HomepageProps) {
   const handleProfileSelect = async (profile: ChromeProfile) => {
     if (selectedLink) {
       try {
-        const response = await chromeApiService.openUrlInProfile({
+        const response = await chromeService.openUrlInProfile({
           url: selectedLink.url,
           profile_id: profile.id,
         });

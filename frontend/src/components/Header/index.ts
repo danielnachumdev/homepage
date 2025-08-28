@@ -1,4 +1,5 @@
 export { Header } from './Header';
+export { ChromeProfileSwitcher } from './ChromeProfileSwitcher';
 export { BackendStatus } from './BackendStatus';
 export { StatusBadge, SimpleStatusBadge, TrendStatusBadge, CustomStatusBadge } from './StatusBadge';
 export { StatusBadges } from './StatusBadges';

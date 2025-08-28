@@ -1,6 +1,7 @@
 import asyncio
 import subprocess
-from typing import Optional
+import shlex
+from typing import Optional, Union
 from ...schemas.v1.system import CommandResponse
 
 
@@ -8,86 +9,89 @@ class SystemGateway:
     """Gateway for executing system commands asynchronously."""
 
     @staticmethod
-    async def execute_command(command: str) -> CommandResponse:
-        """Execute a system command asynchronously."""
+    def _parse_command(command: str) -> list[str]:
+        """Parse a command string into a list of arguments, handling basic quoting."""
         try:
-            # Run the command asynchronously
-            process = await asyncio.create_subprocess_exec(
-                *command.split(),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+            # Use shlex to properly parse the command, handling quotes and escaping
+            return shlex.split(command)
+        except ValueError:
+            # Fallback to simple split if shlex fails
+            return command.split()
+
+    @staticmethod
+    async def _execute_command_internal(args: list[str], timeout: Optional[float] = None) -> CommandResponse:
+        """Internal method to execute a command with given arguments."""
+        try:
+            coro = asyncio.to_thread(
+                subprocess.run,
+                args,
+                capture_output=True,
+                text=True,
+                check=False
             )
-
-            stdout, stderr = await process.communicate()
-
-            # Decode output
-            output = stdout.decode('utf-8', errors='ignore') if stdout else ""
-            error = stderr.decode('utf-8', errors='ignore') if stderr else ""
+            # Use asyncio.to_thread with subprocess.run for better cross-platform compatibility
+            if timeout:
+                # For timeout support, we need to handle it manually since subprocess.run doesn't support it natively
+                # We'll use asyncio.wait_for with the subprocess call
+                result = await asyncio.wait_for(
+                    coro,
+                    timeout=timeout
+                )
+            else:
+                result = await coro
 
             return CommandResponse(
-                success=process.returncode == 0,
-                output=output,
-                error=error if process.returncode != 0 else None
+                success=result.returncode == 0,
+                output=result.stdout or "",
+                error=result.stderr if result.returncode != 0 else None
             )
 
+        except asyncio.TimeoutError:
+            return CommandResponse(
+                success=False,
+                output="",
+                error=f"Command timed out after {timeout} seconds"
+            )
         except Exception as e:
             return CommandResponse(
                 success=False,
                 output="",
                 error=str(e)
             )
+
+    @staticmethod
+    async def execute_command_args(args: list[str]) -> CommandResponse:
+        """Execute a system command using a list of arguments directly."""
+        return await SystemGateway._execute_command_internal(args)
+
+    @staticmethod
+    async def execute_command(command: str) -> CommandResponse:
+        """Execute a system command asynchronously from a string."""
+        args = SystemGateway._parse_command(command)
+        return await SystemGateway._execute_command_internal(args)
 
     @staticmethod
     async def execute_command_with_timeout(command: str, timeout: float = 30.0) -> CommandResponse:
         """Execute a system command asynchronously with a timeout."""
-        try:
-            # Run the command asynchronously with timeout
-            process = await asyncio.create_subprocess_exec(
-                *command.split(),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-
-            try:
-                stdout, stderr = await asyncio.wait_for(
-                    process.communicate(),
-                    timeout=timeout
-                )
-            except asyncio.TimeoutError:
-                # Kill the process if it times out
-                process.kill()
-                await process.wait()
-                return CommandResponse(
-                    success=False,
-                    output="",
-                    error=f"Command timed out after {timeout} seconds"
-                )
-
-            # Decode output
-            output = stdout.decode('utf-8', errors='ignore') if stdout else ""
-            error = stderr.decode('utf-8', errors='ignore') if stderr else ""
-
-            return CommandResponse(
-                success=process.returncode == 0,
-                output=output,
-                error=error if process.returncode != 0 else None
-            )
-
-        except Exception as e:
-            return CommandResponse(
-                success=False,
-                output="",
-                error=str(e)
-            )
+        args = SystemGateway._parse_command(command)
+        return await SystemGateway._execute_command_internal(args, timeout)
 
     @staticmethod
-    async def execute_multiple_commands(commands: list[str], max_concurrent: int = 5) -> list[CommandResponse]:
+    async def execute_command_args_with_timeout(args: list[str], timeout: float = 30.0) -> CommandResponse:
+        """Execute a system command using a list of arguments with a timeout."""
+        return await SystemGateway._execute_command_internal(args, timeout)
+
+    @staticmethod
+    async def execute_multiple_commands(commands: list[Union[str, list[str]]], max_concurrent: int = 5) -> list[CommandResponse]:
         """Execute multiple commands concurrently with a limit on concurrency."""
         semaphore = asyncio.Semaphore(max_concurrent)
 
-        async def execute_with_semaphore(cmd: str) -> CommandResponse:
+        async def execute_with_semaphore(cmd: Union[str, list[str]]) -> CommandResponse:
             async with semaphore:
-                return await SystemGateway.execute_command(cmd)
+                if isinstance(cmd, str):
+                    return await SystemGateway.execute_command(cmd)
+                else:
+                    return await SystemGateway.execute_command_args(cmd)
 
         # Execute all commands concurrently
         tasks = [execute_with_semaphore(cmd) for cmd in commands]

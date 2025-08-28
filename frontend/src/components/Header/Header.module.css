@@ -60,6 +60,16 @@
     white-space: nowrap;
 }
 
+.chromeProfileSection {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
 .headerBottomRow {
     top: 5rem;
     display: flex;

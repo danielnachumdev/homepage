@@ -2,6 +2,7 @@ import React from 'react';
 import { BackendStatus } from './BackendStatus';
 import { StatusBadges } from './StatusBadges';
 import { Clock } from './Clock';
+import { ChromeProfileSwitcher } from './ChromeProfileSwitcher';
 import styles from './Header.module.css';
 
 export const Header: React.FC = () => {
@@ -9,6 +10,13 @@ export const Header: React.FC = () => {
     const HomepageTitle = (
         <div className={styles.headerTitle}>
             <h1>Homepage</h1>
+        </div>
+    );
+
+    // Local sub-component for the Chrome profile switcher
+    const ChromeProfileSection = (
+        <div className={styles.chromeProfileSection}>
+            <ChromeProfileSwitcher />
         </div>
     );
 
@@ -20,6 +28,7 @@ export const Header: React.FC = () => {
                     <Clock />
                 </div>
                 <div className={styles.headerTopRow}>
+                    {ChromeProfileSection}
                     {HomepageTitle}
                 </div>
 

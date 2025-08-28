@@ -101,11 +101,10 @@ class ChromeService:
                 )
 
             # Build Chrome command with profile
-            chrome_command = self._build_chrome_command(
-                request.url, target_profile)
+            chrome_command = self._build_chrome_command(request.url, target_profile)
 
             # Execute the command
-            result = await self.system_gateway.execute_command(chrome_command)
+            result = await self.system_gateway.execute_command_args(chrome_command)
 
             if result.success:
                 return OpenUrlResponse(
@@ -138,14 +137,13 @@ class ChromeService:
             pass
         return None
 
-    def _build_chrome_command(self, url: str, profile: ChromeProfile) -> str:
+    def _build_chrome_command(self, url: str, profile: ChromeProfile) -> List[str]:
         """Build Chrome command with profile specification."""
         # Try to find Chrome executable in common Windows locations
         chrome_paths = [
             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-            os.path.join(os.environ.get('LOCALAPPDATA', ''),
-                         'Google', 'Chrome', 'Application', 'chrome.exe'),
+            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Google', 'Chrome', 'Application', 'chrome.exe'),
             "chrome.exe"  # Fallback to PATH
         ]
 
@@ -154,7 +152,6 @@ class ChromeService:
             if os.path.exists(path):
                 chrome_exe = path
                 break
-
         if not chrome_exe:
             chrome_exe = "chrome.exe"  # Use PATH as last resort
 
@@ -171,7 +168,7 @@ class ChromeService:
         # Build the complete command
         args = [chrome_exe, profile_arg] + additional_args + [url]
 
-        return " ".join(args)
+        return args
 
 
 __all__ = [
