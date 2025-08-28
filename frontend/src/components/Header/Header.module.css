@@ -9,17 +9,47 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.header-content {}
+.headerContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+    padding: 0 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
-.header-top-row {}
+.headerTopRow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 60px;
+    width: 100%;
+}
 
-.header-status-wrapper {}
+.headerStatusWrapper {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    align-items: flex-start;
+    z-index: 10;
+}
 
-.header-spacer {}
+.headerSpacer {
+    flex: 1;
+}
 
-.header-title {}
+.headerTitle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
 
-.header-title h1 {
+.headerTitle h1 {
     margin: 0;
     font-size: 1.8rem;
     font-weight: 600;
@@ -32,11 +62,22 @@
     white-space: nowrap;
 }
 
-.header-bottom-row {}
+.headerBottomRow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
 
-.header-status {}
+.headerStatus {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
 
-.status-indicator {
+.statusIndicator {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -48,7 +89,7 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.status-dot {
+.statusDot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
@@ -56,7 +97,7 @@
     animation: pulse 2s infinite;
 }
 
-.status-text {
+.statusText {
     font-weight: 500;
     font-size: 0.9rem;
     text-transform: uppercase;
@@ -64,14 +105,14 @@
     color: white;
 }
 
-.status-error {
+.statusError {
     font-size: 1.2rem;
     cursor: help;
     opacity: 0.9;
     color: #ff6b6b;
 }
 
-.status-time {
+.statusTime {
     font-size: 0.8rem;
     opacity: 0.8;
     font-family: 'Courier New', monospace;
@@ -94,39 +135,39 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
-    .header-content {
+    .headerContent {
         padding: 0 1rem;
     }
 
-    .header-top-row {
+    .headerTopRow {
         flex-direction: column;
         text-align: center;
         gap: 0.75rem;
         min-height: auto;
     }
 
-    .header-status-wrapper {
+    .headerStatusWrapper {
         position: static;
         order: 3;
         justify-content: center;
         width: 100%;
     }
 
-    .header-title {
+    .headerTitle {
         position: static;
         transform: none;
         order: 1;
     }
 
-    .header-spacer {
+    .headerSpacer {
         display: none;
     }
 
-    .header-title h1 {
+    .headerTitle h1 {
         font-size: 1.5rem;
     }
 
-    .header-bottom-row {
+    .headerBottomRow {
         padding-top: 0.75rem;
     }
 }
@@ -136,15 +177,15 @@
         padding: 0.75rem 0;
     }
 
-    .header-content {
+    .headerContent {
         gap: 0.75rem;
     }
 
-    .header-top-row {
+    .headerTopRow {
         gap: 0.5rem;
     }
 
-    .header-title h1 {
+    .headerTitle h1 {
         font-size: 1.4rem;
     }
 }

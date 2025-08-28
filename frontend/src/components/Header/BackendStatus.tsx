@@ -1,6 +1,6 @@
 import React from 'react';
 import { useBackendStatus } from '../../hooks/useBackendStatus';
-import './BackendStatus.css';
+import styles from './BackendStatus.module.css';
 
 export const BackendStatus: React.FC = () => {
     const { isConnected, error } = useBackendStatus();
@@ -16,21 +16,22 @@ export const BackendStatus: React.FC = () => {
     };
 
     return (
-        <div className="backend-status">
-            <div className="status-indicator">
+        <div className={styles.backendStatus}>
+            <div className={styles.statusIndicator}>
                 <div
-                    className="status-dot"
+                    className={styles.statusDot}
                     style={{ backgroundColor: getStatusColor() }}
                     title={`${isConnected ? 'Connected' : 'Disconnected'} - ${error || 'No errors'}`}
                 />
-                <span className="status-text">{getStatusText()}</span>
+                <span className={styles.statusText}>{getStatusText()}</span>
             </div>
 
             {error && (
-                <div className="status-error" title={error}>
+                <div className={styles.statusError} title={error}>
                     ⚠️
                 </div>
             )}
+
         </div>
     );
 };

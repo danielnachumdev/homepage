@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBadge } from './StatusBadge';
 import type { StatusBadgeProps } from './StatusBadge';
-import './StatusBadges.css';
+import styles from './StatusBadges.module.css';
 
 // Mock data for demonstration - in a real app, this would come from your backend
 const mockStatusData: StatusBadgeProps[] = [
@@ -66,7 +66,7 @@ export const StatusBadges: React.FC = () => {
     }, []);
 
     return (
-        <div className="status-badges">
+        <div className={styles.statusBadges}>
             {statusData.map((badge, index) => (
                 <StatusBadge
                     key={`${badge.label}-${index}`}

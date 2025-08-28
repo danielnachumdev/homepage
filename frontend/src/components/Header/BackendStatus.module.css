@@ -1,11 +1,11 @@
-.backend-status {
+.backendStatus {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
 }
 
-.status-indicator {
+.statusIndicator {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -17,7 +17,7 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.status-dot {
+.statusDot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
@@ -25,7 +25,7 @@
     animation: pulse 2s infinite;
 }
 
-.status-text {
+.statusText {
     font-weight: 500;
     font-size: 0.9rem;
     text-transform: uppercase;
@@ -33,14 +33,14 @@
     color: white;
 }
 
-.status-error {
+.statusError {
     font-size: 1.2rem;
     cursor: help;
     opacity: 0.9;
     color: #ff6b6b;
 }
 
-.status-time {
+.statusTime {
     font-size: 0.8rem;
     opacity: 0.8;
     font-family: 'Courier New', monospace;
@@ -67,32 +67,32 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
-    .backend-status {
+    .backendStatus {
         justify-content: center;
         gap: 0.5rem;
     }
 
-    .status-indicator {
+    .statusIndicator {
         padding: 0.4rem 0.8rem;
     }
 
-    .status-text {
+    .statusText {
         font-size: 0.8rem;
     }
 
-    .status-time {
+    .statusTime {
         font-size: 0.7rem;
         padding: 0.2rem 0.4rem;
     }
 }
 
 @media (max-width: 480px) {
-    .backend-status {
+    .backendStatus {
         flex-direction: column;
         gap: 0.5rem;
     }
 
-    .status-time {
+    .statusTime {
         font-size: 0.7rem;
     }
 }

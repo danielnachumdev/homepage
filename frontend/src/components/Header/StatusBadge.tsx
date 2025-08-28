@@ -1,5 +1,5 @@
 import React from 'react';
-import './StatusBadge.css';
+import styles from './StatusBadge.module.css';
 
 export interface StatusBadgeProps {
     label: string;
@@ -20,44 +20,37 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 }) => {
     const getColorClass = () => {
         switch (color) {
-            case 'success': return 'status-badge--success';
-            case 'warning': return 'status-badge--warning';
-            case 'error': return 'status-badge--error';
-            case 'info': return 'status-badge--info';
-            default: return 'status-badge--primary';
-        }
-    };
-
-    const getTrendIcon = () => {
-        switch (trend) {
-            case 'up': return '↗';
-            case 'down': return '↘';
-            case 'stable': return '→';
-            default: return null;
+            case 'success': return styles.statusBadgeSuccess;
+            case 'warning': return styles.statusBadgeWarning;
+            case 'error': return styles.statusBadgeError;
+            case 'info': return styles.statusBadgeInfo;
+            default: return styles.statusBadgePrimary;
         }
     };
 
     const getTrendClass = () => {
         switch (trend) {
-            case 'up': return 'trend--up';
-            case 'down': return 'trend--down';
-            case 'stable': return 'trend--stable';
+            case 'up': return styles.trendUp;
+            case 'down': return styles.trendDown;
+            case 'stable': return styles.trendStable;
             default: return '';
         }
     };
 
     return (
-        <div className={`status-badge ${getColorClass()}`}>
-            {icon && <span className="status-badge__icon">{icon}</span>}
+        <div className={`${styles.statusBadge} ${getColorClass()}`}>
+            {icon && <span className={styles.statusBadgeIcon}>{icon}</span>}
 
-            <div className="status-badge__content">
-                <div className="status-badge__label">{label}</div>
-                <div className="status-badge__value">{value}</div>
+            <div className={styles.statusBadgeContent}>
+                <div className={styles.statusBadgeLabel}>{label}</div>
+                <div className={styles.statusBadgeValue}>{value}</div>
 
                 {trend && trendValue && (
-                    <div className={`status-badge__trend ${getTrendClass()}`}>
-                        <span className="trend-icon">{getTrendIcon()}</span>
-                        <span className="trend-value">{trendValue}</span>
+                    <div className={`${styles.statusBadgeTrend} ${getTrendClass()}`}>
+                        <span className={styles.trendIcon}>
+                            {trend === 'up' ? '↗' : trend === 'down' ? '↘' : '→'}
+                        </span>
+                        <span className={styles.trendValue}>{trendValue}</span>
                     </div>
                 )}
             </div>
