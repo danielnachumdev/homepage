@@ -1,10 +1,11 @@
 import os
 import json
 import subprocess
-from typing import List, Optional
+from typing import List, Optional, Any
+from jsonpath_ng import parse
 from ...gateways.v1.system_gateway import SystemGateway
 from ...schemas.v1.chrome import (
-    ChromeProfile, ChromeProfileListResponse, OpenUrlRequest, OpenUrlResponse
+    ChromeProfile, ChromeProfileListResponse, OpenUrlRequest, OpenUrlResponse, ChromeProfileInfo
 )
 
 
@@ -54,7 +55,8 @@ class ChromeService:
 
             for profile_dir in profile_dirs:
                 profile_path = os.path.join(chrome_user_data_path, profile_dir)
-                profile_name = self._get_profile_name(profile_path)
+                profile_info = self._extract_profile_information(profile_path)
+                profile_name = profile_info.profile_name if profile_info else None
 
                 profiles.append(ChromeProfile(
                     id=profile_dir,
@@ -101,7 +103,8 @@ class ChromeService:
                 )
 
             # Build Chrome command with profile
-            chrome_command = self._build_chrome_command(request.url, target_profile)
+            chrome_command = self._build_chrome_command(
+                request.url, target_profile)
 
             # Execute the command
             result = await self.system_gateway.execute_command_args(chrome_command)
@@ -124,18 +127,83 @@ class ChromeService:
                 message=f"Error opening URL in profile: {str(e)}"
             )
 
-    def _get_profile_name(self, profile_path: str) -> Optional[str]:
-        """Extract profile name from Chrome profile directory."""
+    async def get_profile_details(self, profile_id: str) -> Optional[ChromeProfileInfo]:
+        """Get detailed information for a specific Chrome profile."""
+        try:
+            # Get all profiles to find the target one
+            profiles_response = await self.get_chrome_profiles()
+            if not profiles_response.success:
+                return None
+
+            # Find the target profile
+            target_profile = None
+            for profile in profiles_response.profiles:
+                if profile.id == profile_id and profile.path:
+                    target_profile = profile
+                    break
+
+            if not target_profile:
+                return None
+
+            # Extract detailed profile information
+            return self._extract_profile_information(target_profile.path)
+
+        except Exception:
+            return None
+
+    def _extract_profile_information(self, profile_path: str) -> Optional[ChromeProfileInfo]:
+        """Extract comprehensive profile information from Chrome profile directory."""
         try:
             preferences_file = os.path.join(profile_path, 'Preferences')
-            if os.path.exists(preferences_file):
-                with open(preferences_file, 'r', encoding='utf-8') as f:
-                    preferences = json.load(f)
-                    profile_info = preferences.get('profile', {})
-                    return profile_info.get('name', '')
+            if not os.path.exists(preferences_file):
+                return None
+
+            with open(preferences_file, 'r', encoding='utf-8') as f:
+                preferences = json.load(f)
+
+                # Use jsonpath for cleaner data extraction
+                profile_name = self._extract_jsonpath_value(
+                    preferences, '$.profile.name')
+
+                # Extract account information using jsonpath
+                account_data = self._extract_jsonpath_value(
+                    preferences, '$.account_id_mapping.account_info[0]') or {}
+
+                # Extract relevant account details
+                account_id = self._extract_jsonpath_value(
+                    account_data, '$.account_id')
+                email = self._extract_jsonpath_value(account_data, '$.email')
+                full_name = self._extract_jsonpath_value(
+                    account_data, '$.full_name')
+                given_name = self._extract_jsonpath_value(
+                    account_data, '$.given_name')
+                picture_url = self._extract_jsonpath_value(
+                    account_data, '$.picture_url')
+                locale = self._extract_jsonpath_value(account_data, '$.locale')
+
+                return ChromeProfileInfo(
+                    profile_name=profile_name,
+                    account_id=account_id,
+                    email=email,
+                    full_name=full_name,
+                    given_name=given_name,
+                    picture_url=picture_url,
+                    locale=locale
+                )
+
         except Exception:
             pass
         return None
+
+    def _extract_jsonpath_value(self, data: dict, jsonpath_expr: str) -> Optional[Any]:
+        """Extract value from data using jsonpath expression."""
+        try:
+            jsonpath_expr_parsed = parse(jsonpath_expr)
+            matches = [
+                match.value for match in jsonpath_expr_parsed.find(data)]
+            return matches[0] if matches else None
+        except Exception:
+            return None
 
     def _build_chrome_command(self, url: str, profile: ChromeProfile) -> List[str]:
         """Build Chrome command with profile specification."""
@@ -143,7 +211,8 @@ class ChromeService:
         chrome_paths = [
             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Google', 'Chrome', 'Application', 'chrome.exe'),
+            os.path.join(os.environ.get('LOCALAPPDATA', ''),
+                         'Google', 'Chrome', 'Application', 'chrome.exe'),
             "chrome.exe"  # Fallback to PATH
         ]
 

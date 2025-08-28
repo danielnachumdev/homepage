@@ -1,5 +1,16 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+
+
+class ChromeProfileInfo(BaseModel):
+    """Detailed Chrome profile information extracted from Preferences file."""
+    profile_name: Optional[str] = None
+    account_id: Optional[str] = None
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    given_name: Optional[str] = None
+    picture_url: Optional[str] = None
+    locale: Optional[str] = None
 
 
 class ChromeProfile(BaseModel):
@@ -33,7 +44,8 @@ class OpenUrlResponse(BaseModel):
 
 __all__ = [
     "ChromeProfile",
-    "ChromeProfileListResponse", 
+    "ChromeProfileInfo",
+    "ChromeProfileListResponse",
     "OpenUrlRequest",
     "OpenUrlResponse"
 ]
