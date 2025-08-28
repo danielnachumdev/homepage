@@ -1,78 +1,86 @@
 import React, { useState, useEffect } from 'react';
-import { StatusBadge } from './StatusBadge';
-import type { StatusBadgeProps } from './StatusBadge';
+import { SimpleStatusBadge, TrendStatusBadge, CustomStatusBadge } from './StatusBadge';
 import styles from './StatusBadges.module.css';
 
-// Mock data for demonstration - in a real app, this would come from your backend
-const mockStatusData: StatusBadgeProps[] = [
-    {
-        label: 'Active Users',
-        value: '1,247',
-        icon: '👥',
-        color: 'success',
-        trend: 'up',
-        trendValue: '+12%'
-    },
-    {
-        label: 'System Load',
-        value: '67%',
-        icon: '⚡',
-        color: 'warning',
-        trend: 'stable',
-        trendValue: '0%'
-    },
-    {
-        label: 'Memory Usage',
-        value: '2.1GB',
-        icon: '💾',
-        color: 'info',
-        trend: 'down',
-        trendValue: '-5%'
-    },
-    {
-        label: 'Network',
-        value: '45 Mbps',
-        icon: '🌐',
-        color: 'primary',
-        trend: 'up',
-        trendValue: '+8%'
-    }
-];
-
 export const StatusBadges: React.FC = () => {
-    const [statusData, setStatusData] = useState<StatusBadgeProps[]>(mockStatusData);
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const [userCount, setUserCount] = useState(1247);
 
-    // Simulate real-time updates
+    // Update time every second
     useEffect(() => {
         const interval = setInterval(() => {
-            setStatusData(prevData =>
-                prevData.map(badge => ({
-                    ...badge,
-                    // Simulate changing values
-                    value: badge.label === 'Active Users'
-                        ? `${Math.floor(Math.random() * 500) + 1000}`
-                        : badge.value,
-                    // Simulate changing trends
-                    trend: Math.random() > 0.7 ?
-                        (Math.random() > 0.5 ? 'up' : 'down') : 'stable' as const,
-                    trendValue: Math.random() > 0.7 ?
-                        `${Math.random() > 0.5 ? '+' : '-'}${Math.floor(Math.random() * 20) + 1}%`
-                        : badge.trendValue
-                }))
-            );
-        }, 10000); // Update every 10 seconds
+            setCurrentTime(new Date());
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    // Simulate user count changes
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setUserCount(prev => prev + Math.floor(Math.random() * 10) - 5);
+        }, 5000);
 
         return () => clearInterval(interval);
     }, []);
 
     return (
         <div className={styles.statusBadges}>
-            {statusData.map((badge, index) => (
-                <StatusBadge
-                    key={`${badge.label}-${index}`}
-                    {...badge}
-                />
-            ))}
+            {/* Example 1: Simple status badge */}
+            <SimpleStatusBadge
+                label="Users"
+                value={userCount}
+                icon="👥"
+                color="success"
+            />
+
+            {/* Example 2: Trend status badge */}
+            <TrendStatusBadge
+                label="System"
+                value="67%"
+                trend="stable"
+                trendValue="0%"
+                icon="⚡"
+                color="warning"
+            />
+
+            {/* Example 3: Custom status badge with custom content */}
+            <CustomStatusBadge
+                color="info"
+                title="Current time"
+                onClick={() => console.log('Time badge clicked!')}
+            >
+                <span className={styles.statusBadgeIcon}>🕐</span>
+                <div className={styles.statusBadgeContent}>
+                    <div className={styles.statusBadgeLabel}>Time</div>
+                    <div className={styles.statusBadgeValue}>
+                        {currentTime.toLocaleTimeString()}
+                    </div>
+                </div>
+            </CustomStatusBadge>
+
+            {/* Example 4: Another custom badge */}
+            <CustomStatusBadge
+                color="primary"
+                title="Network status"
+            >
+                <span className={styles.statusBadgeIcon}>🌐</span>
+                <div className={styles.statusBadgeContent}>
+                    <div className={styles.statusBadgeLabel}>Network</div>
+                    <div className={styles.statusBadgeValue}>45 Mbps</div>
+                </div>
+            </CustomStatusBadge>
+
+            {/* Example 5: Minimal custom badge */}
+            <CustomStatusBadge
+                color="error"
+                title="Error count"
+            >
+                <div className={styles.statusBadgeContent}>
+                    <div className={styles.statusBadgeLabel}>Errors</div>
+                    <div className={styles.statusBadgeValue}>0</div>
+                </div>
+            </CustomStatusBadge>
         </div>
     );
 };

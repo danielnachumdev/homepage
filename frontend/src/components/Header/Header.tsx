@@ -1,6 +1,7 @@
 import React from 'react';
 import { BackendStatus } from './BackendStatus';
 import { StatusBadges } from './StatusBadges';
+import { Clock } from './Clock';
 import styles from './Header.module.css';
 
 export const Header: React.FC = () => {
@@ -16,6 +17,7 @@ export const Header: React.FC = () => {
             <div className={styles.headerContent}>
                 <div className={styles.headerStatusWrapper}>
                     <BackendStatus />
+                    <Clock />
                 </div>
                 <div className={styles.headerTopRow}>
                     {HomepageTitle}

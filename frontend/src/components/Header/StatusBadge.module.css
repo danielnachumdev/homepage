@@ -1,27 +1,28 @@
 .statusBadge {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
     background: rgba(255, 255, 255, 0.15);
-    padding: 0.75rem 1rem;
-    border-radius: 16px;
+    padding: 0.4rem 0.7rem;
+    border-radius: 12px;
     backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
-    min-width: 140px;
+    min-width: 100px;
+    max-width: 120px;
 }
 
 .statusBadge:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     border-color: rgba(255, 255, 255, 0.4);
 }
 
 .statusBadgeIcon {
-    font-size: 1.2rem;
+    font-size: 0.9rem;
     opacity: 0.9;
-    min-width: 24px;
+    min-width: 18px;
     text-align: center;
 }
 
@@ -31,31 +32,33 @@
 }
 
 .statusBadgeLabel {
-    font-size: 0.75rem;
+    font-size: 0.6rem;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
+    line-height: 1;
 }
 
 .statusBadgeValue {
-    font-size: 1.1rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: white;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
+    line-height: 1;
 }
 
 .statusBadgeTrend {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    font-size: 0.7rem;
+    gap: 0.2rem;
+    font-size: 0.55rem;
     font-weight: 500;
 }
 
 .trendIcon {
-    font-size: 0.8rem;
+    font-size: 0.65rem;
 }
 
 .trendValue {
@@ -69,7 +72,7 @@
 
 .statusBadgePrimary:hover {
     border-color: rgba(100, 149, 237, 0.6);
-    box-shadow: 0 6px 20px rgba(100, 149, 237, 0.2);
+    box-shadow: 0 4px 15px rgba(100, 149, 237, 0.2);
 }
 
 .statusBadgeSuccess {
@@ -78,7 +81,7 @@
 
 .statusBadgeSuccess:hover {
     border-color: rgba(76, 175, 80, 0.6);
-    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.2);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
 }
 
 .statusBadgeWarning {
@@ -87,7 +90,7 @@
 
 .statusBadgeWarning:hover {
     border-color: rgba(255, 193, 7, 0.6);
-    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.2);
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
 }
 
 .statusBadgeError {
@@ -96,7 +99,7 @@
 
 .statusBadgeError:hover {
     border-color: rgba(244, 67, 54, 0.6);
-    box-shadow: 0 6px 20px rgba(244, 67, 54, 0.2);
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.2);
 }
 
 .statusBadgeInfo {
@@ -105,7 +108,7 @@
 
 .statusBadgeInfo:hover {
     border-color: rgba(33, 150, 243, 0.6);
-    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.2);
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.2);
 }
 
 /* Trend colors */
@@ -124,44 +127,46 @@
 /* Responsive design */
 @media (max-width: 768px) {
     .statusBadge {
-        padding: 0.6rem 0.8rem;
-        min-width: 120px;
+        padding: 0.35rem 0.6rem;
+        min-width: 90px;
+        max-width: 110px;
     }
 
     .statusBadgeIcon {
-        font-size: 1rem;
-        min-width: 20px;
+        font-size: 0.8rem;
+        min-width: 16px;
     }
 
     .statusBadgeLabel {
-        font-size: 0.7rem;
+        font-size: 0.55rem;
     }
 
     .statusBadgeValue {
-        font-size: 1rem;
+        font-size: 0.8rem;
     }
 
     .statusBadgeTrend {
-        font-size: 0.65rem;
+        font-size: 0.5rem;
     }
 }
 
 @media (max-width: 480px) {
     .statusBadge {
-        min-width: 100px;
-        padding: 0.5rem 0.7rem;
+        min-width: 80px;
+        max-width: 100px;
+        padding: 0.3rem 0.5rem;
     }
 
     .statusBadgeIcon {
-        font-size: 0.9rem;
-        min-width: 18px;
+        font-size: 0.75rem;
+        min-width: 15px;
     }
 
     .statusBadgeLabel {
-        font-size: 0.65rem;
+        font-size: 0.5rem;
     }
 
     .statusBadgeValue {
-        font-size: 0.9rem;
+        font-size: 0.75rem;
     }
 }
