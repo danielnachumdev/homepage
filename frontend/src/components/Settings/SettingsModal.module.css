@@ -1,0 +1,30 @@
+.modalPaper {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+.modalBackdrop {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+.modalContent {
+    padding: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+/* Fullscreen modal styles */
+@media (max-width: 960px) {
+    .modalPaper {
+        border-radius: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+}

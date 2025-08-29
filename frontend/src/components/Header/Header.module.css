@@ -31,7 +31,7 @@
 .headerStatusWrapper {
     position: absolute;
     top: 0;
-    right: 0;
+    right: 80px;
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -63,6 +63,16 @@
 .chromeProfileSection {
     position: absolute;
     left: 0;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.settingsIcon {
+    position: absolute;
+    right: 0;
     top: 0;
     z-index: 10;
     display: flex;
@@ -111,7 +121,7 @@
     .headerStatusWrapper {
         position: absolute;
         top: 0;
-        right: 0;
+        right: 70px;
         flex-direction: column;
         gap: 0.4rem;
     }
@@ -144,6 +154,7 @@
     }
 
     .headerStatusWrapper {
+        right: 60px;
         gap: 0.3rem;
     }
 

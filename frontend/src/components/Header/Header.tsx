@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BackendStatus } from './BackendStatus';
 import { StatusBadges } from './StatusBadges';
 import { Clock } from './Clock';
 import { ChromeProfileSwitcher } from './ChromeProfileSwitcher';
+import { SettingsIcon } from './SettingsIcon';
+import { SettingsModal } from '../Settings';
 import styles from './Header.module.css';
 
 export const Header: React.FC = () => {
+    const [settingsOpen, setSettingsOpen] = useState(false);
+
     // Local sub-component for the homepage title
     const HomepageTitle = (
         <div className={styles.headerTitle}>
@@ -20,6 +24,13 @@ export const Header: React.FC = () => {
         </div>
     );
 
+    // Local sub-component for the settings icon
+    const SettingsSection = (
+        <div className={styles.settingsIcon}>
+            <SettingsIcon onOpen={() => setSettingsOpen(true)} />
+        </div>
+    );
+
     return (
         <header className={styles.header}>
             <div className={styles.headerContent}>
@@ -30,12 +41,18 @@ export const Header: React.FC = () => {
                 <div className={styles.headerTopRow}>
                     {ChromeProfileSection}
                     {HomepageTitle}
+                    {SettingsSection}
                 </div>
 
                 <div className={styles.headerBottomRow}>
                     <StatusBadges />
                 </div>
             </div>
+
+            <SettingsModal
+                open={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+            />
         </header>
     );
 };
