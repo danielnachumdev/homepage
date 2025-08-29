@@ -2,23 +2,33 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.2s ease;
-    height: 100%;
+    width: 100%;
 }
 
 .profileCard:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.cardContent {
+    padding: 1.5rem;
 }
 
 .profileHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profileTitleSection {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .profileName {
@@ -28,26 +38,26 @@
 }
 
 .profileInfo {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .profileIcon {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
+    font-size: 2rem;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 50px;
+    height: 40px;
+    width: 40px;
 }
 
 .profilePath {
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.875rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     word-break: break-word;
 }
 
@@ -59,6 +69,12 @@
 
 .editableFields {
     padding-top: 0.5rem;
+}
+
+.fieldRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
 }
 
 /* Responsive design */

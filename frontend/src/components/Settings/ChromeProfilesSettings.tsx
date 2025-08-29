@@ -128,7 +128,7 @@ export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ o
                 Customize your Chrome profiles. All settings are editable in real-time. Disabled profiles will not be included in the homepage.
             </Typography>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
                 {profiles.map((profile) => {
                     const currentSettings = profileSettings[profile.id];
                     if (!currentSettings) return null;

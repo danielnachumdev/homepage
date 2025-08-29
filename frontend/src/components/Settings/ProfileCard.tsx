@@ -54,11 +54,16 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onProfileUpda
 
     return (
         <Card className={styles.profileCard}>
-            <CardContent>
+            <CardContent className={styles.cardContent}>
                 <Box className={styles.profileHeader}>
-                    <Typography variant="h6" className={styles.profileName}>
-                        Profile Settings
-                    </Typography>
+                    <Box className={styles.profileTitleSection}>
+                        <Box className={styles.profileIcon}>
+                            {icon}
+                        </Box>
+                        <Typography variant="h6" className={styles.profileName}>
+                            {displayName}
+                        </Typography>
+                    </Box>
                     <FormControlLabel
                         control={
                             <Switch
@@ -85,70 +90,66 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onProfileUpda
                 </Box>
 
                 <Box className={styles.profileInfo}>
-                    <Box className={styles.profileIcon}>
-                        {icon}
-                    </Box>
-
                     <Typography variant="body2" className={styles.profilePath}>
                         <strong>Path:</strong> {profile.path || 'No path specified'}
                     </Typography>
-
                     <Typography variant="body2" className={styles.profileId}>
                         <strong>ID:</strong> {profile.id}
                     </Typography>
                 </Box>
 
                 <Box className={styles.editableFields}>
-                    <TextField
-                        fullWidth
-                        label="Display Name"
-                        value={displayName}
-                        onChange={(e) => handleDisplayNameChange(e.target.value)}
-                        size="small"
-                        sx={{
-                            mb: 2,
-                            '& .MuiOutlinedInput-root': {
-                                color: 'white',
-                                '& fieldset': {
-                                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    <Box className={styles.fieldRow}>
+                        <TextField
+                            label="Display Name"
+                            value={displayName}
+                            onChange={(e) => handleDisplayNameChange(e.target.value)}
+                            size="small"
+                            sx={{
+                                flex: 1,
+                                '& .MuiOutlinedInput-root': {
+                                    color: 'white',
+                                    '& fieldset': {
+                                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: 'rgba(255, 255, 255, 0.8)',
+                                    },
                                 },
-                                '&:hover fieldset': {
-                                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                                '& .MuiInputLabel-root': {
+                                    color: 'rgba(255, 255, 255, 0.7)',
                                 },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: 'rgba(255, 255, 255, 0.8)',
+                            }}
+                        />
+                        <TextField
+                            label="Icon"
+                            value={icon}
+                            onChange={(e) => handleIconChange(e.target.value)}
+                            size="small"
+                            sx={{
+                                width: '120px',
+                                ml: 2,
+                                '& .MuiOutlinedInput-root': {
+                                    color: 'white',
+                                    '& fieldset': {
+                                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: 'rgba(255, 255, 255, 0.8)',
+                                    },
                                 },
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: 'rgba(255, 255, 255, 0.7)',
-                            },
-                        }}
-                    />
-
-                    <TextField
-                        fullWidth
-                        label="Icon (emoji or text)"
-                        value={icon}
-                        onChange={(e) => handleIconChange(e.target.value)}
-                        size="small"
-                        sx={{
-                            '& .MuiOutlinedInput-root': {
-                                color: 'white',
-                                '& fieldset': {
-                                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                                '& .MuiInputLabel-root': {
+                                    color: 'rgba(255, 255, 255, 0.7)',
                                 },
-                                '&:hover fieldset': {
-                                    borderColor: 'rgba(255, 255, 255, 0.5)',
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: 'rgba(255, 255, 255, 0.8)',
-                                },
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: 'rgba(255, 255, 255, 0.7)',
-                            },
-                        }}
-                    />
+                            }}
+                        />
+                    </Box>
                 </Box>
             </CardContent>
         </Card>
