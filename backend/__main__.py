@@ -80,7 +80,7 @@ def main():
     logger = get_logger("main")
 
     # Configuration from environment variables
-    host = os.getenv("HOST", "localhost")
+    host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8000"))
     reload = os.getenv("RELOAD", "false").lower() == "true"
     log_level = os.getenv("LOG_LEVEL", "info")

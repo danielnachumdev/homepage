@@ -9,7 +9,7 @@ import {
 } from '../RequestManager/middlewares';
 
 // Get backend URL from environment or use default
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = import.meta.env.BACKEND_BASE_URL || 'http://localhost:8000';
 
 // Create the main API instance
 export const api = new RequestManager({

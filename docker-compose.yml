@@ -5,10 +5,14 @@ services:
     build: ./backend
     container_name: homepage-backend
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Keep external port for direct access if needed
     environment:
       - PYTHONUNBUFFERED=1
+      - HOST=0.0.0.0
+      - PORT=8000
     restart: unless-stopped
+    networks:
+      - homepage-network
 
   homepage-frontend:
     build: ./frontend
@@ -19,4 +23,10 @@ services:
       - homepage-backend
     restart: unless-stopped
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - BACKEND_BASE_URL=http://localhost:8000
+    networks:
+      - homepage-network
+
+networks:
+  homepage-network:
+    driver: bridge

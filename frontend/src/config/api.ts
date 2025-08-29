@@ -1,10 +1,10 @@
 // API configuration for backend endpoints
 export const API_CONFIG = {
     // Base URL for the backend API
-    BASE_URL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000',
+    BASE_URL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000',
 
     // Health check endpoint
-    HEALTH_CHECK: '/api/health',
+    HEALTH_CHECK: '/health',
 
     // Timeout for requests (in milliseconds)
     REQUEST_TIMEOUT: 3000,
