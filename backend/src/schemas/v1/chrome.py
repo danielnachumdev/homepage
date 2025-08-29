@@ -42,10 +42,32 @@ class OpenUrlResponse(BaseModel):
     profile_name: Optional[str] = None
 
 
+class UpdateProfileVisibilityRequest(BaseModel):
+    """Request to update profile visibility."""
+    profile_id: str
+    is_visible: bool
+
+
+class UpdateProfileDisplayRequest(BaseModel):
+    """Request to update profile display information."""
+    profile_id: str
+    display_name: str
+    icon: str
+
+
+class ProfileUpdateResponse(BaseModel):
+    """Response for profile update operations."""
+    success: bool
+    message: str
+
+
 __all__ = [
     "ChromeProfile",
     "ChromeProfileInfo",
     "ChromeProfileListResponse",
     "OpenUrlRequest",
-    "OpenUrlResponse"
+    "OpenUrlResponse",
+    "UpdateProfileVisibilityRequest",
+    "UpdateProfileDisplayRequest",
+    "ProfileUpdateResponse"
 ]

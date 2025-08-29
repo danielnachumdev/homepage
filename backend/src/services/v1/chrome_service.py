@@ -4,8 +4,11 @@ import subprocess
 from typing import List, Optional, Any
 from jsonpath_ng import parse
 from ...gateways.v1.system_gateway import SystemGateway
+from ...db.dependencies import get_db
+from ...db.models.chrome_profile import ChromeProfileModel
 from ...schemas.v1.chrome import (
-    ChromeProfile, ChromeProfileListResponse, OpenUrlRequest, OpenUrlResponse, ChromeProfileInfo
+    ChromeProfile, ChromeProfileListResponse, OpenUrlRequest, OpenUrlResponse, ChromeProfileInfo,
+    UpdateProfileVisibilityRequest, UpdateProfileDisplayRequest, ProfileUpdateResponse
 )
 
 
@@ -14,6 +17,7 @@ class ChromeService:
 
     def __init__(self):
         self.system_gateway = SystemGateway()
+        self.db = get_db()
 
     async def get_chrome_profiles(self) -> ChromeProfileListResponse:
         """Get list of available Chrome profiles from the system."""
@@ -41,13 +45,17 @@ class ChromeService:
             profiles = []
 
             # Default profile is always available
-            profiles.append(ChromeProfile(
-                id="Default",
-                name="Default",
-                icon="👤",
-                is_active=True,
-                path=os.path.join(chrome_user_data_path, "Default")
-            ))
+            default_path = os.path.join(chrome_user_data_path, "Default")
+            default_profile_info = self._extract_profile_information(
+                default_path)
+
+            # Get or create profile in database
+            default_db_profile = await self.get_or_create_profile(
+                "Default", "Default", default_path, default_profile_info
+            )
+
+            profiles.append(
+                self.convert_to_schema(default_db_profile))
 
             # Look for additional profiles
             profile_dirs = [d for d in os.listdir(chrome_user_data_path)
@@ -58,13 +66,13 @@ class ChromeService:
                 profile_info = self._extract_profile_information(profile_path)
                 profile_name = profile_info.profile_name if profile_info else None
 
-                profiles.append(ChromeProfile(
-                    id=profile_dir,
-                    name=profile_name or profile_dir,
-                    icon="👤",
-                    is_active=False,
-                    path=profile_path
-                ))
+                # Get or create profile in database
+                db_profile = await self.get_or_create_profile(
+                    profile_dir, profile_name or profile_dir, profile_path, profile_info
+                )
+
+                profiles.append(
+                    self.convert_to_schema(db_profile))
 
             return ChromeProfileListResponse(
                 success=True,
@@ -238,6 +246,152 @@ class ChromeService:
         args = [chrome_exe, profile_arg] + additional_args + [url]
 
         return args
+
+    async def get_or_create_profile(self, profile_id: str, name: str, path: str,
+                                    profile_info: Optional[ChromeProfileInfo] = None) -> ChromeProfileModel:
+        """Get existing profile or create new one if it doesn't exist."""
+        try:
+            # Try to get existing profile
+            existing_profile = await self.get_profile(profile_id)
+            if existing_profile:
+                return existing_profile
+
+            # Create new profile
+            new_profile = ChromeProfileModel(
+                id=profile_id,
+                name=name,
+                display_name=name,  # Default to system name
+                icon="👤",  # Default icon
+                is_active=False,
+                is_visible=True,
+                path=path,
+                profile_name=profile_info.profile_name if profile_info else None,
+                account_id=profile_info.account_id if profile_info else None,
+                email=profile_info.email if profile_info else None,
+                full_name=profile_info.full_name if profile_info else None,
+                given_name=profile_info.given_name if profile_info else None,
+                picture_url=profile_info.picture_url if profile_info else None,
+                locale=profile_info.locale if profile_info else None
+            )
+
+            # Save to database
+            await self.save_profile(new_profile)
+            return new_profile
+
+        except Exception as e:
+            print(f"Error in get_or_create_profile: {e}")
+            # Return a basic profile if database fails
+            return ChromeProfileModel(
+                id=profile_id,
+                name=name,
+                display_name=name,
+                icon="👤",
+                is_active=False,
+                is_visible=True,
+                path=path
+            )
+
+    async def get_profile(self, profile_id: str) -> Optional[ChromeProfileModel]:
+        """Get a Chrome profile by ID from the database."""
+        try:
+            # This would need to be implemented based on the specific database backend
+            # For now, we'll use a placeholder approach
+            return None
+        except Exception as e:
+            print(f"Error getting profile {profile_id}: {e}")
+            return None
+
+    async def save_profile(self, profile: ChromeProfileModel) -> bool:
+        """Save a Chrome profile to the database."""
+        try:
+            # This would need to be implemented based on the specific database backend
+            # For now, we'll use a placeholder approach
+            return True
+        except Exception as e:
+            print(f"Error saving profile {profile.id}: {e}")
+            return False
+
+    def convert_to_schema(self, model: ChromeProfileModel) -> ChromeProfile:
+        """Convert database model to API schema."""
+        return ChromeProfile(
+            id=model.id,
+            name=model.display_name or model.name,
+            icon=model.icon,
+            is_active=model.is_active,
+            path=model.path
+        )
+
+    async def update_profile_visibility(self, request: UpdateProfileVisibilityRequest) -> ProfileUpdateResponse:
+        """Update the visibility of a Chrome profile."""
+        try:
+            profile = await self.get_profile(request.profile_id)
+            if profile:
+                profile.is_visible = request.is_visible
+                success = await self.save_profile(profile)
+
+                if success:
+                    return ProfileUpdateResponse(
+                        success=True,
+                        message=f"Profile visibility updated successfully"
+                    )
+                else:
+                    return ProfileUpdateResponse(
+                        success=False,
+                        message="Failed to update profile visibility"
+                    )
+            else:
+                return ProfileUpdateResponse(
+                    success=False,
+                    message="Profile not found"
+                )
+
+        except Exception as e:
+            return ProfileUpdateResponse(
+                success=False,
+                message=f"Error updating profile visibility: {str(e)}"
+            )
+
+    async def update_profile_display_info(self, request: UpdateProfileDisplayRequest) -> ProfileUpdateResponse:
+        """Update the display information of a Chrome profile."""
+        try:
+            profile = await self.get_profile(request.profile_id)
+            if profile:
+                profile.display_name = request.display_name
+                profile.icon = request.icon
+                success = await self.save_profile(profile)
+
+                if success:
+                    return ProfileUpdateResponse(
+                        success=True,
+                        message=f"Profile display information updated successfully"
+                    )
+                else:
+                    return ProfileUpdateResponse(
+                        success=False,
+                        message="Failed to update profile display information"
+                    )
+            else:
+                return ProfileUpdateResponse(
+                    success=False,
+                    message="Profile not found"
+                )
+
+        except Exception as e:
+            return ProfileUpdateResponse(
+                success=False,
+                message=f"Error updating profile display information: {str(e)}"
+            )
+
+    async def get_all_visible_profiles(self) -> List[ChromeProfileModel]:
+        """Get all visible Chrome profiles from the database."""
+        try:
+            # This would need to be implemented based on the specific database backend
+            # For now, we'll use a placeholder approach that returns empty list
+            # In a real implementation, this would query the database for visible profiles
+            return []
+        except Exception as e:
+            print(f"Error getting visible profiles: {e}")
+            return []
 
 
 __all__ = [

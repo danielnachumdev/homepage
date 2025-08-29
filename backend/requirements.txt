@@ -4,3 +4,4 @@ pydantic
 danielutils
 dotenv
 jsonpath-ng
+sqlalchemy
