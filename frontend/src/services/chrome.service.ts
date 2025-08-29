@@ -5,6 +5,7 @@ export interface ChromeProfile {
     name: string;
     icon?: string;
     is_active: boolean;
+    is_visible?: boolean;
     path?: string;
 }
 
@@ -25,6 +26,18 @@ export interface OpenUrlResponse {
     profile_name?: string;
 }
 
+export interface UpdateProfileSettingsRequest {
+    profile_id: string;
+    display_name: string;
+    icon: string;
+    enabled: boolean;
+}
+
+export interface ProfileUpdateResponse {
+    success: boolean;
+    message: string;
+}
+
 class ChromeService {
     async getChromeProfiles(): Promise<ChromeProfileListResponse> {
         try {
@@ -42,6 +55,16 @@ class ChromeService {
             return response.data;
         } catch (error) {
             console.error('Failed to open URL in profile:', error);
+            throw error;
+        }
+    }
+
+    async updateProfileSettings(request: UpdateProfileSettingsRequest): Promise<ProfileUpdateResponse> {
+        try {
+            const response = await api.put<ProfileUpdateResponse>(`/api/v1/chrome/profiles/${request.profile_id}/settings`, request);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to update profile settings:', error);
             throw error;
         }
     }

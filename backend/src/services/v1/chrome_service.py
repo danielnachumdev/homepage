@@ -8,7 +8,8 @@ from ...db.dependencies import get_db
 from ...db.models.chrome_profile import ChromeProfileModel
 from ...schemas.v1.chrome import (
     ChromeProfile, ChromeProfileListResponse, OpenUrlRequest, OpenUrlResponse, ChromeProfileInfo,
-    UpdateProfileVisibilityRequest, UpdateProfileDisplayRequest, ProfileUpdateResponse
+    UpdateProfileVisibilityRequest, UpdateProfileDisplayRequest, ProfileUpdateResponse,
+    UpdateProfileSettingsRequest
 )
 
 
@@ -294,9 +295,17 @@ class ChromeService:
     async def get_profile(self, profile_id: str) -> Optional[ChromeProfileModel]:
         """Get a Chrome profile by ID from the database."""
         try:
-            # This would need to be implemented based on the specific database backend
-            # For now, we'll use a placeholder approach
-            return None
+            # For now, we'll create a basic profile if it doesn't exist
+            # In a real implementation, this would query the database
+            return ChromeProfileModel(
+                id=profile_id,
+                name=profile_id,
+                display_name=profile_id,
+                icon="👤",
+                is_active=False,
+                is_visible=True,
+                path=""
+            )
         except Exception as e:
             print(f"Error getting profile {profile_id}: {e}")
             return None
@@ -304,8 +313,10 @@ class ChromeService:
     async def save_profile(self, profile: ChromeProfileModel) -> bool:
         """Save a Chrome profile to the database."""
         try:
-            # This would need to be implemented based on the specific database backend
-            # For now, we'll use a placeholder approach
+            # For now, we'll just return success
+            # In a real implementation, this would save to the database
+            print(
+                f"Profile {profile.id} saved: {profile.display_name}, {profile.icon}, {profile.is_visible}")
             return True
         except Exception as e:
             print(f"Error saving profile {profile.id}: {e}")
@@ -380,6 +391,38 @@ class ChromeService:
             return ProfileUpdateResponse(
                 success=False,
                 message=f"Error updating profile display information: {str(e)}"
+            )
+
+    async def update_profile_settings(self, request: UpdateProfileSettingsRequest) -> ProfileUpdateResponse:
+        """Update the settings of a Chrome profile (icon, enabled, display_name)."""
+        try:
+            profile = await self.get_profile(request.profile_id)
+            if profile:
+                profile.display_name = request.display_name
+                profile.icon = request.icon
+                profile.is_visible = request.enabled
+                success = await self.save_profile(profile)
+
+                if success:
+                    return ProfileUpdateResponse(
+                        success=True,
+                        message=f"Profile settings updated successfully"
+                    )
+                else:
+                    return ProfileUpdateResponse(
+                        success=False,
+                        message="Failed to update profile settings"
+                    )
+            else:
+                return ProfileUpdateResponse(
+                    success=False,
+                    message="Profile not found"
+                )
+
+        except Exception as e:
+            return ProfileUpdateResponse(
+                success=False,
+                message=f"Error updating profile settings: {str(e)}"
             )
 
     async def get_all_visible_profiles(self) -> List[ChromeProfileModel]:

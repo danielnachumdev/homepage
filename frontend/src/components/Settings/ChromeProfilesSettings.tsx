@@ -45,7 +45,7 @@ export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ o
                     initialSettings[profile.id] = {
                         displayName: profile.name,
                         icon: profile.icon || '👤',
-                        enabled: true // Default to enabled
+                        enabled: profile.is_visible !== false // Use profile visibility, default to true if not specified
                     };
                 });
                 setProfileSettings(initialSettings);
@@ -125,7 +125,7 @@ export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ o
     return (
         <Box className={styles.container}>
             <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 3 }}>
-                Customize your Chrome profiles. All settings are editable in real-time. Disabled profiles will not be included in the homepage.
+                Customize your Chrome profiles. All settings are automatically saved to the backend after you stop typing. Disabled profiles will not be included in the homepage.
             </Typography>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>

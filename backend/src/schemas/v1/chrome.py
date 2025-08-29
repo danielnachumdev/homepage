@@ -55,6 +55,14 @@ class UpdateProfileDisplayRequest(BaseModel):
     icon: str
 
 
+class UpdateProfileSettingsRequest(BaseModel):
+    """Request to update profile settings (icon, enabled, display_name)."""
+    profile_id: str
+    display_name: str
+    icon: str
+    enabled: bool
+
+
 class ProfileUpdateResponse(BaseModel):
     """Response for profile update operations."""
     success: bool
@@ -69,5 +77,6 @@ __all__ = [
     "OpenUrlResponse",
     "UpdateProfileVisibilityRequest",
     "UpdateProfileDisplayRequest",
+    "UpdateProfileSettingsRequest",
     "ProfileUpdateResponse"
 ]
