@@ -1,0 +1,90 @@
+.profileCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+    height: 100%;
+}
+
+.profileCard:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.profileHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profileName {
+    color: white;
+    font-weight: 600;
+    margin: 0;
+}
+
+.profileInfo {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.profileIcon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50px;
+}
+
+.profilePath {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+}
+
+.profileId {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+    font-family: 'Courier New', monospace;
+}
+
+.editableFields {
+    padding-top: 0.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .profileCard {
+        margin-bottom: 1rem;
+    }
+
+    .profileHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .profileInfo {
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .profileHeader {
+        gap: 0.75rem;
+    }
+
+    .profileIcon {
+        font-size: 2rem;
+        height: 40px;
+    }
+}
