@@ -1,0 +1,27 @@
+import { ChromeProfilesSettings } from './ChromeProfilesSettings';
+import type { SettingsCategoryComponent } from './types';
+
+// Registry of all setting categories
+export const settingsRegistry: SettingsCategoryComponent[] = [
+    {
+        id: 'chrome-profiles',
+        title: 'Chrome Profiles',
+        description: 'Customize display names and icons for your Chrome profiles',
+        component: ChromeProfilesSettings
+    }
+    // Add more categories here as needed
+];
+
+// Helper function to get a category by ID
+export function getSettingsCategory(id: string): SettingsCategoryComponent | undefined {
+    return settingsRegistry.find(category => category.id === id);
+}
+
+// Helper function to get all category titles for the left menu
+export function getCategoryTitles(): Array<{ id: string; title: string; description?: string }> {
+    return settingsRegistry.map(category => ({
+        id: category.id,
+        title: category.title,
+        description: category.description
+    }));
+}

@@ -160,6 +160,10 @@
     gap: 1.5rem;
 }
 
+.categoryContent {
+    padding: 1rem 0;
+}
+
 .settingItem {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;

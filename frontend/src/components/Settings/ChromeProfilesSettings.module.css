@@ -1,0 +1,121 @@
+.container {
+    padding: 1rem 0;
+}
+
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: white;
+}
+
+.errorContainer {
+    padding: 2rem;
+    text-align: center;
+}
+
+.emptyContainer {
+    padding: 3rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.profileCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+    height: 100%;
+}
+
+.profileCard:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.profileHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.profileName {
+    color: white;
+    font-weight: 600;
+    margin: 0;
+}
+
+.editButton {
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease;
+}
+
+.editButton:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profileDisplay {
+    text-align: center;
+}
+
+.profileIcon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 60px;
+}
+
+.profileDescription {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+    word-break: break-word;
+}
+
+.editForm {
+    padding: 0.5rem 0;
+}
+
+.editActions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 0.5rem 0;
+    }
+    
+    .profileCard {
+        margin-bottom: 1rem;
+    }
+    
+    .editActions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .editActions button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .profileHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .editButton {
+        align-self: flex-end;
+    }
+}

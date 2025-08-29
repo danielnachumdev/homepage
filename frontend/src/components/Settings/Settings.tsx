@@ -7,14 +7,12 @@ import {
     ListItem,
     ListItemButton,
     ListItemText,
-    Divider,
     IconButton,
     useTheme,
     useMediaQuery
 } from '@mui/material';
 import { Close as CloseIcon, Search as SearchIcon } from '@mui/icons-material';
-import type { SettingsCategory } from './types';
-import { settingsData } from './settingsData';
+import { settingsRegistry, getCategoryTitles } from './settingsRegistry';
 import styles from './Settings.module.css';
 
 interface SettingsProps {
@@ -27,7 +25,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState<string>('');
-    const [filteredCategories, setFilteredCategories] = useState<SettingsCategory[]>(settingsData);
+    const [filteredCategories, setFilteredCategories] = useState(getCategoryTitles());
 
     const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -35,17 +33,14 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     // Filter categories based on search term
     useEffect(() => {
         if (!searchTerm.trim()) {
-            setFilteredCategories(settingsData);
+            setFilteredCategories(getCategoryTitles());
             return;
         }
 
-        const filtered = settingsData.map(category => ({
-            ...category,
-            settings: category.settings.filter(setting =>
-                setting.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                setting.description.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-        })).filter(category => category.settings.length > 0);
+        const filtered = getCategoryTitles().filter(category =>
+            category.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
 
         setFilteredCategories(filtered);
     }, [searchTerm]);
@@ -150,7 +145,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
         </Box>
     );
 
-    // Local sub-component for the category navigation
+        // Local sub-component for the category navigation
     const CategoryNavigation = (
         <Box className={styles.categoryNavigation}>
             <Typography variant="h6" className={styles.navigationTitle}>
@@ -169,8 +164,8 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                                 mb: 0.5,
                             }}
                         >
-                            <ListItemText
-                                primary={category.name}
+                            <ListItemText 
+                                primary={category.title}
                                 primaryTypographyProps={{
                                     className: styles.categoryText,
                                 }}
@@ -182,7 +177,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
         </Box>
     );
 
-    // Local sub-component for the settings content
+        // Local sub-component for the settings content
     const SettingsContent = (
         <Box className={styles.settingsContent}>
             <div
@@ -190,48 +185,36 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                 className={styles.scrollContainer}
                 onScroll={handleScroll}
             >
-                {filteredCategories.map((category) => (
-                    <div
-                        key={category.id}
-                        ref={(el) => {
-                            categoryRefs.current[category.id] = el;
-                        }}
-                        className={styles.categorySection}
-                    >
-                                                <div className={styles.categoryTitleWrapper}>
-                            <Typography 
-                                variant="h5" 
-                                component="h2" 
-                                className={styles.categoryTitle}
-                            >
-                                {category.name}
-                            </Typography>
+                {filteredCategories.map((category) => {
+                    const categoryComponent = settingsRegistry.find(c => c.id === category.id);
+                    if (!categoryComponent) return null;
+
+                    const CategoryComponent = categoryComponent.component;
+
+                    return (
+                        <div
+                            key={category.id}
+                            ref={(el) => {
+                                categoryRefs.current[category.id] = el;
+                            }}
+                            className={styles.categorySection}
+                        >
+                            <div className={styles.categoryTitleWrapper}>
+                                <Typography 
+                                    variant="h5" 
+                                    component="h2" 
+                                    className={styles.categoryTitle}
+                                >
+                                    {category.title}
+                                </Typography>
+                            </div>
+
+                            <Box className={styles.categoryContent}>
+                                <CategoryComponent />
+                            </Box>
                         </div>
-
-                        <Box className={styles.settingsList}>
-                            {category.settings.map((setting, index) => (
-                                <Box key={index} className={styles.settingItem}>
-                                    <Typography variant="h6" className={styles.settingName}>
-                                        {setting.name}
-                                    </Typography>
-                                    <Typography variant="body2" className={styles.settingDescription}>
-                                        {setting.description}
-                                    </Typography>
-                                    {/* Placeholder for actual setting controls */}
-                                    <Box className={styles.settingControl}>
-                                        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                                            Setting control placeholder
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            ))}
-                        </Box>
-
-                        {category.id !== filteredCategories[filteredCategories.length - 1].id && (
-                            <Divider sx={{ my: 3, borderColor: 'rgba(255, 255, 255, 0.1)' }} />
-                        )}
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </Box>
     );

@@ -1,3 +1,4 @@
 export { Settings } from './Settings';
 export { SettingsModal } from './SettingsModal';
-export type { Setting, SettingsCategory } from './types';
+export { ChromeProfilesSettings } from './ChromeProfilesSettings';
+export type { Setting, SettingsCategory, SettingsCategoryComponent } from './types';
