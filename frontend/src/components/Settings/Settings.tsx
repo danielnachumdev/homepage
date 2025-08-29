@@ -198,19 +198,15 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                         }}
                         className={styles.categorySection}
                     >
-                        <Typography
-                            variant="h5"
-                            component="h2"
-                            className={styles.categoryTitle}
-                            sx={{
-                                color: 'white',
-                                mb: 2,
-                                pb: 1,
-                                borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
-                            }}
-                        >
-                            {category.name}
-                        </Typography>
+                                                <div className={styles.categoryTitleWrapper}>
+                            <Typography 
+                                variant="h5" 
+                                component="h2" 
+                                className={styles.categoryTitle}
+                            >
+                                {category.name}
+                            </Typography>
+                        </div>
 
                         <Box className={styles.settingsList}>
                             {category.settings.map((setting, index) => (
