@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 from deployment.steps.base_step import Step
+from deployment.utils.process_manager import ProcessManager
 
 
 class DockerDeployStep(Step):
@@ -84,25 +85,33 @@ class DockerDeployStep(Step):
                     "Docker compose file not found: %s", self.compose_file)
                 return False
 
-            # Run docker compose up -d --build
+            # Run docker compose up -d --build using ProcessManager
             self.logger.info(
                 "Running: docker compose -f %s up -d --build", self.compose_file)
 
-            result = subprocess.run(
-                ['docker', 'compose', '-f',
-                    str(self.compose_file), 'up', '-d', '--build'],
+            result = ProcessManager.spawn(
+                command=['docker', 'compose', '-f',
+                         str(self.compose_file), 'up', '-d', '--build'],
+                detached=False,
                 cwd=self.project_root,
-                capture_output=True,
-                text=True,
-                check=True
+                log_dir=self.project_root / 'logs',
+                log_prefix='docker_compose_up'
             )
 
-            self.logger.info("Docker compose up completed successfully")
-            self.logger.debug("Docker compose output: %s", result.stdout)
+            if not result.success:
+                self.logger.error(
+                    "Failed to start Docker services: %s", result.error_message)
+                return False
 
-            if result.stderr:
-                self.logger.warning(
-                    "Docker compose warnings: %s", result.stderr)
+            # Wait for the process to complete
+            if result.process:
+                stdout, stderr = result.process.communicate()
+
+                self.logger.info("Docker compose up completed successfully")
+                self.logger.debug("Docker compose output: %s", stdout)
+
+                if stderr:
+                    self.logger.warning("Docker compose warnings: %s", stderr)
 
             self._mark_installed()
             return True
@@ -146,24 +155,33 @@ class DockerDeployStep(Step):
                 self._mark_uninstalled()
                 return True
 
-            # Run docker compose down
+            # Run docker compose down using ProcessManager
             self.logger.info(
                 "Running: docker compose -f %s down", self.compose_file)
 
-            result = subprocess.run(
-                ['docker', 'compose', '-f', str(self.compose_file), 'down'],
+            result = ProcessManager.spawn(
+                command=['docker', 'compose', '-f',
+                         str(self.compose_file), 'down'],
+                detached=False,
                 cwd=self.project_root,
-                capture_output=True,
-                text=True,
-                check=True
+                log_dir=self.project_root / 'logs',
+                log_prefix='docker_compose_down'
             )
 
-            self.logger.info("Docker compose down completed successfully")
-            self.logger.debug("Docker compose output: %s", result.stdout)
+            if not result.success:
+                self.logger.error(
+                    "Failed to stop Docker services: %s", result.error_message)
+                return False
 
-            if result.stderr:
-                self.logger.warning(
-                    "Docker compose warnings: %s", result.stderr)
+            # Wait for the process to complete
+            if result.process:
+                stdout, stderr = result.process.communicate()
+
+                self.logger.info("Docker compose down completed successfully")
+                self.logger.debug("Docker compose output: %s", stdout)
+
+                if stderr:
+                    self.logger.warning("Docker compose warnings: %s", stderr)
 
             self._mark_uninstalled()
             return True

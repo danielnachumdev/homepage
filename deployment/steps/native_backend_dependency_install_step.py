@@ -11,6 +11,7 @@ from typing import Optional
 from .base_step import Step
 from ..utils.interpreter import find_python_interpreter, get_interpreter_info
 from ..utils.requirements import find_requirements_file, validate_requirements_file
+from ..utils.process_manager import ProcessManager
 
 
 class NativeBackendDependencyInstallStep(Step):
@@ -99,23 +100,33 @@ class NativeBackendDependencyInstallStep(Step):
             self.logger.info("Requirements file contains %d packages",
                              requirements_info.package_count)
 
-            # Install dependencies
+            # Install dependencies using ProcessManager
             self.logger.info("Installing dependencies using pip...")
 
-            result = subprocess.run(
-                [interpreter_path, '-m', 'pip', 'install',
-                    '-r', str(requirements_file)],
+            result = ProcessManager.spawn(
+                command=[interpreter_path, '-m', 'pip',
+                         'install', '-r', str(requirements_file)],
+                detached=False,
                 cwd=self.backend_dir,
-                capture_output=True,
-                text=True,
-                check=True
+                log_dir=self.backend_dir / 'logs',
+                log_prefix='pip_install'
             )
 
-            self.logger.info("Dependency installation completed successfully")
-            self.logger.debug("Pip output: %s", result.stdout)
+            if not result.success:
+                self.logger.error(
+                    "Failed to install backend dependencies: %s", result.error_message)
+                return False
 
-            if result.stderr:
-                self.logger.warning("Pip warnings: %s", result.stderr)
+            # Wait for the process to complete
+            if result.process:
+                stdout, stderr = result.process.communicate()
+
+                self.logger.info(
+                    "Dependency installation completed successfully")
+                self.logger.debug("Pip output: %s", stdout)
+
+                if stderr:
+                    self.logger.warning("Pip warnings: %s", stderr)
 
             self._mark_installed()
             return True

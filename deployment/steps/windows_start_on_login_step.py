@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 from deployment.steps.base_step import Step
+from deployment.utils.process_manager import ProcessManager
 
 
 class WindowsStartOnLoginStep(Step):
@@ -111,14 +112,23 @@ $Shortcut.Description = "{description}"
 $Shortcut.Save()
 """
 
-            # Execute PowerShell script
-            subprocess.run(
-                ['powershell', '-Command', ps_script],
-                capture_output=True,
-                text=True,
-                check=True,
-                shell=True
+            # Execute PowerShell script using ProcessManager
+            result = ProcessManager.spawn(
+                command=['powershell', '-Command', ps_script],
+                detached=False
             )
+
+            if not result.success:
+                self.logger.error(
+                    "Failed to create shortcut: %s", result.error_message)
+                return False
+
+            # Wait for the process to complete
+            if result.process:
+                stdout, stderr = result.process.communicate()
+                if stderr:
+                    self.logger.error("PowerShell error: %s", stderr)
+                    return False
             return True
 
         except subprocess.CalledProcessError as e:
@@ -286,17 +296,20 @@ $Shortcut.Save()
                     "Startup folder is not writable: %s", self.startup_folder)
                 return False
 
-            # Check if PowerShell is available
+            # Check if PowerShell is available using ProcessManager
             try:
-                result = subprocess.run(
-                    ['powershell', '-Command', 'Get-Host'],
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    shell=True
+                result = ProcessManager.spawn(
+                    command=['powershell', '-Command', 'Get-Host'],
+                    detached=False
                 )
+
+                if not result.success or not result.process:
+                    self.logger.error("PowerShell is not available")
+                    return False
+
+                stdout, stderr = result.process.communicate()
                 self.logger.info("PowerShell is available")
-            except (subprocess.CalledProcessError, FileNotFoundError):
+            except Exception:
                 self.logger.error("PowerShell is not available")
                 return False
 
@@ -342,13 +355,17 @@ $Shortcut.Save()
             shortcut_path = self.startup_folder / self.shortcut_name
             shortcut_exists = shortcut_path.exists()
 
-            # Check PowerShell availability
+            # Check PowerShell availability using ProcessManager
             powershell_available = False
             try:
-                subprocess.run(['powershell', '-Command', 'Get-Host'],
-                               capture_output=True, check=True, shell=True)
-                powershell_available = True
-            except (subprocess.CalledProcessError, FileNotFoundError):
+                result = ProcessManager.spawn(
+                    command=['powershell', '-Command', 'Get-Host'],
+                    detached=False
+                )
+                if result.success and result.process:
+                    stdout, stderr = result.process.communicate()
+                    powershell_available = True
+            except Exception:
                 pass
 
             metadata.update({

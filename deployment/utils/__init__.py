@@ -5,6 +5,10 @@ from .os_detector import *
 from .interpreter import *
 from .requirements import *
 from .types import *
+from .process_manager import *
+from .command_executor import *
+from .command_executor_v2 import *
+from .commands import *
 from .process_checker import *
 
 __all__ = [
@@ -20,14 +24,16 @@ __all__ = [
     "PackageInfo",
     "RequirementsInfo",
     "RequirementsValidationResult",
+    "CommandExecutor",
+    "ProcessManager",
+    "ProcessHandle",
+    "CommandResult",
+    "ProcessResult",
     "ProcessInfo",
     "ProcessSearchResult",
-    "is_process_running",
-    "find_processes_by_name",
-    "find_processes_by_command_line",
-    "get_process_info",
+    "Command",
+    "StepExecutionResult",
     "is_frontend_running",
     "is_backend_running",
-    "kill_process",
-    "get_system_info"
+    "kill_process"
 ]

@@ -5,14 +5,12 @@ This step handles deploying the backend using the current Python interpreter
 and native system resources (not containerized).
 """
 
-import os
 import sys
-import signal
-import subprocess
 import time
 from pathlib import Path
 from typing import Optional
 from deployment.steps.base_step import Step
+from deployment.utils.process_manager import ProcessManager
 from deployment.utils.interpreter import find_python_interpreter, get_interpreter_info
 
 
@@ -119,15 +117,21 @@ class NativeBackendDeployStep(Step):
             self.logger.info("Starting backend process: %s %s",
                              interpreter_path, main_file)
 
-            process = subprocess.Popen(
-                [interpreter_path, str(main_file)],
+            # Spawn process using ProcessManager
+            result = ProcessManager.spawn(
+                command=[interpreter_path, str(main_file)],
+                detached=True,
                 cwd=self.backend_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-                universal_newlines=True
+                log_dir=self.backend_dir / 'logs',
+                log_prefix='backend'
             )
+
+            if not result.success:
+                self.logger.error(
+                    "Failed to start backend process: %s", result.error_message)
+                return False
+
+            process = result.process
 
             # Give the process a moment to start
             time.sleep(1)
@@ -135,13 +139,11 @@ class NativeBackendDeployStep(Step):
             # Check if the process is still running
             if process.poll() is not None:
                 # Process exited immediately, something went wrong
-                stdout, stderr = process.communicate()
                 self.logger.error(
                     "Backend process exited immediately with code %d", process.returncode)
-                if stdout:
-                    self.logger.error("Backend stdout: %s", stdout)
-                if stderr:
-                    self.logger.error("Backend stderr: %s", stderr)
+                if result.stdout_log and result.stderr_log:
+                    self.logger.error(
+                        "Check log files for details: %s, %s", result.stdout_log, result.stderr_log)
                 return False
 
             self.logger.info(
@@ -303,6 +305,11 @@ class NativeBackendDeployStep(Step):
                 self.project_root, self.backend_dir)
             interpreter_info = get_interpreter_info(interpreter_path)
 
+            # Check for log files
+            log_dir = self.backend_dir / 'logs'
+            stdout_log = log_dir / 'backend_stdout.log'
+            stderr_log = log_dir / 'backend_stderr.log'
+
             metadata.update({
                 "project_root": str(self.project_root),
                 "backend_dir": str(self.backend_dir),
@@ -311,7 +318,12 @@ class NativeBackendDeployStep(Step):
                 "interpreter_version": interpreter_info.version,
                 "is_virtual_env": interpreter_info.is_virtual_env,
                 "backend_dir_exists": self.backend_dir.exists(),
-                "main_file_exists": (self.backend_dir / "__main__.py").exists()
+                "main_file_exists": (self.backend_dir / "__main__.py").exists(),
+                "log_directory": str(log_dir),
+                "stdout_log": str(stdout_log),
+                "stderr_log": str(stderr_log),
+                "stdout_log_exists": stdout_log.exists(),
+                "stderr_log_exists": stderr_log.exists()
             })
         except Exception as e:
             metadata.update({

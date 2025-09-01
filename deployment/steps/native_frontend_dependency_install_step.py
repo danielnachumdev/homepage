@@ -10,6 +10,7 @@ import time
 from pathlib import Path
 from typing import Optional
 from deployment.steps.base_step import Step
+from deployment.utils.process_manager import ProcessManager
 
 
 class NativeFrontendDependencyInstallStep(Step):
@@ -75,24 +76,32 @@ class NativeFrontendDependencyInstallStep(Step):
 
             self.logger.info("Found package.json: %s", package_json)
 
-            # Install dependencies
+            # Install dependencies using ProcessManager
             self.logger.info("Installing frontend dependencies using npm...")
 
-            result = subprocess.run(
-                ['npm', 'install'],
+            result = ProcessManager.spawn(
+                command=['npm', 'install'],
+                detached=False,
                 cwd=self.frontend_dir,
-                capture_output=True,
-                text=True,
-                check=True,
-                shell=True
+                log_dir=self.frontend_dir / 'logs',
+                log_prefix='npm_install'
             )
 
-            self.logger.info(
-                "Frontend dependency installation completed successfully")
-            self.logger.debug("NPM output: %s", result.stdout)
+            if not result.success:
+                self.logger.error(
+                    "Failed to install frontend dependencies: %s", result.error_message)
+                return False
 
-            if result.stderr:
-                self.logger.warning("NPM warnings: %s", result.stderr)
+            # Wait for the process to complete
+            if result.process:
+                stdout, stderr = result.process.communicate()
+
+                self.logger.info(
+                    "Frontend dependency installation completed successfully")
+                self.logger.debug("NPM output: %s", stdout)
+
+                if stderr:
+                    self.logger.warning("NPM warnings: %s", stderr)
 
             self._mark_installed()
             return True
@@ -160,17 +169,21 @@ class NativeFrontendDependencyInstallStep(Step):
 
             self.logger.info("package.json found: %s", package_json)
 
-            # Check if npm is available
+            # Check if npm is available using ProcessManager
             try:
-                result = subprocess.run(
-                    ['npm', '--version'],
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                    shell=True
+                result = ProcessManager.spawn(
+                    command=['npm', '--version'],
+                    detached=False
                 )
-                self.logger.info("NPM is available: %s", result.stdout.strip())
-            except (subprocess.CalledProcessError, FileNotFoundError):
+
+                if not result.success or not result.process:
+                    self.logger.error(
+                        "NPM is not available. Please ensure Node.js and npm are installed")
+                    return False
+
+                stdout, stderr = result.process.communicate()
+                self.logger.info("NPM is available: %s", stdout.strip())
+            except Exception:
                 self.logger.error(
                     "NPM is not available. Please ensure Node.js and npm are installed")
                 return False

@@ -5,14 +5,12 @@ This step handles deploying the frontend using npm run dev
 and native system resources (not containerized).
 """
 
-import os
-import sys
-import signal
 import subprocess
 import time
 from pathlib import Path
 from typing import Optional
 from deployment.steps.base_step import Step
+from deployment.utils.process_manager import ProcessManager
 
 
 class NativeFrontendDeployStep(Step):
@@ -99,16 +97,21 @@ class NativeFrontendDeployStep(Step):
             # Start the frontend process
             self.logger.info("Starting frontend process: npm run dev")
 
-            process = subprocess.Popen(
-                ['npm', 'run', 'dev'],
+            # Spawn process using ProcessManager
+            result = ProcessManager.spawn(
+                command=['npm', 'run', 'dev'],
+                detached=True,
                 cwd=self.frontend_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-                universal_newlines=True,
-                shell=True
+                log_dir=self.frontend_dir / 'logs',
+                log_prefix='frontend'
             )
+
+            if not result.success:
+                self.logger.error(
+                    "Failed to start frontend process: %s", result.error_message)
+                return False
+
+            process = result.process
 
             # Give the process a moment to start
             time.sleep(2)
@@ -116,13 +119,11 @@ class NativeFrontendDeployStep(Step):
             # Check if the process is still running
             if process.poll() is not None:
                 # Process exited immediately, something went wrong
-                stdout, stderr = process.communicate()
                 self.logger.error(
                     "Frontend process exited immediately with code %d", process.returncode)
-                if stdout:
-                    self.logger.error("Frontend stdout: %s", stdout)
-                if stderr:
-                    self.logger.error("Frontend stderr: %s", stderr)
+                if result.stdout_log and result.stderr_log:
+                    self.logger.error(
+                        "Check log files for details: %s, %s", result.stdout_log, result.stderr_log)
                 return False
 
             self.logger.info(
@@ -293,6 +294,11 @@ class NativeFrontendDeployStep(Step):
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass
 
+            # Check for log files
+            log_dir = self.frontend_dir / 'logs'
+            stdout_log = log_dir / 'frontend_stdout.log'
+            stderr_log = log_dir / 'frontend_stderr.log'
+
             metadata.update({
                 "project_root": str(self.project_root),
                 "frontend_dir": str(self.frontend_dir),
@@ -300,7 +306,12 @@ class NativeFrontendDeployStep(Step):
                 "package_json_path": str(package_json) if package_json_exists else None,
                 "node_modules_exists": node_modules_exists,
                 "node_modules_path": str(node_modules) if node_modules_exists else None,
-                "npm_version": npm_version
+                "npm_version": npm_version,
+                "log_directory": str(log_dir),
+                "stdout_log": str(stdout_log),
+                "stderr_log": str(stderr_log),
+                "stdout_log_exists": stdout_log.exists(),
+                "stderr_log_exists": stderr_log.exists()
             })
         except Exception as e:
             metadata.update({
