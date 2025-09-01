@@ -67,9 +67,6 @@ class WindowsStartOnLoginStep(Step):
         # Shortcut name
         self.shortcut_name = "Homepage Startup.lnk"
 
-        self.logger.info("WindowsStartOnLoginStep initialized with project_root=%s, startup_folder=%s",
-                         self.project_root, self.startup_folder)
-
     def _get_startup_folder(self) -> Path:
         """
         Get the Windows startup folder path.

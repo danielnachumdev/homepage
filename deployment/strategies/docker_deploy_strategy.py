@@ -36,9 +36,6 @@ class DockerDeployStrategy(Strategy):
         self.project_root = project_root
         self.compose_file = compose_file
 
-        self.logger.info("DockerDeployStrategy initialized with project_root=%s, compose_file=%s",
-                         self.project_root, self.compose_file)
-
     def get_steps(self) -> List[DockerDeployStep]:
         """
         Get the ordered list of steps for this strategy.

@@ -48,9 +48,6 @@ class DockerDeployStep(Step):
         else:
             self.compose_file = Path(compose_file)
 
-        self.logger.info("DockerDeployStep initialized with project_root=%s, compose_file=%s",
-                         self.project_root, self.compose_file)
-
     def install(self) -> bool:
         """
         Install the application using Docker Compose.

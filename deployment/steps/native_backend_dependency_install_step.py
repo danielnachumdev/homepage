@@ -50,9 +50,6 @@ class NativeBackendDependencyInstallStep(Step):
         else:
             self.backend_dir = Path(backend_dir)
 
-        self.logger.info("NativeBackendDependencyInstallStep initialized with project_root=%s, backend_dir=%s",
-                         self.project_root, self.backend_dir)
-
     def install(self) -> bool:
         """
         Install dependencies by running 'pip install -r requirements.txt'.

@@ -56,9 +56,6 @@ class NativeBackendDeployStep(Step):
 
         # Note: We don't store process references as they won't persist between invocations
 
-        self.logger.info("NativeBackendDeployStep initialized with project_root=%s, backend_dir=%s",
-                         self.project_root, self.backend_dir)
-
     def install(self) -> bool:
         """
         Install the backend by starting the server process.

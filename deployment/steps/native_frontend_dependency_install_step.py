@@ -49,9 +49,6 @@ class NativeFrontendDependencyInstallStep(Step):
         else:
             self.frontend_dir = Path(frontend_dir)
 
-        self.logger.info("NativeFrontendDependencyInstallStep initialized with project_root=%s, frontend_dir=%s",
-                         self.project_root, self.frontend_dir)
-
     def install(self) -> bool:
         """
         Install dependencies by running 'npm install'.

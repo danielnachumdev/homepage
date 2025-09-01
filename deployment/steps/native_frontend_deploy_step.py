@@ -55,9 +55,6 @@ class NativeFrontendDeployStep(Step):
 
         # Note: We don't store process references as they won't persist between invocations
 
-        self.logger.info("NativeFrontendDeployStep initialized with project_root=%s, frontend_dir=%s",
-                         self.project_root, self.frontend_dir)
-
     def install(self) -> bool:
         """
         Install the frontend by starting the development server process.
