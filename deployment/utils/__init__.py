@@ -2,8 +2,6 @@
 
 from .logger import *
 from .os_detector import *
-
-__all__ = [
-    "setup_logger",
-    "detect_os"
-]
+from .interpreter import *
+from .requirements import *
+from .types import *

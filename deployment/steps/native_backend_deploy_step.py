@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 from typing import Optional
 from deployment.steps.base_step import Step
+from deployment.utils.interpreter import find_python_interpreter, get_interpreter_info
 
 
 class NativeBackendDeployStep(Step):
@@ -92,12 +93,30 @@ class NativeBackendDeployStep(Step):
                 self._mark_installed()
                 return True
 
+            # Find the correct Python interpreter
+            interpreter_path = find_python_interpreter(
+                self.project_root, self.backend_dir)
+            self.logger.info("Using Python interpreter: %s", interpreter_path)
+
+            # Get interpreter info
+            interpreter_info = get_interpreter_info(interpreter_path)
+            if not interpreter_info.working:
+                self.logger.error(
+                    "Python interpreter is not working: %s", interpreter_path)
+                return False
+
+            self.logger.info("Python interpreter info: %s",
+                             interpreter_info.version)
+            if interpreter_info.is_virtual_env:
+                self.logger.info("Using virtual environment: %s",
+                                 interpreter_info.executable)
+
             # Start the backend process
             self.logger.info("Starting backend process: %s %s",
-                             sys.executable, main_file)
+                             interpreter_path, main_file)
 
             self._process = subprocess.Popen(
-                [sys.executable, str(main_file)],
+                [interpreter_path, str(main_file)],
                 cwd=self.backend_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -129,7 +148,7 @@ class NativeBackendDeployStep(Step):
 
         except FileNotFoundError:
             self.logger.error(
-                "Python interpreter not found: %s", sys.executable)
+                "Python interpreter not found: %s", interpreter_path)
             return False
 
         except Exception as e:
@@ -205,19 +224,27 @@ class NativeBackendDeployStep(Step):
         """
         self.logger.info("Validating backend deployment environment")
 
-        # Check if Python interpreter is available
+        # Find and validate the correct Python interpreter
         try:
-            result = subprocess.run(
-                [sys.executable, '--version'],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            self.logger.info("Python interpreter found: %s",
-                             result.stdout.strip())
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            self.logger.error(
-                "Python interpreter is not available or not working properly")
+            interpreter_path = find_python_interpreter(
+                self.project_root, self.backend_dir)
+            self.logger.info("Found Python interpreter: %s", interpreter_path)
+
+            # Get interpreter info
+            interpreter_info = get_interpreter_info(interpreter_path)
+            if not interpreter_info.working:
+                self.logger.error(
+                    "Python interpreter is not working: %s", interpreter_path)
+                return False
+
+            self.logger.info("Python interpreter is working: %s",
+                             interpreter_info.version)
+            if interpreter_info.is_virtual_env:
+                self.logger.info("Using virtual environment: %s",
+                                 interpreter_info.executable)
+
+        except Exception as e:
+            self.logger.error("Failed to find Python interpreter: %s", e)
             return False
 
         # Check if backend directory exists
@@ -273,15 +300,35 @@ class NativeBackendDeployStep(Step):
             Dict containing step metadata
         """
         metadata = super().get_metadata()
-        metadata.update({
-            "project_root": str(self.project_root),
-            "backend_dir": str(self.backend_dir),
-            "python_executable": sys.executable,
-            "backend_dir_exists": self.backend_dir.exists(),
-            "main_file_exists": (self.backend_dir / "__main__.py").exists(),
-            "process_running": self._process is not None and self._process.poll() is None,
-            "process_pid": self._process.pid if self._process else None
-        })
+        try:
+            # Get interpreter info
+            interpreter_path = find_python_interpreter(
+                self.project_root, self.backend_dir)
+            interpreter_info = get_interpreter_info(interpreter_path)
+
+            metadata.update({
+                "project_root": str(self.project_root),
+                "backend_dir": str(self.backend_dir),
+                "interpreter_path": interpreter_path,
+                "interpreter_working": interpreter_info.working,
+                "interpreter_version": interpreter_info.version,
+                "is_virtual_env": interpreter_info.is_virtual_env,
+                "backend_dir_exists": self.backend_dir.exists(),
+                "main_file_exists": (self.backend_dir / "__main__.py").exists(),
+                "process_running": self._process is not None and self._process.poll() is None,
+                "process_pid": self._process.pid if self._process else None
+            })
+        except Exception as e:
+            metadata.update({
+                "project_root": str(self.project_root),
+                "backend_dir": str(self.backend_dir),
+                "python_executable": sys.executable,  # fallback
+                "backend_dir_exists": self.backend_dir.exists(),
+                "main_file_exists": (self.backend_dir / "__main__.py").exists(),
+                "process_running": self._process is not None and self._process.poll() is None,
+                "process_pid": self._process.pid if self._process else None,
+                "error": str(e)
+            })
         return metadata
 
     def is_process_running(self) -> bool:
