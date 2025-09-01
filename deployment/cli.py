@@ -8,12 +8,9 @@ to manage deployment steps and strategies.
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from deployment.utils import setup_logger
-from deployment.steps import (
-    DockerDeployStep, NativeBackendDeployStep, NativeBackendDependencyInstallStep,
-    NativeFrontendDeployStep, NativeFrontendDependencyInstallStep, WindowsStartOnLoginStep
-)
-from deployment.strategies import DockerDeployStrategy
+from .steps import *
+from .strategies import *
+from .utils import setup_logger
 
 
 class DeploymentCLI:
@@ -35,20 +32,60 @@ class DeploymentCLI:
         self.project_root = Path(project_root) if project_root else Path.cwd()
         self._logger = setup_logger("deployment_cli", log_level)
 
-        # Available steps registry
-        self._steps_registry = {
-            "docker-deploy": DockerDeployStep,
-            "native-backend-deploy": NativeBackendDeployStep,
-            "native-backend-dependency-install": NativeBackendDependencyInstallStep,
-            "native-frontend-deploy": NativeFrontendDeployStep,
-            "native-frontend-dependency-install": NativeFrontendDependencyInstallStep,
-            "windows-start-on-login": WindowsStartOnLoginStep,
-        }
+        # Import all step and strategy modules to trigger registration
 
-        # Available strategies registry
-        self._strategies_registry = {
-            "docker-deploy": DockerDeployStrategy,
-        }
+        # Get dynamic registries from base classes
+        self._steps_registry = self._build_steps_registry()
+        self._strategies_registry = self._build_strategies_registry()
+
+    def _build_steps_registry(self) -> Dict[str, Any]:
+        """
+        Build the steps registry from dynamically registered step classes.
+
+        Returns:
+            Dictionary mapping step names to step classes
+        """
+        from deployment.steps.base_step import Step
+
+        registry = {}
+        for step_class in Step.get_registered_steps():
+            # Use the class name as the key, converted to kebab-case
+            name = self._class_name_to_kebab_case(step_class.__name__)
+            registry[name] = step_class
+
+        return registry
+
+    def _build_strategies_registry(self) -> Dict[str, Any]:
+        """
+        Build the strategies registry from dynamically registered strategy classes.
+
+        Returns:
+            Dictionary mapping strategy names to strategy classes
+        """
+        from deployment.strategies.base_strategy import Strategy
+
+        registry = {}
+        for strategy_class in Strategy.get_registered_strategies():
+            # Use the class name as the key, converted to kebab-case
+            name = self._class_name_to_kebab_case(strategy_class.__name__)
+            registry[name] = strategy_class
+
+        return registry
+
+    def _class_name_to_kebab_case(self, class_name: str) -> str:
+        """
+        Convert a class name from PascalCase to kebab-case.
+
+        Args:
+            class_name: Class name in PascalCase
+
+        Returns:
+            Class name in kebab-case
+        """
+        import re
+        # Insert hyphens before uppercase letters (except the first one)
+        kebab = re.sub(r'(?<!^)(?=[A-Z])', '-', class_name)
+        return kebab.lower()
 
     def list_steps(self) -> Dict[str, str]:
         """

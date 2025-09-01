@@ -31,9 +31,9 @@ def setup_logger(name: str, level: Optional[int] = None) -> logging.Logger:
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(level)
 
-        # Create formatter
+        # Create formatter with filename and line number
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
             datefmt='%H:%M:%S'
         )
         handler.setFormatter(formatter)

@@ -6,7 +6,7 @@ in sequence. Uninstall operations are performed in reverse order.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Type
 from deployment.steps.base_step import Step
 from deployment.utils.logger import setup_logger
 
@@ -18,6 +18,34 @@ class Strategy(ABC):
     A strategy is an ordered collection of steps that can be installed or
     uninstalled in sequence. Uninstall operations are performed in reverse order.
     """
+
+    # Registry of all concrete strategy classes
+    _strategies: List[Type['Strategy']] = []
+
+    def __init_subclass__(cls, **kwargs):
+        """
+        Automatically register concrete (non-abstract) strategy subclasses.
+
+        This method is called when a subclass is created. It automatically
+        adds concrete subclasses to the registry.
+        """
+        super().__init_subclass__(**kwargs)
+
+        # Check if this is a concrete class (not abstract)
+        if not getattr(cls, '__abstractmethods__', None):
+            # Add to registry if not already present
+            if cls not in cls._strategies:
+                cls._strategies.append(cls)
+
+    @classmethod
+    def get_registered_strategies(cls) -> List[Type['Strategy']]:
+        """
+        Get all registered concrete strategy classes.
+
+        Returns:
+            List of concrete strategy classes
+        """
+        return cls._strategies.copy()
 
     def __init__(self, name: str, description: Optional[str] = None):
         """

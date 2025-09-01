@@ -6,7 +6,7 @@ Each step should be self-contained and reversible.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List, Type
 from deployment.utils.logger import setup_logger
 
 
@@ -17,6 +17,34 @@ class Step(ABC):
     Each step represents a single autonomous operation that can be installed
     or uninstalled. Steps should be self-contained and reversible.
     """
+
+    # Registry of all concrete step classes
+    _steps: List[Type['Step']] = []
+
+    def __init_subclass__(cls, **kwargs):
+        """
+        Automatically register concrete (non-abstract) step subclasses.
+
+        This method is called when a subclass is created. It automatically
+        adds concrete subclasses to the registry.
+        """
+        super().__init_subclass__(**kwargs)
+
+        # Check if this is a concrete class (not abstract)
+        if not getattr(cls, '__abstractmethods__', None):
+            # Add to registry if not already present
+            if cls not in cls._steps:
+                cls._steps.append(cls)
+
+    @classmethod
+    def get_registered_steps(cls) -> List[Type['Step']]:
+        """
+        Get all registered concrete step classes.
+
+        Returns:
+            List of concrete step classes
+        """
+        return cls._steps.copy()
 
     def __init__(self, name: str, description: Optional[str] = None):
         """
