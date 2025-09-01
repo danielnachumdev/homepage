@@ -106,7 +106,8 @@ class NativeFrontendDeployStep(Step):
                 stderr=subprocess.PIPE,
                 text=True,
                 bufsize=1,
-                universal_newlines=True
+                universal_newlines=True,
+                shell=True
             )
 
             # Give the process a moment to start
@@ -206,11 +207,12 @@ class NativeFrontendDeployStep(Step):
             result = subprocess.run(
                 ['npm', '--version'],
                 capture_output=True,
+                shell=True,
                 text=True,
                 check=True
             )
             self.logger.info("NPM is available: %s", result.stdout.strip())
-        except (subprocess.CalledProcessError, FileNotFoundError):
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
             self.logger.error(
                 "NPM is not available. Please ensure Node.js and npm are installed")
             return False
@@ -284,7 +286,8 @@ class NativeFrontendDeployStep(Step):
                     ['npm', '--version'],
                     capture_output=True,
                     text=True,
-                    check=True
+                    check=True,
+                    shell=True
                 )
                 npm_version = result.stdout.strip()
             except (subprocess.CalledProcessError, FileNotFoundError):

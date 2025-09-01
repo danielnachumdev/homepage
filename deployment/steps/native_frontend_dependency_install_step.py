@@ -83,7 +83,8 @@ class NativeFrontendDependencyInstallStep(Step):
                 cwd=self.frontend_dir,
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
+                shell=True
             )
 
             self.logger.info(
@@ -165,7 +166,8 @@ class NativeFrontendDependencyInstallStep(Step):
                     ['npm', '--version'],
                     capture_output=True,
                     text=True,
-                    check=True
+                    check=True,
+                    shell=True
                 )
                 self.logger.info("NPM is available: %s", result.stdout.strip())
             except (subprocess.CalledProcessError, FileNotFoundError):
@@ -216,7 +218,8 @@ class NativeFrontendDependencyInstallStep(Step):
                     ['npm', '--version'],
                     capture_output=True,
                     text=True,
-                    check=True
+                    check=True,
+                    shell=True
                 )
                 npm_version = result.stdout.strip()
             except (subprocess.CalledProcessError, FileNotFoundError):

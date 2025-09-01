@@ -116,7 +116,8 @@ $Shortcut.Save()
                 ['powershell', '-Command', ps_script],
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
+                shell=True
             )
             return True
 
@@ -291,7 +292,8 @@ $Shortcut.Save()
                     ['powershell', '-Command', 'Get-Host'],
                     capture_output=True,
                     text=True,
-                    check=True
+                    check=True,
+                    shell=True
                 )
                 self.logger.info("PowerShell is available")
             except (subprocess.CalledProcessError, FileNotFoundError):
@@ -344,7 +346,7 @@ $Shortcut.Save()
             powershell_available = False
             try:
                 subprocess.run(['powershell', '-Command', 'Get-Host'],
-                               capture_output=True, check=True)
+                               capture_output=True, check=True, shell=True)
                 powershell_available = True
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass
