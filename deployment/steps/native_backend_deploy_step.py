@@ -54,8 +54,7 @@ class NativeBackendDeployStep(Step):
         else:
             self.backend_dir = Path(backend_dir)
 
-        # Store the process reference for uninstallation
-        self._process: Optional[subprocess.Popen] = None
+        # Note: We don't store process references as they won't persist between invocations
 
         self.logger.info("NativeBackendDeployStep initialized with project_root=%s, backend_dir=%s",
                          self.project_root, self.backend_dir)
@@ -86,10 +85,18 @@ class NativeBackendDeployStep(Step):
                     "Backend __main__.py not found: %s", main_file)
                 return False
 
-            # Check if we already have a running process
-            if self._process is not None and self._process.poll() is None:
+            # Check if backend is already running
+            from deployment.utils import is_backend_running
+            backend_status = is_backend_running(
+                str(self.project_root), str(self.backend_dir))
+            if backend_status.found:
                 self.logger.warning(
-                    "Backend process is already running (PID: %d)", self._process.pid)
+                    "Backend is already running, skipping startup")
+                self.logger.info("Found %d backend process(es)",
+                                 backend_status.total_count)
+                for proc in backend_status.processes:
+                    self.logger.info("  - PID %d: %s", proc.pid,
+                                     ' '.join(proc.cmdline))
                 self._mark_installed()
                 return True
 
@@ -115,7 +122,7 @@ class NativeBackendDeployStep(Step):
             self.logger.info("Starting backend process: %s %s",
                              interpreter_path, main_file)
 
-            self._process = subprocess.Popen(
+            process = subprocess.Popen(
                 [interpreter_path, str(main_file)],
                 cwd=self.backend_dir,
                 stdout=subprocess.PIPE,
@@ -129,20 +136,19 @@ class NativeBackendDeployStep(Step):
             time.sleep(1)
 
             # Check if the process is still running
-            if self._process.poll() is not None:
+            if process.poll() is not None:
                 # Process exited immediately, something went wrong
-                stdout, stderr = self._process.communicate()
+                stdout, stderr = process.communicate()
                 self.logger.error(
-                    "Backend process exited immediately with code %d", self._process.returncode)
+                    "Backend process exited immediately with code %d", process.returncode)
                 if stdout:
                     self.logger.error("Backend stdout: %s", stdout)
                 if stderr:
                     self.logger.error("Backend stderr: %s", stderr)
-                self._process = None
                 return False
 
             self.logger.info(
-                "Backend process started successfully (PID: %d)", self._process.pid)
+                "Backend process started successfully (PID: %d)", process.pid)
             self._mark_installed()
             return True
 
@@ -154,15 +160,13 @@ class NativeBackendDeployStep(Step):
         except Exception as e:
             self.logger.error(
                 "Unexpected error during backend deployment: %s", e)
-            if self._process:
-                self._process = None
             return False
 
     def uninstall(self) -> bool:
         """
         Uninstall the backend by stopping the server process.
 
-        Terminates the running backend process.
+        Finds and terminates running backend processes.
 
         Returns:
             bool: True if uninstallation was successful, False otherwise
@@ -170,49 +174,45 @@ class NativeBackendDeployStep(Step):
         self.logger.info("Stopping backend deployment")
 
         try:
-            if self._process is None:
-                self.logger.warning("No backend process to stop")
+            # Find running backend processes
+            from deployment.utils import is_backend_running, kill_process
+            backend_status = is_backend_running(
+                str(self.project_root), str(self.backend_dir))
+
+            if not backend_status.found:
+                self.logger.info("No backend processes found to stop")
                 self._mark_uninstalled()
                 return True
 
-            # Check if process is still running
-            if self._process.poll() is not None:
-                self.logger.info("Backend process already stopped")
-                self._process = None
-                self._mark_uninstalled()
-                return True
-
-            # Terminate the process gracefully first
             self.logger.info(
-                "Terminating backend process (PID: %d)", self._process.pid)
-            self._process.terminate()
+                "Found %d backend process(es) to stop", backend_status.total_count)
 
-            # Wait for graceful shutdown
-            try:
-                self._process.wait(timeout=10)
-                self.logger.info("Backend process terminated gracefully")
-            except subprocess.TimeoutExpired:
-                # Force kill if graceful termination failed
+            # Terminate all found processes
+            success_count = 0
+            for proc in backend_status.processes:
+                self.logger.info(
+                    "Terminating backend process (PID: %d)", proc.pid)
+                if kill_process(proc.pid, timeout=10):
+                    self.logger.info(
+                        "Backend process %d terminated successfully", proc.pid)
+                    success_count += 1
+                else:
+                    self.logger.warning(
+                        "Failed to terminate backend process %d", proc.pid)
+
+            if success_count == backend_status.total_count:
+                self.logger.info("All backend processes stopped successfully")
+                self._mark_uninstalled()
+                return True
+            else:
                 self.logger.warning(
-                    "Backend process did not terminate gracefully, forcing kill")
-                self._process.kill()
-                self._process.wait()
-                self.logger.info("Backend process killed")
-
-            self._process = None
-            self._mark_uninstalled()
-            return True
+                    "Some backend processes could not be stopped")
+                self._mark_uninstalled()
+                return False
 
         except Exception as e:
             self.logger.error(
                 "Unexpected error during backend uninstallation: %s", e)
-            # Try to clean up the process reference even if there was an error
-            if self._process:
-                try:
-                    self._process.kill()
-                except:
-                    pass
-                self._process = None
             return False
 
     def validate(self) -> bool:
@@ -314,9 +314,7 @@ class NativeBackendDeployStep(Step):
                 "interpreter_version": interpreter_info.version,
                 "is_virtual_env": interpreter_info.is_virtual_env,
                 "backend_dir_exists": self.backend_dir.exists(),
-                "main_file_exists": (self.backend_dir / "__main__.py").exists(),
-                "process_running": self._process is not None and self._process.poll() is None,
-                "process_pid": self._process.pid if self._process else None
+                "main_file_exists": (self.backend_dir / "__main__.py").exists()
             })
         except Exception as e:
             metadata.update({
@@ -325,8 +323,6 @@ class NativeBackendDeployStep(Step):
                 "python_executable": sys.executable,  # fallback
                 "backend_dir_exists": self.backend_dir.exists(),
                 "main_file_exists": (self.backend_dir / "__main__.py").exists(),
-                "process_running": self._process is not None and self._process.poll() is None,
-                "process_pid": self._process.pid if self._process else None,
                 "error": str(e)
             })
         return metadata
@@ -338,9 +334,10 @@ class NativeBackendDeployStep(Step):
         Returns:
             bool: True if process is running, False otherwise
         """
-        if self._process is None:
-            return False
-        return self._process.poll() is None
+        from deployment.utils import is_backend_running
+        backend_status = is_backend_running(
+            str(self.project_root), str(self.backend_dir))
+        return backend_status.found
 
     def get_process_info(self) -> dict:
         """
@@ -349,19 +346,28 @@ class NativeBackendDeployStep(Step):
         Returns:
             Dict containing process information
         """
-        if self._process is None:
-            return {"status": "not_started"}
+        from deployment.utils import is_backend_running
+        backend_status = is_backend_running(
+            str(self.project_root), str(self.backend_dir))
 
-        if self._process.poll() is None:
-            return {
-                "status": "running",
-                "pid": self._process.pid
-            }
-        else:
-            return {
-                "status": "stopped",
-                "return_code": self._process.returncode
-            }
+        if not backend_status.found:
+            return {"status": "not_running", "process_count": 0}
+
+        processes_info = []
+        for proc in backend_status.processes:
+            processes_info.append({
+                "pid": proc.pid,
+                "name": proc.name,
+                "cmdline": proc.cmdline,
+                "cwd": proc.cwd,
+                "status": proc.status
+            })
+
+        return {
+            "status": "running",
+            "process_count": backend_status.total_count,
+            "processes": processes_info
+        }
 
 
 __all__ = [

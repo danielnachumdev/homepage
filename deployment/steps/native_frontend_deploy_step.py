@@ -53,8 +53,7 @@ class NativeFrontendDeployStep(Step):
         else:
             self.frontend_dir = Path(frontend_dir)
 
-        # Store the process reference for uninstallation
-        self._process: Optional[subprocess.Popen] = None
+        # Note: We don't store process references as they won't persist between invocations
 
         self.logger.info("NativeFrontendDeployStep initialized with project_root=%s, frontend_dir=%s",
                          self.project_root, self.frontend_dir)
@@ -85,17 +84,25 @@ class NativeFrontendDeployStep(Step):
                     "Frontend package.json not found: %s", package_json)
                 return False
 
-            # Check if we already have a running process
-            if self._process is not None and self._process.poll() is None:
+            # Check if frontend is already running
+            from deployment.utils import is_frontend_running
+            frontend_status = is_frontend_running(
+                str(self.project_root), str(self.frontend_dir))
+            if frontend_status.found:
                 self.logger.warning(
-                    "Frontend process is already running (PID: %d)", self._process.pid)
+                    "Frontend is already running, skipping startup")
+                self.logger.info("Found %d frontend process(es)",
+                                 frontend_status.total_count)
+                for proc in frontend_status.processes:
+                    self.logger.info("  - PID %d: %s", proc.pid,
+                                     ' '.join(proc.cmdline))
                 self._mark_installed()
                 return True
 
             # Start the frontend process
             self.logger.info("Starting frontend process: npm run dev")
 
-            self._process = subprocess.Popen(
+            process = subprocess.Popen(
                 ['npm', 'run', 'dev'],
                 cwd=self.frontend_dir,
                 stdout=subprocess.PIPE,
@@ -109,20 +116,19 @@ class NativeFrontendDeployStep(Step):
             time.sleep(2)
 
             # Check if the process is still running
-            if self._process.poll() is not None:
+            if process.poll() is not None:
                 # Process exited immediately, something went wrong
-                stdout, stderr = self._process.communicate()
+                stdout, stderr = process.communicate()
                 self.logger.error(
-                    "Frontend process exited immediately with code %d", self._process.returncode)
+                    "Frontend process exited immediately with code %d", process.returncode)
                 if stdout:
                     self.logger.error("Frontend stdout: %s", stdout)
                 if stderr:
                     self.logger.error("Frontend stderr: %s", stderr)
-                self._process = None
                 return False
 
             self.logger.info(
-                "Frontend process started successfully (PID: %d)", self._process.pid)
+                "Frontend process started successfully (PID: %d)", process.pid)
             self._mark_installed()
             return True
 
@@ -134,15 +140,13 @@ class NativeFrontendDeployStep(Step):
         except Exception as e:
             self.logger.error(
                 "Unexpected error during frontend deployment: %s", e)
-            if self._process:
-                self._process = None
             return False
 
     def uninstall(self) -> bool:
         """
         Uninstall the frontend by stopping the development server process.
 
-        Terminates the running frontend process.
+        Finds and terminates running frontend processes.
 
         Returns:
             bool: True if uninstallation was successful, False otherwise
@@ -150,49 +154,45 @@ class NativeFrontendDeployStep(Step):
         self.logger.info("Stopping frontend deployment")
 
         try:
-            if self._process is None:
-                self.logger.warning("No frontend process to stop")
+            # Find running frontend processes
+            from deployment.utils import is_frontend_running, kill_process
+            frontend_status = is_frontend_running(
+                str(self.project_root), str(self.frontend_dir))
+
+            if not frontend_status.found:
+                self.logger.info("No frontend processes found to stop")
                 self._mark_uninstalled()
                 return True
 
-            # Check if process is still running
-            if self._process.poll() is not None:
-                self.logger.info("Frontend process already stopped")
-                self._process = None
-                self._mark_uninstalled()
-                return True
-
-            # Terminate the process gracefully first
             self.logger.info(
-                "Terminating frontend process (PID: %d)", self._process.pid)
-            self._process.terminate()
+                "Found %d frontend process(es) to stop", frontend_status.total_count)
 
-            # Wait for graceful shutdown
-            try:
-                self._process.wait(timeout=10)
-                self.logger.info("Frontend process terminated gracefully")
-            except subprocess.TimeoutExpired:
-                # Force kill if graceful termination failed
+            # Terminate all found processes
+            success_count = 0
+            for proc in frontend_status.processes:
+                self.logger.info(
+                    "Terminating frontend process (PID: %d)", proc.pid)
+                if kill_process(proc.pid, timeout=10):
+                    self.logger.info(
+                        "Frontend process %d terminated successfully", proc.pid)
+                    success_count += 1
+                else:
+                    self.logger.warning(
+                        "Failed to terminate frontend process %d", proc.pid)
+
+            if success_count == frontend_status.total_count:
+                self.logger.info("All frontend processes stopped successfully")
+                self._mark_uninstalled()
+                return True
+            else:
                 self.logger.warning(
-                    "Frontend process did not terminate gracefully, forcing kill")
-                self._process.kill()
-                self._process.wait()
-                self.logger.info("Frontend process killed")
-
-            self._process = None
-            self._mark_uninstalled()
-            return True
+                    "Some frontend processes could not be stopped")
+                self._mark_uninstalled()
+                return False
 
         except Exception as e:
             self.logger.error(
                 "Unexpected error during frontend uninstallation: %s", e)
-            # Try to clean up the process reference even if there was an error
-            if self._process:
-                try:
-                    self._process.kill()
-                except:
-                    pass
-                self._process = None
             return False
 
     def validate(self) -> bool:
@@ -300,16 +300,12 @@ class NativeFrontendDeployStep(Step):
                 "package_json_path": str(package_json) if package_json_exists else None,
                 "node_modules_exists": node_modules_exists,
                 "node_modules_path": str(node_modules) if node_modules_exists else None,
-                "npm_version": npm_version,
-                "process_running": self._process is not None and self._process.poll() is None,
-                "process_pid": self._process.pid if self._process else None
+                "npm_version": npm_version
             })
         except Exception as e:
             metadata.update({
                 "project_root": str(self.project_root),
                 "frontend_dir": str(self.frontend_dir),
-                "process_running": self._process is not None and self._process.poll() is None,
-                "process_pid": self._process.pid if self._process else None,
                 "error": str(e)
             })
         return metadata
@@ -321,9 +317,10 @@ class NativeFrontendDeployStep(Step):
         Returns:
             bool: True if process is running, False otherwise
         """
-        if self._process is None:
-            return False
-        return self._process.poll() is None
+        from deployment.utils import is_frontend_running
+        frontend_status = is_frontend_running(
+            str(self.project_root), str(self.frontend_dir))
+        return frontend_status.found
 
     def get_process_info(self) -> dict:
         """
@@ -332,19 +329,28 @@ class NativeFrontendDeployStep(Step):
         Returns:
             Dict containing process information
         """
-        if self._process is None:
-            return {"status": "not_started"}
+        from deployment.utils import is_frontend_running
+        frontend_status = is_frontend_running(
+            str(self.project_root), str(self.frontend_dir))
 
-        if self._process.poll() is None:
-            return {
-                "status": "running",
-                "pid": self._process.pid
-            }
-        else:
-            return {
-                "status": "stopped",
-                "return_code": self._process.returncode
-            }
+        if not frontend_status.found:
+            return {"status": "not_running", "process_count": 0}
+
+        processes_info = []
+        for proc in frontend_status.processes:
+            processes_info.append({
+                "pid": proc.pid,
+                "name": proc.name,
+                "cmdline": proc.cmdline,
+                "cwd": proc.cwd,
+                "status": proc.status
+            })
+
+        return {
+            "status": "running",
+            "process_count": frontend_status.total_count,
+            "processes": processes_info
+        }
 
 
 __all__ = [
