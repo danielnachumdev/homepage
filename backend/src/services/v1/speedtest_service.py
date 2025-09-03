@@ -24,47 +24,16 @@ class SpeedTestService:
         self._test_task: Optional[asyncio.Task] = None
 
     async def perform_speed_test(self, request: Optional[SpeedTestRequest] = None) -> SpeedTestResponse:
-        """Perform a single speed test."""
+        """Perform a single speed test with partial results."""
         try:
             self.logger.info("Starting speed test...")
 
-            # Create speedtest instance
-            st = speedtest.Speedtest()
-
-            # Get the best server based on ping
-            self.logger.info("Finding best server...")
-            st.get_best_server()
-
-            server_name = st.results.server.get('name', 'Unknown')
-            server_sponsor = st.results.server.get('sponsor', 'Unknown')
-
-            self.logger.info(
-                f"Testing against server: {server_sponsor} ({server_name})")
-
-            # Test download speed
-            self.logger.info("Testing download speed...")
-            download_speed = st.download() / 1_000_000  # Convert to Mbps
-
-            # Test upload speed
-            self.logger.info("Testing upload speed...")
-            upload_speed = st.upload() / 1_000_000  # Convert to Mbps
-
-            # Get ping
-            ping = st.results.ping
-
-            # Create result
-            result = SpeedTestResult(
-                download_speed_mbps=download_speed,
-                upload_speed_mbps=upload_speed,
-                ping_ms=ping,
-                timestamp=datetime.now(),
-                server_name=server_name,
-                server_sponsor=server_sponsor
-            )
+            # Run the blocking speedtest operations in a separate thread
+            result = await asyncio.to_thread(self._run_speedtest_blocking)
 
             self._last_result = result
             self.logger.info(
-                f"Speed test completed: {download_speed:.2f} Mbps down, {upload_speed:.2f} Mbps up, {ping:.2f} ms ping")
+                f"Speed test completed: {result.download_speed_mbps:.2f} Mbps down, {result.upload_speed_mbps:.2f} Mbps up, {result.ping_ms:.2f} ms ping")
 
             return SpeedTestResponse(
                 success=True,
@@ -78,6 +47,51 @@ class SpeedTestService:
                 success=False,
                 message=f"Error performing speed test: {str(e)}"
             )
+
+    def _run_speedtest_blocking(self) -> SpeedTestResult:
+        """Run the blocking speedtest operations in a separate thread."""
+        # Create speedtest instance
+        st = speedtest.Speedtest()
+
+        # Initialize result with server info
+        result = SpeedTestResult(
+            timestamp=datetime.now(),
+            is_download_complete=False,
+            is_upload_complete=False,
+            is_ping_complete=False
+        )
+
+        # Get the best server based on ping
+        self.logger.info("Finding best server...")
+        st.get_best_server()
+
+        server_name = st.results.server.get('name', 'Unknown')
+        server_sponsor = st.results.server.get('sponsor', 'Unknown')
+        result.server_name = server_name
+        result.server_sponsor = server_sponsor
+
+        self.logger.info(
+            f"Testing against server: {server_sponsor} ({server_name})")
+
+        # Get ping first (usually fastest)
+        self.logger.info("Testing ping...")
+        ping = st.results.ping
+        result.ping_ms = ping
+        result.is_ping_complete = True
+
+        # Test download speed
+        self.logger.info("Testing download speed...")
+        download_speed = st.download() / 1_000_000  # Convert to Mbps
+        result.download_speed_mbps = download_speed
+        result.is_download_complete = True
+
+        # Test upload speed
+        self.logger.info("Testing upload speed...")
+        upload_speed = st.upload() / 1_000_000  # Convert to Mbps
+        result.upload_speed_mbps = upload_speed
+        result.is_upload_complete = True
+
+        return result
 
     async def start_continuous_testing(self, request: SpeedTestRequest) -> SpeedTestConfigResponse:
         """Start continuous speed testing with specified interval."""
@@ -175,7 +189,7 @@ class SpeedTestService:
         """Internal method to run continuous speed tests."""
         try:
             while self._current_config["is_running"]:
-                # Perform a speed test
+                # Perform a speed test (already uses asyncio.to_thread internally)
                 await self.perform_speed_test()
 
                 # Wait for the specified interval

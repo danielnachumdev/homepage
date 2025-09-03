@@ -7,7 +7,7 @@ from ...schemas.v1.docker import (
 )
 from ...services.v1.docker_service import DockerService
 
-router = APIRouter(prefix="/docker")
+router = APIRouter(prefix="/docker",tags=["docker"])
 docker_service = DockerService()
 
 

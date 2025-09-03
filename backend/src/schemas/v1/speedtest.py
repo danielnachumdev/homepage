@@ -11,14 +11,24 @@ class SpeedTestRequest(BaseModel):
 
 class SpeedTestResult(BaseModel):
     """Individual speed test result."""
-    download_speed_mbps: float = Field(description="Download speed in Mbps")
-    upload_speed_mbps: float = Field(description="Upload speed in Mbps")
-    ping_ms: float = Field(description="Ping latency in milliseconds")
-    timestamp: datetime = Field(description="When the test was performed")
+    download_speed_mbps: Optional[float] = Field(
+        default=None, description="Download speed in Mbps")
+    upload_speed_mbps: Optional[float] = Field(
+        default=None, description="Upload speed in Mbps")
+    ping_ms: Optional[float] = Field(
+        default=None, description="Ping latency in milliseconds")
+    timestamp: Optional[datetime] = Field(
+        default=None, description="When the test was performed")
     server_name: Optional[str] = Field(
         default=None, description="Name of the test server")
     server_sponsor: Optional[str] = Field(
         default=None, description="Sponsor of the test server")
+    is_download_complete: bool = Field(
+        default=False, description="Whether download test is complete")
+    is_upload_complete: bool = Field(
+        default=False, description="Whether upload test is complete")
+    is_ping_complete: bool = Field(
+        default=False, description="Whether ping test is complete")
 
 
 class SpeedTestResponse(BaseModel):

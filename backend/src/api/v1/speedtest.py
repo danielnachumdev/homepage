@@ -67,6 +67,15 @@ async def get_status():
     }
 
 
+@router.get("/partial-result")
+async def get_partial_result():
+    """Get the latest partial speed test result."""
+    response = await speedtest_service.get_last_result()
+    if not response.success:
+        raise HTTPException(status_code=404, detail=response.message)
+    return response
+
+
 __all__ = [
     "router"
 ]

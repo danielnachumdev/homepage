@@ -3,6 +3,23 @@
     max-width: 160px;
 }
 
+.loadingIcon {
+    display: inline-block;
+    margin-right: 2px;
+    font-size: 0.6rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .speedContent {
     display: flex;
     flex-direction: column;
