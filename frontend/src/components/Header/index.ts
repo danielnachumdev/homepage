@@ -5,4 +5,5 @@ export { StatusBadge, SimpleStatusBadge, TrendStatusBadge, CustomStatusBadge } f
 export { StatusBadges } from './StatusBadges';
 export { Clock } from './Clock';
 export { SettingsIcon } from './SettingsIcon';
+export { SpeedTestWidget } from './SpeedTestWidget';
 export type { StatusBadgeProps } from './StatusBadge';

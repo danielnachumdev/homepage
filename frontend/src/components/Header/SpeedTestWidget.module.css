@@ -1,0 +1,140 @@
+.speedTestWidget {
+    min-width: 120px;
+    max-width: 160px;
+}
+
+.speedContent {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+}
+
+.speedRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.speedLabel {
+    font-weight: 500;
+    opacity: 0.8;
+    font-size: 0.7rem;
+}
+
+.speedValue {
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.pingRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.65rem;
+    line-height: 1;
+    margin-top: 1px;
+    padding-top: 1px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pingLabel {
+    font-weight: 500;
+    opacity: 0.7;
+    font-size: 0.6rem;
+}
+
+.pingValue {
+    font-weight: 500;
+    font-size: 0.65rem;
+    opacity: 0.9;
+}
+
+.errorContent,
+.loadingContent,
+.noDataContent {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+}
+
+.errorContent .statusBadgeLabel,
+.loadingContent .statusBadgeLabel,
+.noDataContent .statusBadgeLabel {
+    font-size: 0.7rem;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.errorContent .statusBadgeValue,
+.loadingContent .statusBadgeValue,
+.noDataContent .statusBadgeValue {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .speedTestWidget {
+        min-width: 100px;
+        max-width: 140px;
+    }
+
+    .speedRow {
+        font-size: 0.7rem;
+    }
+
+    .speedLabel {
+        font-size: 0.65rem;
+    }
+
+    .speedValue {
+        font-size: 0.7rem;
+    }
+
+    .pingRow {
+        font-size: 0.6rem;
+    }
+
+    .pingLabel {
+        font-size: 0.55rem;
+    }
+
+    .pingValue {
+        font-size: 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .speedTestWidget {
+        min-width: 90px;
+        max-width: 120px;
+    }
+
+    .speedRow {
+        font-size: 0.65rem;
+    }
+
+    .speedLabel {
+        font-size: 0.6rem;
+    }
+
+    .speedValue {
+        font-size: 0.65rem;
+    }
+
+    .pingRow {
+        font-size: 0.55rem;
+    }
+
+    .pingLabel {
+        font-size: 0.5rem;
+    }
+
+    .pingValue {
+        font-size: 0.55rem;
+    }
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SimpleStatusBadge, TrendStatusBadge, CustomStatusBadge } from './StatusBadge';
+import { SpeedTestWidget } from './SpeedTestWidget';
 import styles from './StatusBadges.module.css';
 
 export const StatusBadges: React.FC = () => {
@@ -81,6 +82,9 @@ export const StatusBadges: React.FC = () => {
                     <div className={styles.statusBadgeValue}>0</div>
                 </div>
             </CustomStatusBadge>
+
+            {/* Speed Test Widget */}
+            <SpeedTestWidget intervalSeconds={1} autoStart={true} />
         </div>
     );
 };
