@@ -95,7 +95,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     };
 
     const getSearchButtonText = () => {
-        return searchMode === 'newTab' ? 'Search - New Tab' : 'Search';
+        return searchMode === 'newTab' ? 'New Tab' : 'Search';
     };
 
     const getSearchButtonIcon = () => {
