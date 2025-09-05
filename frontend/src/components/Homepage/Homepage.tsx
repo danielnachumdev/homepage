@@ -27,6 +27,8 @@ import { chromeService } from '../../services';
 import type { ChromeProfile } from '../../services';
 import { useChromeProfiles } from '../../hooks';
 import { ProfileMenu } from '../shared';
+import { SearchComponent } from '../Search';
+import type { SearchEngineStrategy } from '../Search/SearchEngineStrategy';
 import styles from './Homepage.module.css';
 
 interface HomepageProps {
@@ -136,6 +138,7 @@ export function Homepage({ data }: HomepageProps) {
     loadChromeProfiles();
   }, [loadChromeProfiles]);
 
+
   const handleSectionToggle = (sectionId: string) => {
     setSections(prev =>
       prev.map(section =>
@@ -174,6 +177,16 @@ export function Homepage({ data }: HomepageProps) {
       }
     }
     handleProfileMenuClose();
+  };
+
+  const handleSearch = (query: string, engine: SearchEngineStrategy) => {
+    const searchUrl = engine.buildSearchUrl(query);
+    window.location.href = searchUrl;
+  };
+
+  const handleSearchNewTab = (query: string, engine: SearchEngineStrategy) => {
+    const searchUrl = engine.buildSearchUrl(query);
+    window.open(searchUrl, '_blank');
   };
 
   const filteredSections = sections.map(section => ({
@@ -248,7 +261,16 @@ export function Homepage({ data }: HomepageProps) {
     </Card>
   );
 
-  const SearchBar = (
+  const InternetSearchBar = (
+    <Box className={styles.internetSearchSection}>
+      <SearchComponent
+        onSearch={handleSearch}
+        onSearchNewTab={handleSearchNewTab}
+      />
+    </Box>
+  );
+
+  const LinksSearchBar = (
     <Box className={styles.searchSection}>
       <TextField
         fullWidth
@@ -295,7 +317,8 @@ export function Homepage({ data }: HomepageProps) {
 
   return (
     <Container maxWidth="xl" className={styles.container}>
-      {SearchBar}
+      {InternetSearchBar}
+      {LinksSearchBar}
       {ChromeProfilesStatus}
 
       <Box className={styles.mainContent}>

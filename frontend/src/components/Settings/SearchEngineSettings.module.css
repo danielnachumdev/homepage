@@ -1,0 +1,138 @@
+.container {
+    padding: 24px;
+    max-width: 800px;
+}
+
+.title {
+    margin-bottom: 8px;
+    color: #1976d2;
+    font-weight: 600;
+}
+
+.description {
+    margin-bottom: 24px;
+    color: rgba(0, 0, 0, 0.7);
+    line-height: 1.5;
+}
+
+.settingsCard {
+    margin-bottom: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.formControl {
+    margin-bottom: 16px;
+}
+
+.menuItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.engineLogo {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+}
+
+.engineName {
+    font-weight: 500;
+}
+
+.previewCard {
+    margin-bottom: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.previewTitle {
+    margin-bottom: 8px;
+    color: #1976d2;
+    font-weight: 600;
+}
+
+.previewDescription {
+    margin-bottom: 16px;
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.engineInfo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.previewLogo {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+}
+
+.engineDetails {
+    flex: 1;
+}
+
+.engineUrl {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.6);
+    word-break: break-all;
+}
+
+.availableEnginesCard {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.availableTitle {
+    margin-bottom: 16px;
+    color: #1976d2;
+    font-weight: 600;
+}
+
+.enginesList {
+    padding: 0;
+}
+
+.engineListItem {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 16px 0;
+}
+
+.engineListItem:last-child {
+    border-bottom: none;
+}
+
+.listEngineLogo {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+}
+
+.selectedChip {
+    margin-left: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    .engineInfo {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .engineUrl {
+        font-size: 11px;
+    }
+}

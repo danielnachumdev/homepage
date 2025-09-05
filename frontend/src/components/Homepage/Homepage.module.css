@@ -3,7 +3,14 @@
     padding: 2rem 0;
 }
 
-/* Search Section */
+/* Internet Search Section */
+.internetSearchSection {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+/* Links Search Section */
 .searchSection {
     margin-bottom: 2rem;
 }

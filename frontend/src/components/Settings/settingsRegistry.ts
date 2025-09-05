@@ -1,4 +1,5 @@
 import { ChromeProfilesSettings } from './ChromeProfilesSettings';
+import { SearchEngineSettings } from './SearchEngineSettings';
 import type { SettingsCategoryComponent } from './types';
 
 // Registry of all setting categories
@@ -8,6 +9,12 @@ export const settingsRegistry: SettingsCategoryComponent[] = [
         title: 'Chrome Profiles',
         description: 'Customize display names and icons for your Chrome profiles',
         component: ChromeProfilesSettings
+    },
+    {
+        id: 'search-engine',
+        title: 'Search Engine',
+        description: 'Configure your preferred search engine for internet searches',
+        component: SearchEngineSettings
     }
     // Add more categories here as needed
 ];
