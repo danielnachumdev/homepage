@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { chromeService, type ChromeProfile } from '../services';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface UseChromeProfilesReturn {
     profiles: ChromeProfile[];
@@ -8,23 +9,46 @@ interface UseChromeProfilesReturn {
     error: string | null;
     loadChromeProfiles: () => Promise<void>;
     switchProfile: (profile: ChromeProfile) => Promise<void>;
+    refreshProfiles: () => Promise<void>;
 }
 
 export function useChromeProfiles(): UseChromeProfilesReturn {
-    const [profiles, setProfiles] = useState<ChromeProfile[]>([]);
+    const { settings, loading: settingsLoading, error: settingsError, refreshSettings } = useSettings();
     const [activeProfile, setActiveProfile] = useState<ChromeProfile | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Convert settings data to ChromeProfile format
+    const profiles: ChromeProfile[] = settings.chromeProfiles.profiles.map(profileSetting => ({
+        id: profileSetting.profileId,
+        name: profileSetting.displayName,
+        icon: profileSetting.icon,
+        is_active: false, // This will be determined by backend data
+        enabled: profileSetting.enabled,
+    }));
 
     const loadChromeProfiles = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
+
+            // First refresh the unified settings
+            await refreshSettings();
+
+            // Then get the actual Chrome profiles from backend to get active status
             const response = await chromeService.getChromeProfiles();
             if (response.success) {
-                setProfiles(response.profiles);
+                // Merge backend data with settings data
+                const enrichedProfiles = profiles.map(profileSetting => {
+                    const backendProfile = response.profiles.find(p => p.id === profileSetting.id);
+                    return {
+                        ...profileSetting,
+                        is_active: backendProfile?.is_active || false,
+                    };
+                });
+
                 // Set the first active profile as default
-                const active = response.profiles.find(p => p.is_active) || response.profiles[0];
+                const active = enrichedProfiles.find(p => p.is_active) || enrichedProfiles[0];
                 setActiveProfile(active);
             } else {
                 setError(response.message || 'Failed to load Chrome profiles');
@@ -35,7 +59,7 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [profiles, refreshSettings]);
 
     const switchProfile = useCallback(async (profile: ChromeProfile) => {
         if (profile.id === activeProfile?.id) {
@@ -53,11 +77,8 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
             if (response.success) {
                 console.log(`Switched to profile: ${profile.name}`);
                 setActiveProfile(profile);
-                // Update the profiles list to reflect the new active state
-                setProfiles(prev => prev.map(p => ({
-                    ...p,
-                    is_active: p.id === profile.id
-                })));
+                // Note: Profile state is managed by the unified settings
+                // The active state will be updated when settings are refreshed
             } else {
                 console.error('Failed to switch profile:', response.message);
                 setError(`Failed to switch profile: ${response.message}`);
@@ -68,17 +89,30 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
         }
     }, [activeProfile?.id]);
 
+    const refreshProfiles = useCallback(async () => {
+        await loadChromeProfiles();
+    }, [loadChromeProfiles]);
+
     // Load Chrome profiles on hook initialization
     useEffect(() => {
         loadChromeProfiles();
     }, [loadChromeProfiles]);
 
+    // Update active profile when profiles change
+    useEffect(() => {
+        if (profiles.length > 0 && !activeProfile) {
+            const active = profiles.find(p => p.is_active) || profiles[0];
+            setActiveProfile(active);
+        }
+    }, [profiles, activeProfile]);
+
     return {
         profiles,
         activeProfile,
-        loading,
-        error,
+        loading: loading || settingsLoading,
+        error: error || settingsError,
         loadChromeProfiles,
         switchProfile,
+        refreshProfiles,
     };
 }

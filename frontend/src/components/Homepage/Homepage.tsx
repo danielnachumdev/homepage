@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Container,
@@ -10,8 +10,6 @@ import {
   Button,
   TextField,
   InputAdornment,
-  Alert,
-  CircularProgress,
   Chip,
 } from '@mui/material';
 import {
@@ -131,12 +129,7 @@ export function Homepage({ data }: HomepageProps) {
   const [selectedLink, setSelectedLink] = useState<LinkItem | null>(null);
 
   // Use the useChromeProfiles hook
-  const { profiles: chromeProfiles, loading, error, loadChromeProfiles } = useChromeProfiles();
-
-  // Load Chrome profiles on component mount
-  useEffect(() => {
-    loadChromeProfiles();
-  }, [loadChromeProfiles]);
+  const { profiles: chromeProfiles } = useChromeProfiles();
 
 
   const handleSectionToggle = (sectionId: string) => {
@@ -289,37 +282,11 @@ export function Homepage({ data }: HomepageProps) {
     </Box>
   );
 
-  const ChromeProfilesStatus = (
-    <Box className={styles.chromeProfilesStatus}>
-      {loading && (
-        <Box className={styles.loadingContainer}>
-          <CircularProgress size={16} />
-          <Typography variant="body2">Loading Chrome profiles...</Typography>
-        </Box>
-      )}
-      {error && (
-        <Alert severity="warning" className={styles.errorAlert}>
-          {error}
-        </Alert>
-      )}
-      {chromeProfiles.length > 0 && (
-        <Box className={styles.profilesInfo}>
-          <Typography variant="body2" color="text.secondary">
-            Chrome profiles available: {chromeProfiles.length}
-          </Typography>
-          <Button size="small" onClick={loadChromeProfiles}>
-            Refresh
-          </Button>
-        </Box>
-      )}
-    </Box>
-  );
 
   return (
     <Container maxWidth="xl" className={styles.container}>
       {InternetSearchBar}
       {LinksSearchBar}
-      {ChromeProfilesStatus}
 
       <Box className={styles.mainContent}>
         <Box className={styles.sectionsContainer}>

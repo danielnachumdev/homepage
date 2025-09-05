@@ -19,6 +19,7 @@ class ChromeProfile(BaseModel):
     name: str
     icon: Optional[str] = None
     is_active: bool = False
+    is_visible: Optional[bool] = True
     path: Optional[str] = None
 
 

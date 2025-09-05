@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Typography,
@@ -15,36 +15,54 @@ import {
     ListItemText,
     Chip,
 } from '@mui/material';
-import { searchEngineManager, type SearchEngineStrategy } from '../Search/SearchEngineStrategy';
+import type { SearchEngineStrategy } from '../Search/SearchEngineStrategy';
+import { useSearchEngine } from '../../hooks/useSearchEngine';
 import styles from './SearchEngineSettings.module.css';
 
-const SEARCH_ENGINE_KEY = 'selectedSearchEngine';
+interface SearchEngineSettingsProps {
+    onProfilesRefresh?: () => void;
+}
 
-export const SearchEngineSettings: React.FC = () => {
-    const [selectedEngine, setSelectedEngine] = useState<string>('google');
-    const [availableEngines, setAvailableEngines] = useState<SearchEngineStrategy[]>([]);
+export const SearchEngineSettings: React.FC<SearchEngineSettingsProps> = () => {
+    const { selectedEngine, availableEngines, setSelectedEngine, loading, error } = useSearchEngine();
+    const [updating, setUpdating] = useState(false);
 
-    useEffect(() => {
-        // Load available search engines
-        const engines = searchEngineManager.getAllStrategies();
-        setAvailableEngines(engines);
-
-        // Load saved preference
-        const savedEngine = localStorage.getItem(SEARCH_ENGINE_KEY);
-        if (savedEngine && engines.find(engine => engine.name.toLowerCase() === savedEngine)) {
-            setSelectedEngine(savedEngine);
-        }
-    }, []);
-
-    const handleEngineChange = (event: any) => {
+    const handleEngineChange = async (event: any) => {
         const newEngine = event.target.value;
-        setSelectedEngine(newEngine);
-        localStorage.setItem(SEARCH_ENGINE_KEY, newEngine);
+        setUpdating(true);
+
+        try {
+            await setSelectedEngine(newEngine);
+        } catch (error) {
+            console.error('Failed to save search engine setting:', error);
+        } finally {
+            setUpdating(false);
+        }
     };
 
     const getCurrentEngine = (): SearchEngineStrategy => {
-        return searchEngineManager.getStrategy(selectedEngine);
+        return selectedEngine;
     };
+
+    if (loading) {
+        return (
+            <Box className={styles.container}>
+                <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Loading search engine settings...
+                </Typography>
+            </Box>
+        );
+    }
+
+    if (error) {
+        return (
+            <Box className={styles.container}>
+                <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Error: {error}
+                </Typography>
+            </Box>
+        );
+    }
 
     return (
         <Box className={styles.container}>
@@ -63,9 +81,10 @@ export const SearchEngineSettings: React.FC = () => {
                         <InputLabel id="search-engine-label">Default Search Engine</InputLabel>
                         <Select
                             labelId="search-engine-label"
-                            value={selectedEngine}
+                            value={selectedEngine.name.toLowerCase()}
                             onChange={handleEngineChange}
                             label="Default Search Engine"
+                            disabled={updating}
                         >
                             {availableEngines.map((engine) => (
                                 <MenuItem key={engine.name.toLowerCase()} value={engine.name.toLowerCase()}>
@@ -144,7 +163,7 @@ export const SearchEngineSettings: React.FC = () => {
                                     primary={engine.name}
                                     secondary={`Search URL: ${engine.buildSearchUrl('query')}`}
                                 />
-                                {engine.name.toLowerCase() === selectedEngine && (
+                                {engine.name.toLowerCase() === selectedEngine.name.toLowerCase() && (
                                     <Chip
                                         label="Selected"
                                         color="primary"

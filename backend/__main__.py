@@ -11,13 +11,36 @@ from src.utils.logger import get_logger
 
 APP_PATH = "__main__:app"
 
+
 # Create FastAPI app instance
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger = get_logger("lifespan")
+
+    # ================== SETUP ==================
+    logger.info("Starting application setup...")
+    db = get_db()
+    await DatabaseInitializer().init_db(db)
+    await db.connect()
+    logger.info("Application setup completed successfully")
+    # ================== END SETUP ==================
+    yield
+    # ================== SHUTDOWN ==================
+    logger.info("Starting application shutdown...")
+    await db.disconnect()  # type: ignore
+    logger.info("Application shutdown completed")
+    # ================== END SHUTDOWN ==================
+
+
 app = FastAPI(
     title="Homepage Backend API",
     description="Backend API for homepage management with Docker container management capabilities",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # Add CORS middleware
@@ -31,24 +54,6 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(api_router)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger = get_logger("lifespan")
-
-    # ================== SETUP ==================
-    logger.info("Starting application setup...")
-    db = get_db()
-    await DatabaseInitializer().init_db(db)
-    logger.info("Application setup completed successfully")
-    # ================== END SETUP ==================
-    yield
-    # ================== SHUTDOWN ==================
-    logger.info("Starting application shutdown...")
-    await db.disconnect()  # type: ignore
-    logger.info("Application shutdown completed")
-    # ================== END SHUTDOWN ==================
 
 
 @app.get("/")

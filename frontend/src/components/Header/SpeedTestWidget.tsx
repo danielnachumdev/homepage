@@ -1,6 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { CustomStatusBadge } from './StatusBadge';
 import { useSpeedTest } from '../../hooks/useSpeedTest';
+import { useSpeedTestSettings } from '../../hooks/useSpeedTestSettings';
 import styles from './SpeedTestWidget.module.css';
 
 interface SpeedTestWidgetProps {
@@ -14,6 +15,7 @@ export const SpeedTestWidget: React.FC<SpeedTestWidgetProps> = ({
     className = '',
     autoStart = true
 }) => {
+    const { enabled } = useSpeedTestSettings();
     const {
         result,
         isLoading,
@@ -23,8 +25,24 @@ export const SpeedTestWidget: React.FC<SpeedTestWidgetProps> = ({
         isDownloadLoading,
         isUploadLoading,
         isPingLoading,
-        toggleTesting
-    } = useSpeedTest({ intervalSeconds, autoStart });
+        toggleTesting,
+        startContinuousTesting,
+        stopContinuousTesting
+    } = useSpeedTest({ intervalSeconds, autoStart: false }); // Don't auto-start by default
+
+    // Auto start/stop when setting changes
+    useEffect(() => {
+        if (enabled && autoStart && !isRunning) {
+            startContinuousTesting();
+        } else if (!enabled && isRunning) {
+            stopContinuousTesting();
+        }
+    }, [enabled, autoStart, isRunning, startContinuousTesting, stopContinuousTesting]);
+
+    // Don't render if speed test is disabled
+    if (!enabled) {
+        return null;
+    }
 
     const formatSpeed = useCallback((speedMbps?: number): [string, string] => {
         if (!speedMbps) return ['--', ''];

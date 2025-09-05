@@ -5,16 +5,17 @@ import {
     Alert,
     CircularProgress
 } from '@mui/material';
-import { chromeService } from '../../services/chrome.service';
+import { chromeService, settingsService } from '../../services';
 import type { ChromeProfile } from '../../services/chrome.service';
 import { ProfileCard } from './ProfileCard';
 import styles from './ChromeProfilesSettings.module.css';
 
 interface ChromeProfileSettingsProps {
     onSettingChange?: (settingId: string, newValue: any) => void;
+    onProfilesRefresh?: () => void;
 }
 
-export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ onSettingChange }) => {
+export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ onSettingChange, onProfilesRefresh }) => {
     const [profiles, setProfiles] = useState<ChromeProfile[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -60,7 +61,7 @@ export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ o
         }
     };
 
-    const handleProfileUpdate = (profileId: string, updates: {
+    const handleProfileUpdate = async (profileId: string, updates: {
         displayName: string;
         icon: string;
         enabled: boolean;
@@ -75,8 +76,22 @@ export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ o
             onSettingChange(`chrome-profile-${profileId}`, updates);
         }
 
-        // TODO: Call backend API to update profile
-        // await chromeService.updateProfile(profileId, updates);
+        // Update setting in backend
+        try {
+            await settingsService.updateChromeProfileSetting(
+                profileId,
+                updates.displayName,
+                updates.icon,
+                updates.enabled
+            );
+
+            // Refresh profiles to reflect changes
+            if (onProfilesRefresh) {
+                onProfilesRefresh();
+            }
+        } catch (error) {
+            console.error('Failed to update profile setting:', error);
+        }
     };
 
     if (loading) {

@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon, Search as SearchIcon } from '@mui/icons-material';
 import { settingsRegistry, getCategoryTitles } from './settingsRegistry';
+import { useChromeProfilesContext } from '../../contexts/ChromeProfilesContext';
 import styles from './Settings.module.css';
 
 interface SettingsProps {
@@ -22,6 +23,7 @@ interface SettingsProps {
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     const theme = useTheme();
     const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
+    const { refreshProfiles } = useChromeProfilesContext();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState<string>('');
@@ -145,7 +147,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
         </Box>
     );
 
-        // Local sub-component for the category navigation
+    // Local sub-component for the category navigation
     const CategoryNavigation = (
         <Box className={styles.categoryNavigation}>
             <Typography variant="h6" className={styles.navigationTitle}>
@@ -164,7 +166,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                                 mb: 0.5,
                             }}
                         >
-                            <ListItemText 
+                            <ListItemText
                                 primary={category.title}
                                 primaryTypographyProps={{
                                     className: styles.categoryText,
@@ -177,7 +179,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
         </Box>
     );
 
-        // Local sub-component for the settings content
+    // Local sub-component for the settings content
     const SettingsContent = (
         <Box className={styles.settingsContent}>
             <div
@@ -200,9 +202,9 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                             className={styles.categorySection}
                         >
                             <div className={styles.categoryTitleWrapper}>
-                                <Typography 
-                                    variant="h5" 
-                                    component="h2" 
+                                <Typography
+                                    variant="h5"
+                                    component="h2"
                                     className={styles.categoryTitle}
                                 >
                                     {category.title}
@@ -210,7 +212,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                             </div>
 
                             <Box className={styles.categoryContent}>
-                                <CategoryComponent />
+                                <CategoryComponent onProfilesRefresh={refreshProfiles} />
                             </Box>
                         </div>
                     );

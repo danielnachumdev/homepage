@@ -1,5 +1,9 @@
-from .chrome_profile import ChromeProfileModel
+from .base import Base
+from .settings import SettingsModel
+from .db_settings import DbSettingsModel
 
 __all__ = [
-    "ChromeProfileModel"
+    "Base",
+    "SettingsModel",
+    "DbSettingsModel"
 ]

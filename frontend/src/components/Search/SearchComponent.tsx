@@ -18,7 +18,8 @@ import {
     OpenInNew as OpenInNewIcon,
     ArrowDropDown as ArrowDropDownIcon,
 } from '@mui/icons-material';
-import { searchEngineManager, type SearchEngineStrategy } from './SearchEngineStrategy';
+import type { SearchEngineStrategy } from './SearchEngineStrategy';
+import { useSearchEngine } from '../../hooks/useSearchEngine';
 import styles from './SearchComponent.module.css';
 
 interface SearchComponentProps {
@@ -32,16 +33,12 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     onSearch,
     onSearchNewTab,
 }) => {
+    const { selectedEngine, availableEngines, setSelectedEngine } = useSearchEngine();
     const [query, setQuery] = useState('');
-    const [selectedEngine, setSelectedEngine] = useState<SearchEngineStrategy>(
-        searchEngineManager.getDefaultStrategy()
-    );
     const [engineMenuAnchor, setEngineMenuAnchor] = useState<null | HTMLElement>(null);
     const [modeMenuAnchor, setModeMenuAnchor] = useState<null | HTMLElement>(null);
     const [searchMode, setSearchMode] = useState<SearchMode>('newTab');
     const [isFocused, setIsFocused] = useState(false);
-
-    const availableEngines = searchEngineManager.getAllStrategies();
 
     const handleSearch = () => {
         if (query.trim()) {
@@ -71,8 +68,8 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
         }
     };
 
-    const handleEngineSelect = (engine: SearchEngineStrategy) => {
-        setSelectedEngine(engine);
+    const handleEngineSelect = async (engine: SearchEngineStrategy) => {
+        await setSelectedEngine(engine.name.toLowerCase());
         setEngineMenuAnchor(null);
     };
 

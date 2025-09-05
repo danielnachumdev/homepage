@@ -11,7 +11,7 @@ import {
     Alert
 } from '@mui/material';
 import type { ChromeProfile } from '../../services/chrome.service';
-import { chromeService } from '../../services/chrome.service';
+import { settingsService } from '../../services';
 import styles from './ProfileCard.module.css';
 
 interface ProfileCardProps {
@@ -48,12 +48,12 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onProfileUpda
     const saveToBackend = async (updates: { displayName: string; icon: string; enabled: boolean }) => {
         try {
             setIsSaving(true);
-            const response = await chromeService.updateProfileSettings({
-                profile_id: profile.id,
-                display_name: updates.displayName,
-                icon: updates.icon,
-                enabled: updates.enabled
-            });
+            const response = await settingsService.updateChromeProfileSetting(
+                profile.id,
+                updates.displayName,
+                updates.icon,
+                updates.enabled
+            );
 
             if (response.success) {
                 setSaveStatus('success');

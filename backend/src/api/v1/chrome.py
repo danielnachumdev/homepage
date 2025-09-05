@@ -13,7 +13,7 @@ chrome_service = ChromeService()
 @router.get("/profiles", response_model=ChromeProfileListResponse)
 async def get_chrome_profiles():
     """Get list of available Chrome profiles."""
-    response = await chrome_service.get_chrome_profiles()
+    response = await chrome_service.discover()
     if not response.success:
         raise HTTPException(status_code=500, detail=response.message)
     return response

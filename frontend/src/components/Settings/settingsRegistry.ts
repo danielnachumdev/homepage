@@ -1,9 +1,16 @@
 import { ChromeProfilesSettings } from './ChromeProfilesSettings';
 import { SearchEngineSettings } from './SearchEngineSettings';
+import { WidgetsSettings } from './WidgetsSettings';
 import type { SettingsCategoryComponent } from './types';
 
 // Registry of all setting categories
 export const settingsRegistry: SettingsCategoryComponent[] = [
+    {
+        id: 'widgets',
+        title: 'Widgets',
+        description: 'Configure which widgets are displayed in the application',
+        component: WidgetsSettings
+    },
     {
         id: 'chrome-profiles',
         title: 'Chrome Profiles',
