@@ -1,15 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { settingsService } from '../services/settings.service';
-import type { AppSettings, SettingsContextType } from '../types/settings';
+import type { AppSettings, UseSettingsReturn } from '../types/settings';
 import { DEFAULT_SETTINGS } from '../types/settings';
 
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
-
-interface SettingsProviderProps {
-    children: React.ReactNode;
-}
-
-export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
+export function useSettings(): UseSettingsReturn {
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -40,7 +34,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
                     selectedEngine: searchEngineResponse.success ? searchEngineResponse.setting.selected_engine : 'google',
                 },
                 chromeProfiles: {
-                    profiles: chromeProfilesResponse.success ? chromeProfilesResponse.profiles : [],
+                    profiles: chromeProfilesResponse.success ? chromeProfilesResponse.profiles.map(profile => ({
+                        profileId: profile.profile_id,
+                        displayName: profile.display_name,
+                        icon: profile.icon,
+                        enabled: profile.enabled,
+                    })) : [],
                 },
             };
 
@@ -107,7 +106,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         }
     }, []);
 
-    const refreshSettings = useCallback(async () => {
+    const refresh = useCallback(async () => {
         await loadSettings();
     }, [loadSettings]);
 
@@ -116,25 +115,11 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         loadSettings();
     }, [loadSettings]);
 
-    const value: SettingsContextType = {
+    return {
         settings,
         loading,
         error,
         updateSetting,
-        refreshSettings,
+        refresh,
     };
-
-    return (
-        <SettingsContext.Provider value={value}>
-            {children}
-        </SettingsContext.Provider>
-    );
-};
-
-export const useSettings = (): SettingsContextType => {
-    const context = useContext(SettingsContext);
-    if (context === undefined) {
-        throw new Error('useSettings must be used within a SettingsProvider');
-    }
-    return context;
-};
+}

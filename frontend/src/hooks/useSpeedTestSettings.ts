@@ -1,15 +1,19 @@
 import { useCallback } from 'react';
-import { useSettings } from '../contexts/SettingsContext';
+import { useSettings } from './useSettings';
 
 interface UseSpeedTestSettingsReturn {
+    // Speed test specific data
     enabled: boolean;
     setEnabled: (enabled: boolean) => Promise<void>;
+
+    // Inherited from useSettings
     loading: boolean;
     error: string | null;
+    refresh: () => Promise<void>;
 }
 
 export function useSpeedTestSettings(): UseSpeedTestSettingsReturn {
-    const { settings, updateSetting, loading, error } = useSettings();
+    const { settings, updateSetting, loading, error, refresh } = useSettings();
 
     const setEnabled = useCallback(async (enabled: boolean) => {
         try {
@@ -21,9 +25,13 @@ export function useSpeedTestSettings(): UseSpeedTestSettingsReturn {
     }, [updateSetting]);
 
     return {
+        // Speed test specific data
         enabled: settings.widgets.speedTest.enabled,
         setEnabled,
+
+        // Inherited from useSettings
         loading,
         error,
+        refresh,
     };
 }

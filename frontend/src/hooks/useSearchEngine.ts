@@ -1,23 +1,32 @@
-import { useCallback } from 'react';
-import { useSettings } from '../contexts/SettingsContext';
+import { useCallback, useMemo } from 'react';
+import { useSettings } from './useSettings';
 import { searchEngineManager, type SearchEngineStrategy } from '../components/Search/SearchEngineStrategy';
 
 interface UseSearchEngineReturn {
+    // Search engine specific data
     selectedEngine: SearchEngineStrategy;
     availableEngines: SearchEngineStrategy[];
     setSelectedEngine: (engineName: string) => Promise<void>;
+
+    // Inherited from useSettings
     loading: boolean;
     error: string | null;
+    refresh: () => Promise<void>;
 }
 
 export function useSearchEngine(): UseSearchEngineReturn {
-    const { settings, updateSetting, loading, error } = useSettings();
+    const { settings, updateSetting, loading, error, refresh } = useSettings();
 
-    // Get the current selected engine strategy
-    const selectedEngine = searchEngineManager.getStrategy(settings.searchEngine.selectedEngine);
+    // Memoize expensive computations
+    const selectedEngine = useMemo(() =>
+        searchEngineManager.getStrategy(settings.searchEngine.selectedEngine),
+        [settings.searchEngine.selectedEngine]
+    );
 
-    // Get all available engines
-    const availableEngines = searchEngineManager.getAllStrategies();
+    const availableEngines = useMemo(() =>
+        searchEngineManager.getAllStrategies(),
+        []
+    );
 
     const setSelectedEngine = useCallback(async (engineName: string) => {
         try {
@@ -29,10 +38,14 @@ export function useSearchEngine(): UseSearchEngineReturn {
     }, [updateSetting]);
 
     return {
+        // Search engine specific data
         selectedEngine,
         availableEngines,
         setSelectedEngine,
+
+        // Inherited from useSettings
         loading,
         error,
+        refresh,
     };
 }

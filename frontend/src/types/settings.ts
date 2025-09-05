@@ -38,8 +38,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     },
 };
 
-// Settings context type
-export interface SettingsContextType {
+// Settings hook type
+export interface UseSettingsReturn {
     settings: AppSettings;
     loading: boolean;
     error: string | null;
@@ -48,5 +48,5 @@ export interface SettingsContextType {
         key: keyof AppSettings[K],
         value: any
     ) => Promise<void>;
-    refreshSettings: () => Promise<void>;
+    refresh: () => Promise<void>;
 }

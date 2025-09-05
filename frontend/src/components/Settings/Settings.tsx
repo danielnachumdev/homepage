@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon, Search as SearchIcon } from '@mui/icons-material';
 import { settingsRegistry, getCategoryTitles } from './settingsRegistry';
-import { useChromeProfilesContext } from '../../contexts/ChromeProfilesContext';
 import styles from './Settings.module.css';
 
 interface SettingsProps {
@@ -23,7 +22,6 @@ interface SettingsProps {
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     const theme = useTheme();
     const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
-    const { refreshProfiles } = useChromeProfilesContext();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState<string>('');
@@ -212,7 +210,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                             </div>
 
                             <Box className={styles.categoryContent}>
-                                <CategoryComponent onProfilesRefresh={refreshProfiles} />
+                                <CategoryComponent />
                             </Box>
                         </div>
                     );

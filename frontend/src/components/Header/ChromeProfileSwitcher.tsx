@@ -14,7 +14,7 @@ import { ProfileMenu } from '../shared';
 import styles from './ChromeProfileSwitcher.module.css';
 
 export function ChromeProfileSwitcher() {
-    const { profiles, activeProfile, loading, error, loadChromeProfiles, switchProfile } = useChromeProfiles();
+    const { profiles, activeProfile, profilesLoading, profilesError, loadChromeProfiles, switchProfile } = useChromeProfiles();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
     const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -30,7 +30,7 @@ export function ChromeProfileSwitcher() {
         handleProfileMenuClose();
     };
 
-    if (loading) {
+    if (profilesLoading) {
         return (
             <Box className={styles.loadingContainer}>
                 <CircularProgress size={16} sx={{ color: 'white' }} />
@@ -41,11 +41,11 @@ export function ChromeProfileSwitcher() {
         );
     }
 
-    if (error) {
+    if (profilesError) {
         return (
             <Alert severity="warning" className={styles.errorAlert}>
                 <Typography variant="body2" className={styles.errorText}>
-                    {error}
+                    {profilesError}
                     <Button
                         size="small"
                         onClick={loadChromeProfiles}

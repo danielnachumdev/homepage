@@ -116,7 +116,8 @@ class DatabasePopulationScript:
             chrome_settings = []
             for profile in profiles_response.profiles:
                 # Convert profile ID to snake_case for database storage
-                profile_id_snake = profile.id.replace(" ", "_").replace("-", "_").lower()
+                profile_id_snake = profile.id.replace(
+                    " ", "_").replace("-", "_").lower()
                 setting_data = {
                     "id": f"chrome_profile_{profile_id_snake}",
                     "category": "chrome_profiles",
