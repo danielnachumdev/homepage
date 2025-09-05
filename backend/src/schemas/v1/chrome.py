@@ -23,13 +23,6 @@ class ChromeProfile(BaseModel):
     path: Optional[str] = None
 
 
-class ChromeProfileListResponse(BaseModel):
-    """Response containing list of Chrome profiles."""
-    success: bool
-    profiles: List[ChromeProfile]
-    message: Optional[str] = None
-
-
 class OpenUrlRequest(BaseModel):
     """Request to open a URL in a specific Chrome profile."""
     url: str
@@ -73,7 +66,6 @@ class ProfileUpdateResponse(BaseModel):
 __all__ = [
     "ChromeProfile",
     "ChromeProfileInfo",
-    "ChromeProfileListResponse",
     "OpenUrlRequest",
     "OpenUrlResponse",
     "UpdateProfileVisibilityRequest",

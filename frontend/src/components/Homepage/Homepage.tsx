@@ -21,9 +21,8 @@ import {
   Tag,
 } from '@mui/icons-material';
 import type { Section, LinkItem } from '../../types/homepage';
-import { chromeService } from '../../services';
-import type { ChromeProfile } from '../../services';
 import { useChromeProfiles } from '../../hooks';
+import type { ChromeProfile } from '../../hooks/useChromeProfiles';
 import { ProfileMenu } from '../shared';
 import { SearchComponent } from '../Search';
 import type { SearchEngineStrategy } from '../Search/SearchEngineStrategy';
@@ -129,7 +128,7 @@ export function Homepage({ data }: HomepageProps) {
   const [selectedLink, setSelectedLink] = useState<LinkItem | null>(null);
 
   // Use the useChromeProfiles hook
-  const { profiles: chromeProfiles } = useChromeProfiles();
+  const { profiles: chromeProfiles, openUrlInProfile } = useChromeProfiles();
 
 
   const handleSectionToggle = (sectionId: string) => {
@@ -155,7 +154,7 @@ export function Homepage({ data }: HomepageProps) {
   const handleProfileSelect = async (profile: ChromeProfile) => {
     if (selectedLink) {
       try {
-        const response = await chromeService.openUrlInProfile({
+        const response = await openUrlInProfile({
           url: selectedLink.url,
           profile_id: profile.id,
         });
@@ -263,61 +262,43 @@ export function Homepage({ data }: HomepageProps) {
     </Box>
   );
 
-  const LinksSearchBar = (
-    <Box className={styles.searchSection}>
-      <TextField
-        fullWidth
-        placeholder="Search links, descriptions, or tags..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <Search />
-            </InputAdornment>
-          ),
-        }}
-        className={styles.searchField}
-      />
-    </Box>
-  );
+
 
 
   return (
     <Container maxWidth="xl" className={styles.container}>
       {InternetSearchBar}
-      {LinksSearchBar}
 
-      <Box className={styles.mainContent}>
-        <Box className={styles.sectionsContainer}>
-          {filteredSections.map(section => (
-            <Box key={section.id}>
-              <Card className={styles.sectionCard}>
-                <SectionHeader section={section} />
+      {/*<Box className={styles.mainContent}>*/}
+      {/*  <Box className={styles.sectionsContainer}>*/}
+      {/*    {filteredSections.map(section => (*/}
+      {/*      <Box key={section.id}>*/}
+      {/*        <Card className={styles.sectionCard}>*/}
+      {/*          <SectionHeader section={section} />*/}
 
-                <Collapse in={!section.isCollapsed}>
-                  <Box className={styles.linksGrid}>
-                    {section.links.map(link => (
-                      <Box key={link.id}>
-                        <LinkCard link={link} />
-                      </Box>
-                    ))}
-                  </Box>
-                </Collapse>
-              </Card>
-            </Box>
-          ))}
-        </Box>
-      </Box>
+      {/*          <Collapse in={!section.isCollapsed}>*/}
+      {/*            <Box className={styles.linksGrid}>*/}
+      {/*              {section.links.map(link => (*/}
+      {/*                <Box key={link.id}>*/}
+      {/*                  <LinkCard link={link} />*/}
+      {/*                </Box>*/}
+      {/*              ))}*/}
+      {/*            </Box>*/}
+      {/*          </Collapse>*/}
+      {/*        </Card>*/}
+      {/*      </Box>*/}
+      {/*    ))}*/}
+      {/*  </Box>*/}
+      {/*</Box>*/}
 
-      <ProfileMenu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleProfileMenuClose}
-        profiles={chromeProfiles}
-        onProfileSelect={handleProfileSelect}
-        title="Open with profile:"
-      />
+      {/*<ProfileMenu*/}
+      {/*  anchorEl={anchorEl}*/}
+      {/*  open={Boolean(anchorEl)}*/}
+      {/*  onClose={handleProfileMenuClose}*/}
+      {/*  profiles={chromeProfiles}*/}
+      {/*  onProfileSelect={handleProfileSelect}*/}
+      {/*  title="Open with profile:"*/}
+      {/*/>*/}
     </Container>
   );
 }

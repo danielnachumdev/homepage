@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import { CustomStatusBadge } from './StatusBadge';
 import { useSpeedTest } from '../../hooks/useSpeedTest';
-import { useSpeedTestSettings } from '../../hooks/useSpeedTestSettings';
 import styles from './SpeedTestWidget.module.css';
 
 interface SpeedTestWidgetProps {
@@ -15,8 +14,8 @@ export const SpeedTestWidget: React.FC<SpeedTestWidgetProps> = ({
     className = '',
     autoStart = true
 }) => {
-    const { enabled } = useSpeedTestSettings();
     const {
+        enabled,
         result,
         isLoading,
         isRunning,

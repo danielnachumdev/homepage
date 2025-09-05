@@ -5,8 +5,8 @@ import {
     Alert,
     CircularProgress
 } from '@mui/material';
-import { chromeService, settingsService } from '../../services';
-import type { ChromeProfile } from '../../services/chrome.service';
+import { settingsService } from '../../services';
+import { useChromeProfiles } from '../../hooks';
 import { ProfileCard } from './ProfileCard';
 import styles from './ChromeProfilesSettings.module.css';
 
@@ -16,9 +16,7 @@ interface ChromeProfileSettingsProps {
 }
 
 export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ onSettingChange, onProfilesRefresh }) => {
-    const [profiles, setProfiles] = useState<ChromeProfile[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { profiles, loading, error, refreshProfiles } = useChromeProfiles();
     const [profileSettings, setProfileSettings] = useState<{
         [key: string]: {
             displayName: string;
@@ -27,39 +25,20 @@ export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ o
         };
     }>({});
 
-    // Load Chrome profiles on component mount
+    // Initialize profile settings when profiles change
     useEffect(() => {
-        loadChromeProfiles();
-    }, []);
-
-    const loadChromeProfiles = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const response = await chromeService.getChromeProfiles();
-
-            if (response.success && response.profiles) {
-                setProfiles(response.profiles);
-                // Initialize profile settings with current profile data
-                const initialSettings: { [key: string]: { displayName: string; icon: string; enabled: boolean } } = {};
-                response.profiles.forEach(profile => {
-                    initialSettings[profile.id] = {
-                        displayName: profile.name,
-                        icon: profile.icon || '👤',
-                        enabled: profile.is_visible !== false // Use profile visibility, default to true if not specified
-                    };
-                });
-                setProfileSettings(initialSettings);
-            } else {
-                setError('Failed to load Chrome profiles');
-            }
-        } catch (err) {
-            setError('Error loading Chrome profiles');
-            console.error('Error loading Chrome profiles:', err);
-        } finally {
-            setLoading(false);
+        if (profiles.length > 0) {
+            const initialSettings: { [key: string]: { displayName: string; icon: string; enabled: boolean } } = {};
+            profiles.forEach(profile => {
+                initialSettings[profile.id] = {
+                    displayName: profile.name,
+                    icon: profile.icon || '👤',
+                    enabled: profile.enabled !== false // Use profile enabled status
+                };
+            });
+            setProfileSettings(initialSettings);
         }
-    };
+    }, [profiles]);
 
     const handleProfileUpdate = async (profileId: string, updates: {
         displayName: string;
@@ -86,6 +65,7 @@ export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ o
             );
 
             // Refresh profiles to reflect changes
+            await refreshProfiles();
             if (onProfilesRefresh) {
                 onProfilesRefresh();
             }
@@ -119,7 +99,7 @@ export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ o
                         textDecoration: 'underline',
                         '&:hover': { color: 'white' }
                     }}
-                    onClick={loadChromeProfiles}
+                    onClick={refreshProfiles}
                 >
                     Click here to retry
                 </Typography>

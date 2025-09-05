@@ -10,7 +10,7 @@ import {
     Alert,
     CircularProgress,
 } from '@mui/material';
-import { useSpeedTestSettings } from '../../hooks/useSpeedTestSettings';
+import { useSpeedTest } from '../../hooks/useSpeedTest';
 import styles from './WidgetsSettings.module.css';
 
 interface WidgetsSettingsProps {
@@ -18,7 +18,7 @@ interface WidgetsSettingsProps {
 }
 
 export const WidgetsSettings: React.FC<WidgetsSettingsProps> = () => {
-    const { enabled, setEnabled, loading, error } = useSpeedTestSettings();
+    const { enabled, setEnabled, loading, error } = useSpeedTest();
     const [updating, setUpdating] = useState(false);
 
     const handleSpeedTestToggle = async (event: React.ChangeEvent<HTMLInputElement>) => {

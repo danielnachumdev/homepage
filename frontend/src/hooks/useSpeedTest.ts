@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../lib/api';
+import { useSettings } from './useSettings';
 
 export interface SpeedTestPartialResult {
     download_speed_mbps?: number;
@@ -29,8 +30,29 @@ export interface UseSpeedTestOptions {
     autoStart?: boolean;
 }
 
-export const useSpeedTest = (options: UseSpeedTestOptions = {}) => {
+export interface UseSpeedTestReturn extends SpeedTestState {
+    // Speed test actions
+    performSpeedTest: () => Promise<void>;
+    startContinuousTesting: () => Promise<void>;
+    stopContinuousTesting: () => Promise<void>;
+    toggleTesting: () => void;
+    getLatestResult: () => Promise<void>;
+
+    // Speed test settings
+    enabled: boolean;
+    setEnabled: (enabled: boolean) => Promise<void>;
+
+    // Inherited from useSettings
+    loading: boolean;
+    error: string | null;
+    refresh: () => Promise<void>;
+}
+
+export const useSpeedTest = (options: UseSpeedTestOptions = {}): UseSpeedTestReturn => {
     const { intervalSeconds = 1, autoStart = true } = options;
+
+    // Get settings from useSettings hook
+    const { settings, updateSetting, loading, error: settingsError, refresh } = useSettings();
 
     const [state, setState] = useState<SpeedTestState>({
         result: null,
@@ -49,6 +71,15 @@ export const useSpeedTest = (options: UseSpeedTestOptions = {}) => {
     const updateState = useCallback((updates: Partial<SpeedTestState>) => {
         setState(prev => ({ ...prev, ...updates }));
     }, []);
+
+    const setEnabled = useCallback(async (enabled: boolean) => {
+        try {
+            await updateSetting('widgets', 'speedTest', { enabled });
+        } catch (err) {
+            console.error('Failed to update speed test setting:', err);
+            throw err;
+        }
+    }, [updateSetting]);
 
     const performSpeedTest = useCallback(async () => {
         try {
@@ -231,10 +262,20 @@ export const useSpeedTest = (options: UseSpeedTestOptions = {}) => {
 
     return {
         ...state,
+        // Speed test actions
         performSpeedTest,
         startContinuousTesting,
         stopContinuousTesting,
         toggleTesting,
         getLatestResult,
+
+        // Speed test settings
+        enabled: settings.widgets.speedTest.enabled,
+        setEnabled,
+
+        // Inherited from useSettings
+        loading,
+        error: state.error || settingsError,
+        refresh,
     };
 };

@@ -3,9 +3,7 @@ from fastapi import APIRouter, HTTPException
 from ...services.v1.settings_service import SettingsService
 from ...schemas.v1.settings import (
     SettingsResponse, SettingUpdateRequest, SettingUpdateResponse,
-    BulkSettingsUpdateRequest, BulkSettingsUpdateResponse,
-    ChromeProfileSettingsResponse, SearchEngineSettingsResponse,
-    SpeedTestSettingsResponse
+    BulkSettingsUpdateRequest, BulkSettingsUpdateResponse
 )
 
 router = APIRouter(prefix="/settings", tags=["settings"])
@@ -14,17 +12,8 @@ settings_service = SettingsService()
 
 @router.get("/", response_model=SettingsResponse)
 async def get_all_settings():
-    """Get all application settings."""
+    """Get all application settings in a unified format."""
     response = await settings_service.get_all_settings()
-    if not response.success:
-        raise HTTPException(status_code=500, detail=response.message)
-    return response
-
-
-@router.get("/category/{category}", response_model=SettingsResponse)
-async def get_settings_by_category(category: str):
-    """Get settings for a specific category."""
-    response = await settings_service.get_settings_by_category(category)
     if not response.success:
         raise HTTPException(status_code=500, detail=response.message)
     return response
@@ -48,13 +37,22 @@ async def bulk_update_settings(request: BulkSettingsUpdateRequest):
     return response
 
 
-# Chrome Profile specific endpoints
-@router.get("/chrome-profiles", response_model=ChromeProfileSettingsResponse)
-async def get_chrome_profile_settings():
-    """Get Chrome profile settings."""
-    response = await settings_service.get_chrome_profile_settings()
+# Convenience endpoints for specific setting types
+@router.put("/speed-test")
+async def update_speed_test_setting(enabled: bool):
+    """Update speed test setting."""
+    response = await settings_service.update_speed_test_setting(enabled)
     if not response.success:
-        raise HTTPException(status_code=500, detail=response.message)
+        raise HTTPException(status_code=400, detail=response.message)
+    return response
+
+
+@router.put("/search-engine")
+async def update_search_engine_setting(selected_engine: str):
+    """Update search engine setting."""
+    response = await settings_service.update_search_engine_setting(selected_engine)
+    if not response.success:
+        raise HTTPException(status_code=400, detail=response.message)
     return response
 
 
@@ -72,46 +70,3 @@ async def update_chrome_profile_setting(
     if not response.success:
         raise HTTPException(status_code=400, detail=response.message)
     return response
-
-
-# Search Engine specific endpoints
-@router.get("/search-engine", response_model=SearchEngineSettingsResponse)
-async def get_search_engine_setting():
-    """Get search engine setting."""
-    response = await settings_service.get_search_engine_setting()
-    if not response.success:
-        raise HTTPException(status_code=500, detail=response.message)
-    return response
-
-
-@router.put("/search-engine")
-async def update_search_engine_setting(selected_engine: str):
-    """Update search engine setting."""
-    response = await settings_service.update_search_engine_setting(selected_engine)
-    if not response.success:
-        raise HTTPException(status_code=400, detail=response.message)
-    return response
-
-
-# Speed Test specific endpoints
-@router.get("/speed-test", response_model=SpeedTestSettingsResponse)
-async def get_speed_test_setting():
-    """Get speed test setting."""
-    response = await settings_service.get_speed_test_setting()
-    if not response.success:
-        raise HTTPException(status_code=500, detail=response.message)
-    return response
-
-
-@router.put("/speed-test")
-async def update_speed_test_setting(enabled: bool):
-    """Update speed test setting."""
-    response = await settings_service.update_speed_test_setting(enabled)
-    if not response.success:
-        raise HTTPException(status_code=400, detail=response.message)
-    return response
-
-
-__all__ = [
-    "router"
-]

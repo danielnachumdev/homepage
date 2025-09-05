@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { settingsService } from '../services/settings.service';
-import type { AppSettings, UseSettingsReturn } from '../types/settings';
-import { DEFAULT_SETTINGS } from '../types/settings';
+import type { AppSettings, UseSettingsReturn, SettingsResponse } from '../types/settings';
+import { DEFAULT_SETTINGS, parseSettingsFromResponse } from '../types/settings';
 
 export function useSettings(): UseSettingsReturn {
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -13,37 +13,16 @@ export function useSettings(): UseSettingsReturn {
             setLoading(true);
             setError(null);
 
-            // Load all settings in parallel
-            const [
-                speedTestResponse,
-                searchEngineResponse,
-                chromeProfilesResponse,
-            ] = await Promise.all([
-                settingsService.getSpeedTestSetting(),
-                settingsService.getSearchEngineSetting(),
-                settingsService.getChromeProfileSettings(),
-            ]);
+            // Load all settings in a single request
+            const response: SettingsResponse = await settingsService.getAllSettings();
 
-            const newSettings: AppSettings = {
-                widgets: {
-                    speedTest: {
-                        enabled: speedTestResponse.success ? speedTestResponse.setting.enabled : false,
-                    },
-                },
-                searchEngine: {
-                    selectedEngine: searchEngineResponse.success ? searchEngineResponse.setting.selected_engine : 'google',
-                },
-                chromeProfiles: {
-                    profiles: chromeProfilesResponse.success ? chromeProfilesResponse.profiles.map(profile => ({
-                        profileId: profile.profile_id,
-                        displayName: profile.display_name,
-                        icon: profile.icon,
-                        enabled: profile.enabled,
-                    })) : [],
-                },
-            };
-
-            setSettings(newSettings);
+            if (response.success) {
+                // Parse the generic settings response into our structured format
+                const parsedSettings = parseSettingsFromResponse(response.settings);
+                setSettings(parsedSettings);
+            } else {
+                throw new Error(response.message || 'Failed to load settings');
+            }
         } catch (err) {
             console.error('Failed to load settings:', err);
             setError(err instanceof Error ? err.message : 'Failed to load settings');

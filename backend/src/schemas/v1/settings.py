@@ -20,10 +20,11 @@ class SettingValue(BaseModel):
 
 
 class SettingsResponse(BaseModel):
-    """Response containing settings."""
+    """Generic response containing all application settings."""
     success: bool
-    settings: List[SettingValue]
     message: Optional[str] = None
+    settings: List[SettingValue] = Field(...,
+                                         description="All settings from database")
 
 
 class SettingUpdateRequest(BaseModel):
@@ -37,13 +38,6 @@ class SettingUpdateResponse(BaseModel):
     success: bool
     message: str
     setting: Optional[SettingValue] = None
-
-
-class SettingsByCategoryResponse(BaseModel):
-    """Response containing settings grouped by category."""
-    success: bool
-    settings: Dict[str, List[SettingValue]]
-    message: Optional[str] = None
 
 
 class BulkSettingsUpdateRequest(BaseModel):
@@ -60,60 +54,11 @@ class BulkSettingsUpdateResponse(BaseModel):
     message: Optional[str] = None
 
 
-# Chrome Profile specific settings
-class ChromeProfileSettingValue(BaseModel):
-    """Chrome profile setting value."""
-    profile_id: str
-    display_name: str
-    icon: str
-    enabled: bool
-
-
-class ChromeProfileSettingsResponse(BaseModel):
-    """Response containing Chrome profile settings."""
-    success: bool
-    profiles: List[ChromeProfileSettingValue]
-    message: Optional[str] = None
-
-
-# Search Engine specific settings
-class SearchEngineSettingValue(BaseModel):
-    """Search engine setting value."""
-    selected_engine: str
-
-
-class SearchEngineSettingsResponse(BaseModel):
-    """Response containing search engine settings."""
-    success: bool
-    setting: SearchEngineSettingValue
-    message: Optional[str] = None
-
-
-# Speed Test specific settings
-class SpeedTestSettingValue(BaseModel):
-    """Speed test setting value."""
-    enabled: bool
-
-
-class SpeedTestSettingsResponse(BaseModel):
-    """Response containing speed test settings."""
-    success: bool
-    setting: SpeedTestSettingValue
-    message: Optional[str] = None
-
-
 __all__ = [
     "SettingValue",
     "SettingsResponse",
     "SettingUpdateRequest",
     "SettingUpdateResponse",
-    "SettingsByCategoryResponse",
     "BulkSettingsUpdateRequest",
-    "BulkSettingsUpdateResponse",
-    "ChromeProfileSettingValue",
-    "ChromeProfileSettingsResponse",
-    "SearchEngineSettingValue",
-    "SearchEngineSettingsResponse",
-    "SpeedTestSettingValue",
-    "SpeedTestSettingsResponse"
+    "BulkSettingsUpdateResponse"
 ]

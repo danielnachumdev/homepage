@@ -10,7 +10,7 @@ import {
     Snackbar,
     Alert
 } from '@mui/material';
-import type { ChromeProfile } from '../../services/chrome.service';
+import type { ChromeProfile } from '../../hooks/useChromeProfiles';
 import { settingsService } from '../../services';
 import styles from './ProfileCard.module.css';
 
