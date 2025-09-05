@@ -11,6 +11,7 @@ import {
     ListItemText,
     Typography,
     Paper,
+    ButtonGroup,
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -25,6 +26,8 @@ interface SearchComponentProps {
     onSearchNewTab?: (query: string, engine: SearchEngineStrategy) => void;
 }
 
+type SearchMode = 'current' | 'newTab';
+
 export const SearchComponent: React.FC<SearchComponentProps> = ({
     onSearch,
     onSearchNewTab,
@@ -33,31 +36,31 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     const [selectedEngine, setSelectedEngine] = useState<SearchEngineStrategy>(
         searchEngineManager.getDefaultStrategy()
     );
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [engineMenuAnchor, setEngineMenuAnchor] = useState<null | HTMLElement>(null);
+    const [modeMenuAnchor, setModeMenuAnchor] = useState<null | HTMLElement>(null);
+    const [searchMode, setSearchMode] = useState<SearchMode>('newTab');
     const [isFocused, setIsFocused] = useState(false);
 
     const availableEngines = searchEngineManager.getAllStrategies();
 
     const handleSearch = () => {
         if (query.trim()) {
-            if (onSearch) {
-                onSearch(query.trim(), selectedEngine);
+            if (searchMode === 'newTab') {
+                if (onSearchNewTab) {
+                    onSearchNewTab(query.trim(), selectedEngine);
+                } else {
+                    // Default behavior: open in new tab
+                    const searchUrl = selectedEngine.buildSearchUrl(query.trim());
+                    window.open(searchUrl, '_blank');
+                }
             } else {
-                // Default behavior: open in current tab
-                const searchUrl = selectedEngine.buildSearchUrl(query.trim());
-                window.location.href = searchUrl;
-            }
-        }
-    };
-
-    const handleSearchNewTab = () => {
-        if (query.trim()) {
-            if (onSearchNewTab) {
-                onSearchNewTab(query.trim(), selectedEngine);
-            } else {
-                // Default behavior: open in new tab
-                const searchUrl = selectedEngine.buildSearchUrl(query.trim());
-                window.open(searchUrl, '_blank');
+                if (onSearch) {
+                    onSearch(query.trim(), selectedEngine);
+                } else {
+                    // Default behavior: open in current tab
+                    const searchUrl = selectedEngine.buildSearchUrl(query.trim());
+                    window.location.href = searchUrl;
+                }
             }
         }
     };
@@ -70,86 +73,107 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
 
     const handleEngineSelect = (engine: SearchEngineStrategy) => {
         setSelectedEngine(engine);
-        setAnchorEl(null);
+        setEngineMenuAnchor(null);
     };
 
-    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
+    const handleEngineMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setEngineMenuAnchor(event.currentTarget);
     };
 
-    const handleMenuClose = () => {
-        setAnchorEl(null);
+    const handleEngineMenuClose = () => {
+        setEngineMenuAnchor(null);
+    };
+
+    const handleModeSelect = (mode: SearchMode) => {
+        setSearchMode(mode);
+        setModeMenuAnchor(null);
+    };
+
+    const handleModeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setModeMenuAnchor(event.currentTarget);
+    };
+
+    const handleModeMenuClose = () => {
+        setModeMenuAnchor(null);
+    };
+
+    const getSearchButtonText = () => {
+        return searchMode === 'newTab' ? 'Search - New Tab' : 'Search';
+    };
+
+    const getSearchButtonIcon = () => {
+        return searchMode === 'newTab' ? <OpenInNewIcon /> : <SearchIcon />;
     };
 
     return (
         <Box className={styles.searchContainer}>
-            <Paper elevation={isFocused ? 8 : 2} className={styles.searchBox}>
-                <TextField
-                    fullWidth
-                    placeholder={`Search with ${selectedEngine.name}...`}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon className={styles.searchIcon} />
-                            </InputAdornment>
-                        ),
-                        endAdornment: (
-                            <InputAdornment position="end">
-                                <Box className={styles.endAdornment}>
-                                    <img
-                                        src={selectedEngine.logo}
-                                        alt={selectedEngine.name}
-                                        className={styles.engineLogo}
-                                        onError={(e) => {
-                                            // Fallback to a default icon if the favicon fails to load
-                                            e.currentTarget.style.display = 'none';
-                                        }}
-                                    />
-                                    <IconButton
-                                        size="small"
-                                        onClick={handleMenuOpen}
-                                        className={styles.engineSelector}
-                                    >
-                                        <ArrowDropDownIcon />
-                                    </IconButton>
-                                </Box>
-                            </InputAdornment>
-                        ),
-                    }}
-                    className={styles.searchInput}
-                />
-            </Paper>
+            <Box className={styles.searchRow}>
+                <Paper elevation={isFocused ? 8 : 2} className={styles.searchBox}>
+                    <TextField
+                        fullWidth
+                        placeholder={`Search with ${selectedEngine.name}...`}
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon className={styles.searchIcon} />
+                                </InputAdornment>
+                            ),
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <Box className={styles.endAdornment}>
+                                        <img
+                                            src={selectedEngine.logo}
+                                            alt={selectedEngine.name}
+                                            className={styles.engineLogo}
+                                            onError={(e) => {
+                                                // Fallback to a default icon if the favicon fails to load
+                                                e.currentTarget.style.display = 'none';
+                                            }}
+                                        />
+                                        <IconButton
+                                            size="small"
+                                            onClick={handleEngineMenuOpen}
+                                            className={styles.engineSelector}
+                                        >
+                                            <ArrowDropDownIcon />
+                                        </IconButton>
+                                    </Box>
+                                </InputAdornment>
+                            ),
+                        }}
+                        className={styles.searchInput}
+                    />
+                </Paper>
 
-            <Box className={styles.searchButtons}>
-                <Button
-                    variant="contained"
-                    startIcon={<SearchIcon />}
-                    onClick={handleSearch}
-                    disabled={!query.trim()}
-                    className={styles.searchButton}
-                >
-                    Search
-                </Button>
-                <Button
-                    variant="outlined"
-                    startIcon={<OpenInNewIcon />}
-                    onClick={handleSearchNewTab}
-                    disabled={!query.trim()}
-                    className={styles.searchButton}
-                >
-                    Search - New Tab
-                </Button>
+                <ButtonGroup className={styles.searchButtonGroup}>
+                    <Button
+                        variant="contained"
+                        startIcon={getSearchButtonIcon()}
+                        onClick={handleSearch}
+                        disabled={!query.trim()}
+                        className={styles.searchButton}
+                    >
+                        {getSearchButtonText()}
+                    </Button>
+                    <Button
+                        size="small"
+                        onClick={handleModeMenuOpen}
+                        className={styles.modeSelector}
+                    >
+                        <ArrowDropDownIcon />
+                    </Button>
+                </ButtonGroup>
             </Box>
 
             <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
+                anchorEl={engineMenuAnchor}
+                open={Boolean(engineMenuAnchor)}
+                onClose={handleEngineMenuClose}
                 className={styles.engineMenu}
             >
                 {availableEngines.map((engine) => (
@@ -173,6 +197,36 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                         </ListItemText>
                     </MenuItem>
                 ))}
+            </Menu>
+
+            <Menu
+                anchorEl={modeMenuAnchor}
+                open={Boolean(modeMenuAnchor)}
+                onClose={handleModeMenuClose}
+                className={styles.modeMenu}
+            >
+                <MenuItem
+                    onClick={() => handleModeSelect('current')}
+                    selected={searchMode === 'current'}
+                >
+                    <ListItemIcon>
+                        <SearchIcon />
+                    </ListItemIcon>
+                    <ListItemText>
+                        <Typography variant="body2">Search (Current Tab)</Typography>
+                    </ListItemText>
+                </MenuItem>
+                <MenuItem
+                    onClick={() => handleModeSelect('newTab')}
+                    selected={searchMode === 'newTab'}
+                >
+                    <ListItemIcon>
+                        <OpenInNewIcon />
+                    </ListItemIcon>
+                    <ListItemText>
+                        <Typography variant="body2">Search (New Tab)</Typography>
+                    </ListItemText>
+                </MenuItem>
             </Menu>
         </Box>
     );
