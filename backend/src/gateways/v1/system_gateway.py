@@ -1,8 +1,9 @@
 import asyncio
 import subprocess
 import shlex
+from datetime import datetime
 from typing import Optional, Union, List
-from ...schemas.v1.system import CommandResponse
+from ...schemas.v1.system import CommandResponse, CommandHandle
 
 
 class SystemGateway:
@@ -21,6 +22,20 @@ class SystemGateway:
     @staticmethod
     async def _execute_command_internal(args: List[str], timeout: Optional[float] = None) -> CommandResponse:
         """Internal method to execute a command with given arguments."""
+        start_time = datetime.now().isoformat()
+        command_str = " ".join(args)
+
+        # Create command handle
+        handle = CommandHandle(
+            pid=None,  # Will be set after process starts
+            command=command_str,
+            args=args.copy(),
+            start_time=start_time,
+            end_time=None,
+            return_code=None,
+            is_running=True
+        )
+
         try:
             coro = asyncio.to_thread(
                 subprocess.run,
@@ -40,23 +55,40 @@ class SystemGateway:
             else:
                 result = await coro
 
+            # Update handle with completion information
+            handle.pid = result.pid
+            handle.end_time = datetime.now().isoformat()
+            handle.return_code = result.returncode
+            handle.is_running = False
+
             return CommandResponse(
                 success=result.returncode == 0,
                 output=result.stdout or "",
-                error=result.stderr if result.returncode != 0 else None
+                error=result.stderr if result.returncode != 0 else None,
+                handle=handle
             )
 
         except asyncio.TimeoutError:
+            handle.end_time = datetime.now().isoformat()
+            handle.is_running = False
+            handle.return_code = -1  # Indicate timeout
+
             return CommandResponse(
                 success=False,
                 output="",
-                error=f"Command timed out after {timeout} seconds"
+                error=f"Command timed out after {timeout} seconds",
+                handle=handle
             )
         except Exception as e:
+            handle.end_time = datetime.now().isoformat()
+            handle.is_running = False
+            handle.return_code = -1  # Indicate error
+
             return CommandResponse(
                 success=False,
                 output="",
-                error=str(e)
+                error=str(e),
+                handle=handle
             )
 
     @staticmethod
@@ -82,7 +114,8 @@ class SystemGateway:
         return await SystemGateway._execute_command_internal(args, timeout)
 
     @staticmethod
-    async def execute_multiple_commands(commands: list[Union[str, list[str]]], max_concurrent: int = 5) -> list[CommandResponse]:
+    async def execute_multiple_commands(
+            commands: list[Union[str, list[str]]], max_concurrent: int = 5) -> list[CommandResponse]:
         """Execute multiple commands concurrently with a limit on concurrency."""
         semaphore = asyncio.Semaphore(max_concurrent)
 

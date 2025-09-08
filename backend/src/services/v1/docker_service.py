@@ -7,6 +7,7 @@ from ...schemas.v1.docker import (
     ContainerRedeployResponse, ContainerStatus, HealthStatus, DockerPsEntry
 )
 from ...schemas.v1.system import CommandResponse
+from ...utils.logger import get_logger
 import asyncio
 
 
@@ -14,19 +15,25 @@ class DockerService:
     """Service for managing Docker containers using SystemGateway."""
 
     def __init__(self):
+        self.logger = get_logger("DockerService")
         self.system_gateway = SystemGateway()
 
     async def get_container_info(self, container_name: str) -> ContainerInfoResponse:
         """Get detailed information about a specific Docker container."""
+        self.logger.info("Getting container info for: %s", container_name)
+
         try:
             # Get detailed container information using docker inspect with JSON format
             command = f"docker inspect {container_name} --format json"
+            self.logger.debug("Executing command: %s", command)
             result = await self.system_gateway.execute_command(command)
 
             if result.success:
+                self.logger.debug("Successfully executed docker inspect command")
                 try:
                     import json
                     container_data = json.loads(result.output)
+                    self.logger.debug("Successfully parsed container data JSON")
 
                     # Extract all the rich information from the inspect output
                     container_id = container_data.get("Id", "")
@@ -39,7 +46,7 @@ class DockerService:
 
                     # Extract ports
                     ports = []
-                    network_settings = container_data.get(                        "NetworkSettings", {})
+                    network_settings = container_data.get("NetworkSettings", {})
                     if "Ports" in network_settings:
                         for port_binding, host_bindings in network_settings["Ports"].items():
                             if host_bindings:
@@ -74,8 +81,8 @@ class DockerService:
 
                     # Extract command and entrypoint
                     command = container_data.get("Config", {}).get("Cmd", [])
-                    entrypoint = container_data.get(                        "Config", {}).get("Entrypoint", [])
-                    working_dir = container_data.get(                        "Config", {}).get("WorkingDir", "")
+                    entrypoint = container_data.get("Config", {}).get("Entrypoint", [])
+                    working_dir = container_data.get("Config", {}).get("WorkingDir", "")
                     user = container_data.get("Config", {}).get("User", "")
 
                     # Extract compose information from labels
@@ -83,8 +90,9 @@ class DockerService:
                     compose_info = self._parse_compose_labels_from_dict(labels)
 
                     # Build deploy command based on available information
-                    deploy_command = self._build_deploy_command_from_inspect(                        container_data)
+                    deploy_command = self._build_deploy_command_from_inspect(container_data)
 
+                    self.logger.info("Successfully retrieved container info for: %s", container_name)
                     return ContainerInfoResponse(
                         success=True,
                         container_name=container_name,
@@ -105,11 +113,12 @@ class DockerService:
                         deploy_command=deploy_command,
                         compose_file=compose_info.get("config_files"),
                         compose_service=compose_info.get("service"),
-                        restart_policy=container_data.get("HostConfig", {}).get(                            "RestartPolicy", {}).get("Name"),
+                        restart_policy=container_data.get("HostConfig", {}).get("RestartPolicy", {}).get("Name"),
                         error=None
                     )
 
                 except json.JSONDecodeError as e:
+                    self.logger.error("Failed to parse container JSON for %s: %s", container_name, str(e))
                     return ContainerInfoResponse(
                         success=False,
                         container_name=container_name,
@@ -117,6 +126,7 @@ class DockerService:
                         error=f"JSON decode error: {str(e)}"
                     )
             else:
+                self.logger.error("Failed to execute docker inspect for %s: %s", container_name, result.error)
                 return ContainerInfoResponse(
                     success=False,
                     container_name=container_name,
@@ -124,6 +134,7 @@ class DockerService:
                     error=result.error
                 )
         except Exception as e:
+            self.logger.error("Error getting container info for %s: %s", container_name, str(e))
             return ContainerInfoResponse(
                 success=False,
                 container_name=container_name,
@@ -219,9 +230,9 @@ class DockerService:
                         host_ip = host_binding.get("HostIp", "")
                         host_port = host_binding.get("HostPort", "")
                         if host_ip and host_ip != "0.0.0.0":
-                            cmd_parts.extend(                                ["-p", f"{host_ip}:{host_port}:{port_binding}"])
+                            cmd_parts.extend(["-p", f"{host_ip}:{host_port}:{port_binding}"])
                         else:
-                            cmd_parts.extend(                                ["-p", f"{host_port}:{port_binding}"])
+                            cmd_parts.extend(["-p", f"{host_port}:{port_binding}"])
 
         # Volumes
         for mount in container_data.get("Mounts", []):
@@ -232,7 +243,7 @@ class DockerService:
                 read_only = mount.get("RW", True)
                 if source and destination:
                     ro_flag = ":ro" if not read_only else ""
-                    cmd_parts.extend(                        ["-v", f"{source}:{destination}{ro_flag}"])
+                    cmd_parts.extend(["-v", f"{source}:{destination}{ro_flag}"])
             elif mount_type == "volume":
                 source = mount.get("Name", "")
                 destination = mount.get("Destination", "")
@@ -264,12 +275,16 @@ class DockerService:
 
     async def list_containers(self, all_containers: bool = False) -> ContainerListResponse:
         """List all Docker containers."""
+        self.logger.info("Listing containers (all_containers=%s)", all_containers)
+
         try:
             flag = "-a" if all_containers else ""
             command = f"docker ps {flag} --format json"
+            self.logger.debug("Executing command: %s", command)
             result = await self.system_gateway.execute_command(command)
 
             if result.success:
+                self.logger.debug("Successfully executed docker ps command")
                 # Parse JSON output for each container
                 docker_entries = []
                 lines = result.output.strip().split('\n')
@@ -278,7 +293,7 @@ class DockerService:
                         try:
                             import json
                             container_data = json.loads(line)
-                            docker_entries.append(                                DockerPsEntry(**container_data))
+                            docker_entries.append(DockerPsEntry(**container_data))
                         except json.JSONDecodeError as e:
                             # Handle cases where line might not be a valid JSON object
                             # For example, if it's a header or an error message
@@ -387,6 +402,8 @@ class DockerService:
                     else:
                         stopped_count += 1
 
+                self.logger.info("Successfully listed %d containers (%d running, %d stopped)",
+                                 len(containers), running_count, stopped_count)
                 return ContainerListResponse(
                     success=True,
                     containers=containers,
@@ -399,12 +416,14 @@ class DockerService:
                     error=None
                 )
             else:
+                self.logger.error("Failed to execute docker ps command: %s", result.error)
                 return ContainerListResponse(
                     success=False,
                     containers=[],
                     error=result.error
                 )
         except Exception as e:
+            self.logger.error("Error listing containers: %s", str(e))
             return ContainerListResponse(
                 success=False,
                 containers=[],
@@ -609,11 +628,15 @@ class DockerService:
 
     async def stop_container(self, container_name: str) -> ContainerOperationResponse:
         """Stop a running Docker container by name."""
+        self.logger.info("Stopping container: %s", container_name)
+
         try:
             command = f"docker stop {container_name}"
+            self.logger.debug("Executing command: %s", command)
             result = await self.system_gateway.execute_command(command)
 
             if result.success:
+                self.logger.info("Successfully stopped container: %s", container_name)
                 return ContainerOperationResponse(
                     success=True,
                     container_name=container_name,
@@ -624,6 +647,7 @@ class DockerService:
                     error=None
                 )
             else:
+                self.logger.error("Failed to stop container %s: %s", container_name, result.error)
                 return ContainerOperationResponse(
                     success=False,
                     container_name=container_name,
@@ -632,6 +656,7 @@ class DockerService:
                     error=result.error
                 )
         except Exception as e:
+            self.logger.error("Error stopping container %s: %s", container_name, str(e))
             return ContainerOperationResponse(
                 success=False,
                 container_name=container_name,
@@ -642,11 +667,15 @@ class DockerService:
 
     async def start_container(self, container_name: str) -> ContainerOperationResponse:
         """Start a stopped Docker container by name."""
+        self.logger.info("Starting container: %s", container_name)
+
         try:
             command = f"docker start {container_name}"
+            self.logger.debug("Executing command: %s", command)
             result = await self.system_gateway.execute_command(command)
 
             if result.success:
+                self.logger.info("Successfully started container: %s", container_name)
                 return ContainerOperationResponse(
                     success=True,
                     container_name=container_name,
@@ -657,6 +686,7 @@ class DockerService:
                     error=None
                 )
             else:
+                self.logger.error("Failed to start container %s: %s", container_name, result.error)
                 return ContainerOperationResponse(
                     success=False,
                     container_name=container_name,
@@ -665,6 +695,7 @@ class DockerService:
                     error=result.error
                 )
         except Exception as e:
+            self.logger.error("Error starting container %s: %s", container_name, str(e))
             return ContainerOperationResponse(
                 success=False,
                 container_name=container_name,
@@ -945,8 +976,11 @@ class DockerService:
         return await self.system_gateway.execute_multiple_commands(commands)
 
     async def batch_container_operations(self, container_names: list[str], operation: str) -> list[
-        ContainerOperationResponse]:
+            ContainerOperationResponse]:
         """Execute the same operation on multiple containers concurrently."""
+        self.logger.info("Starting batch %s operation on %d containers: %s",
+                         operation, len(container_names), container_names)
+
         if operation == "stop":
             commands = [f"docker stop {name}" for name in container_names]
         elif operation == "start":
@@ -954,8 +988,10 @@ class DockerService:
         elif operation == "restart":
             commands = [f"docker restart {name}" for name in container_names]
         else:
+            self.logger.error("Unsupported batch operation: %s", operation)
             raise ValueError(f"Unsupported operation: {operation}")
 
+        self.logger.debug("Executing %d commands concurrently", len(commands))
         results = await self.execute_multiple_commands(commands)
 
         responses = []
@@ -967,7 +1003,9 @@ class DockerService:
                     operation=operation,
                     previous_status=ContainerStatus.RUNNING,
                     current_status=ContainerStatus.STOPPED if result.success else None,
-                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
+                    message=f"Container {
+                        container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {
+                        container_names[i]}",
                     error=result.error
                 ))
             elif operation == "start":
@@ -977,7 +1015,9 @@ class DockerService:
                     operation=operation,
                     previous_status=ContainerStatus.STOPPED,
                     current_status=ContainerStatus.RUNNING if result.success else None,
-                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
+                    message=f"Container {
+                        container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {
+                        container_names[i]}",
                     error=result.error
                 ))
             elif operation == "restart":
@@ -987,9 +1027,16 @@ class DockerService:
                     operation=operation,
                     previous_status=ContainerStatus.RUNNING,
                     current_status=ContainerStatus.RUNNING if result.success else None,
-                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
+                    message=f"Container {
+                        container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {
+                        container_names[i]}",
                     error=result.error
                 ))
+
+        success_count = sum(1 for r in responses if r.success)
+        failure_count = len(responses) - success_count
+        self.logger.info("Batch %s operation completed: %d successful, %d failed",
+                         operation, success_count, failure_count)
 
         return responses
 

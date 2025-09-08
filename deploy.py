@@ -7,35 +7,35 @@ It uses Google Fire to create a CLI from the DeploymentCLI class.
 
 Usage:
     python deploy.py <command> [arguments]
-    
+
 Examples:
     # List available steps and strategies
     python deploy.py info
-    
+
     # List available steps
     python deploy.py list_steps
-    
+
     # List available strategies
     python deploy.py list_strategies
-    
+
     # Install a step
     python deploy.py install_step docker-deploy
-    
+
     # Uninstall a step
     python deploy.py uninstall_step docker-deploy
-    
+
     # Install a strategy
     python deploy.py install_strategy docker-deploy
-    
+
     # Uninstall a strategy
     python deploy.py uninstall_strategy docker-deploy
-    
+
     # Validate a step
     python deploy.py validate_step native-backend-deploy
-    
+
     # Get step metadata
     python deploy.py get_step_metadata native-frontend-deploy
-    
+
     # Set custom project root and log level
     python deploy.py --project_root=/path/to/project --log_level=DEBUG install_step docker-deploy
 """
