@@ -35,13 +35,11 @@ class DockerService:
                     created = container_data.get("Created", "")
                     state = container_data.get("State", {})
                     status = state.get("Status", "")
-                    health_status = state.get("Health", {}).get(
-                        "Status") if state.get("Health") else None
+                    health_status = state.get("Health", {}).get("Status") if state.get("Health") else None
 
                     # Extract ports
                     ports = []
-                    network_settings = container_data.get(
-                        "NetworkSettings", {})
+                    network_settings = container_data.get(                        "NetworkSettings", {})
                     if "Ports" in network_settings:
                         for port_binding, host_bindings in network_settings["Ports"].items():
                             if host_bindings:
@@ -76,10 +74,8 @@ class DockerService:
 
                     # Extract command and entrypoint
                     command = container_data.get("Config", {}).get("Cmd", [])
-                    entrypoint = container_data.get(
-                        "Config", {}).get("Entrypoint", [])
-                    working_dir = container_data.get(
-                        "Config", {}).get("WorkingDir", "")
+                    entrypoint = container_data.get(                        "Config", {}).get("Entrypoint", [])
+                    working_dir = container_data.get(                        "Config", {}).get("WorkingDir", "")
                     user = container_data.get("Config", {}).get("User", "")
 
                     # Extract compose information from labels
@@ -87,8 +83,7 @@ class DockerService:
                     compose_info = self._parse_compose_labels_from_dict(labels)
 
                     # Build deploy command based on available information
-                    deploy_command = self._build_deploy_command_from_inspect(
-                        container_data)
+                    deploy_command = self._build_deploy_command_from_inspect(                        container_data)
 
                     return ContainerInfoResponse(
                         success=True,
@@ -110,8 +105,7 @@ class DockerService:
                         deploy_command=deploy_command,
                         compose_file=compose_info.get("config_files"),
                         compose_service=compose_info.get("service"),
-                        restart_policy=container_data.get("HostConfig", {}).get(
-                            "RestartPolicy", {}).get("Name"),
+                        restart_policy=container_data.get("HostConfig", {}).get(                            "RestartPolicy", {}).get("Name"),
                         error=None
                     )
 
@@ -225,11 +219,9 @@ class DockerService:
                         host_ip = host_binding.get("HostIp", "")
                         host_port = host_binding.get("HostPort", "")
                         if host_ip and host_ip != "0.0.0.0":
-                            cmd_parts.extend(
-                                ["-p", f"{host_ip}:{host_port}:{port_binding}"])
+                            cmd_parts.extend(                                ["-p", f"{host_ip}:{host_port}:{port_binding}"])
                         else:
-                            cmd_parts.extend(
-                                ["-p", f"{host_port}:{port_binding}"])
+                            cmd_parts.extend(                                ["-p", f"{host_port}:{port_binding}"])
 
         # Volumes
         for mount in container_data.get("Mounts", []):
@@ -240,8 +232,7 @@ class DockerService:
                 read_only = mount.get("RW", True)
                 if source and destination:
                     ro_flag = ":ro" if not read_only else ""
-                    cmd_parts.extend(
-                        ["-v", f"{source}:{destination}{ro_flag}"])
+                    cmd_parts.extend(                        ["-v", f"{source}:{destination}{ro_flag}"])
             elif mount_type == "volume":
                 source = mount.get("Name", "")
                 destination = mount.get("Destination", "")
@@ -287,8 +278,7 @@ class DockerService:
                         try:
                             import json
                             container_data = json.loads(line)
-                            docker_entries.append(
-                                DockerPsEntry(**container_data))
+                            docker_entries.append(                                DockerPsEntry(**container_data))
                         except json.JSONDecodeError as e:
                             # Handle cases where line might not be a valid JSON object
                             # For example, if it's a header or an error message
@@ -954,7 +944,8 @@ class DockerService:
         """Execute multiple Docker commands concurrently for better performance."""
         return await self.system_gateway.execute_multiple_commands(commands)
 
-    async def batch_container_operations(self, container_names: list[str], operation: str) -> list[ContainerOperationResponse]:
+    async def batch_container_operations(self, container_names: list[str], operation: str) -> list[
+        ContainerOperationResponse]:
         """Execute the same operation on multiple containers concurrently."""
         if operation == "stop":
             commands = [f"docker stop {name}" for name in container_names]

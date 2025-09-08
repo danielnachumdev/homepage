@@ -1,7 +1,7 @@
 import asyncio
 import subprocess
 import shlex
-from typing import Optional, Union
+from typing import Optional, Union, List
 from ...schemas.v1.system import CommandResponse
 
 
@@ -19,7 +19,7 @@ class SystemGateway:
             return command.split()
 
     @staticmethod
-    async def _execute_command_internal(args: list[str], timeout: Optional[float] = None) -> CommandResponse:
+    async def _execute_command_internal(args: List[str], timeout: Optional[float] = None) -> CommandResponse:
         """Internal method to execute a command with given arguments."""
         try:
             coro = asyncio.to_thread(
