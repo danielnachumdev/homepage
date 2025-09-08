@@ -20,7 +20,7 @@ def setup_logger(
         Configured logger instance
     """
     if format_string is None:
-        format_string = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        format_string = '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
 
     # Create logger
     logger = logging.getLogger(name)

@@ -3,10 +3,11 @@ Common base test classes for all tests.
 """
 import asyncio
 import unittest
+import logging
 from typing import Any, Dict, List, Optional, Union, TypeVar, Awaitable, Coroutine
 
 # Import the actual response types
-from backend.src.schemas.v1.system import CommandResponse, CommandHandle
+from backend.src.schemas.v1.system import CommandResponse, CommandResult
 
 # Type variable for generic return types
 T = TypeVar('T')
@@ -21,14 +22,15 @@ class BaseTest(unittest.TestCase):
         test_method_name = getattr(self, '_testMethodName', 'unknown_test')
         logger_name = f"{test_class_name}.{test_method_name}"
 
-        import logging
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(logging.INFO)
 
         # Add a handler if none exists
         if not self.logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter(f'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            # Include filename and line number for better debugging
+            formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s')
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
 
@@ -52,8 +54,8 @@ class BaseTest(unittest.TestCase):
                               expected_success: Optional[bool] = None,
                               expected_output_contains: Optional[List[str]] = None,
                               expected_error_contains: Optional[List[str]] = None,
-                              handle_should_be_completed: Optional[bool] = None,
-                              handle_should_be_running: Optional[bool] = None,
+                              result_should_be_completed: Optional[bool] = None,
+                              result_should_be_running: Optional[bool] = None,
                               message: str = "") -> None:
         """Comprehensive assertion method for command responses with detailed error logging."""
 
@@ -101,90 +103,66 @@ class BaseTest(unittest.TestCase):
                     error_msg += f"Context: {message}"
                 self.fail(error_msg)
 
-        # Check handle validation
-        if response.handle:
-            self.assertCommandHandle(
-                response.handle,
-                should_be_completed=handle_should_be_completed,
-                should_be_running=handle_should_be_running,
+        # Check result validation
+        if response.result:
+            self.assertCommandResult(
+                response.result,
+                should_be_completed=result_should_be_completed,
+                should_be_running=result_should_be_running,
                 message=message
             )
 
-    def assertCommandHandle(self, handle: CommandHandle,
+    def assertCommandResult(self, result: CommandResult,
                             should_be_completed: Optional[bool] = None,
                             should_be_running: Optional[bool] = None,
                             message: str = "") -> None:
-        """Comprehensive assertion method for command handles with detailed error logging."""
+        """Comprehensive assertion method for command results with detailed error logging."""
 
-        # Validate handle structure
-        self.assertIsInstance(handle, CommandHandle)
-        self.assertIsInstance(handle.command, str)
-        self.assertIsInstance(handle.args, list)
-        self.assertIsInstance(handle.start_time, str)
-        self.assertIsInstance(handle.is_running, bool)
+        # Validate result structure
+        self.assertIsInstance(result, CommandResult)
+        self.assertIsInstance(result.command, str)
+        self.assertIsInstance(result.args, list)
+        self.assertIsInstance(result.start_time, str)
+        self.assertIsInstance(result.end_time, str)
+        self.assertIsInstance(result.returncode, int)
+        self.assertIsInstance(result.pid, int)
+        self.assertIsInstance(result.duration_seconds, float)
+        self.assertIsInstance(result.timeout_occurred, bool)
+        self.assertIsInstance(result.killed, bool)
+        self.assertIsInstance(result.success, bool)
 
-        if handle.end_time is not None:
-            self.assertIsInstance(handle.end_time, str)
-        if handle.return_code is not None:
-            self.assertIsInstance(handle.return_code, int)
-
-        # Check handle completion status
+        # Check result completion status
         if should_be_completed is not None:
             if should_be_completed:
-                if handle.is_running:
-                    error_msg = f"Command handle was expected to be completed but is still running. "
-                    error_msg += f"Command: '{handle.command}'. "
+                # CommandResult is always completed (no is_running field)
+                if result.end_time is None or result.end_time == "":
+                    error_msg = f"Command result was expected to be completed but has no end_time. "
+                    error_msg += f"Command: '{result.command}'. "
                     if message:
                         error_msg += f"Context: {message}"
                     self.fail(error_msg)
-                if handle.end_time is None:
-                    error_msg = f"Command handle was expected to be completed but has no end_time. "
-                    error_msg += f"Command: '{handle.command}'. "
-                    if message:
-                        error_msg += f"Context: {message}"
-                    self.fail(error_msg)
-                if handle.return_code is None:
-                    error_msg = f"Command handle was expected to be completed but has no return_code. "
-                    error_msg += f"Command: '{handle.command}'. "
+                if result.returncode is None:
+                    error_msg = f"Command result was expected to be completed but has no return_code. "
+                    error_msg += f"Command: '{result.command}'. "
                     if message:
                         error_msg += f"Context: {message}"
                     self.fail(error_msg)
             else:
-                if not handle.is_running:
-                    error_msg = f"Command handle was expected to be running but is completed. "
-                    error_msg += f"Command: '{handle.command}'. "
-                    if message:
-                        error_msg += f"Context: {message}"
-                    self.fail(error_msg)
+                # This is not applicable for CommandResult as it's always completed
+                pass
 
-        # Check handle running status
+        # Check result running status
         if should_be_running is not None:
             if should_be_running:
-                if not handle.is_running:
-                    error_msg = f"Command handle was expected to be running but is completed. "
-                    error_msg += f"Command: '{handle.command}'. "
-                    if message:
-                        error_msg += f"Context: {message}"
-                    self.fail(error_msg)
-                if handle.end_time is not None:
-                    error_msg = f"Command handle was expected to be running but has end_time. "
-                    error_msg += f"Command: '{handle.command}'. "
-                    if message:
-                        error_msg += f"Context: {message}"
-                    self.fail(error_msg)
-                if handle.return_code is not None:
-                    error_msg = f"Command handle was expected to be running but has return_code. "
-                    error_msg += f"Command: '{handle.command}'. "
-                    if message:
-                        error_msg += f"Context: {message}"
-                    self.fail(error_msg)
+                # CommandResult is never running (always completed)
+                error_msg = f"Command result was expected to be running but CommandResult is always completed. "
+                error_msg += f"Command: '{result.command}'. "
+                if message:
+                    error_msg += f"Context: {message}"
+                self.fail(error_msg)
             else:
-                if handle.is_running:
-                    error_msg = f"Command handle was expected to be completed but is still running. "
-                    error_msg += f"Command: '{handle.command}'. "
-                    if message:
-                        error_msg += f"Context: {message}"
-                    self.fail(error_msg)
+                # CommandResult is always completed (not running)
+                pass
 
     def assertCommandSuccess(self, response: CommandResponse, message: str = "") -> None:
         """Facade for assert_command_response focusing on success/failure."""
@@ -194,9 +172,9 @@ class BaseTest(unittest.TestCase):
         """Facade for assert_command_response focusing on success/failure."""
         self.assertCommandResponse(response, expected_success=False, message=message)
 
-    def assertHandleCompleted(self, handle: CommandHandle) -> None:
-        """Facade for assertCommandHandle focusing on handle completion."""
-        self.assertCommandHandle(handle, should_be_completed=True)
+    def assertResultCompleted(self, result: CommandResult) -> None:
+        """Facade for assertCommandResult focusing on result completion."""
+        self.assertCommandResult(result, should_be_completed=True)
 
 
 __all__ = [

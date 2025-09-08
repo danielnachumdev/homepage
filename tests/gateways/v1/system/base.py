@@ -4,7 +4,7 @@ Base test classes for system gateway testing.
 from typing import List
 import platform
 
-from backend.src.schemas.v1.system import CommandHandle
+from backend.src.schemas.v1.system import CommandResult
 from ....base import BaseTest
 
 
@@ -17,21 +17,18 @@ class BaseSystemGatewayTest(BaseTest):
 
         # Platform-specific command helpers
         self.is_windows = platform.system() == "Windows"
-        self.echo_cmd = "echo" if self.is_windows else "echo"
-        self.dir_cmd = "dir" if self.is_windows else "ls"
-        self.sleep_cmd = "timeout" if self.is_windows else "sleep"
 
     def get_echo_command(self, text: str) -> str:
         """Get platform-specific echo command."""
         if self.is_windows:
-            return f'echo {text}'
+            return f'cmd /c echo {text}'
         else:
             return f'echo "{text}"'
 
     def get_echo_args(self, text: str) -> List[str]:
         """Get platform-specific echo command arguments."""
         if self.is_windows:
-            return ["echo", text]
+            return ["cmd", "/c", "echo", text]
         else:
             return ["echo", text]
 
@@ -56,8 +53,6 @@ class BaseSystemGatewayTest(BaseTest):
     def get_invalid_args(self) -> List[str]:
         """Get arguments for a command that will definitely fail."""
         return ["nonexistent_command_that_should_fail_12345"]
-
-
 
 
 __all__ = [

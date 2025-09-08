@@ -11,7 +11,7 @@ from ...utils.logger import get_logger
 from ...schemas.v1.chrome import (
     ChromeProfile, ChromeProfileInfo, ChromeProcessHandle
 )
-from ...schemas.v1.system import CommandHandle
+from ...schemas.v1.system import CommandResult
 
 
 def extract_jsonpath_value(data: dict, jsonpath_expr: str) -> Optional[Any]:
@@ -197,9 +197,9 @@ class ChromeService:
             if result.success:
                 self.logger.info("Successfully opened URL %s in profile %s", normalized_url, profile_id)
 
-                # Create process handle using CommandHandle from SystemGateway
+                # Create process handle using CommandResult from SystemGateway
                 process_handle = ChromeProcessHandle(
-                    command_handle=result.handle.dict() if result.handle else None,
+                    command_handle=result.result.dict() if result.result else None,
                     profile_id=profile_id,
                     url=normalized_url,
                     is_running=True

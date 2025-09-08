@@ -5,7 +5,7 @@ import asyncio
 from unittest.mock import patch, MagicMock
 import unittest
 from backend.src.gateways.v1.system_gateway import SystemGateway
-from backend.src.schemas.v1.system import CommandResponse, CommandHandle
+from backend.src.schemas.v1.system import CommandResponse, CommandResult
 from tests.gateways.v1.system.base import BaseSystemGatewayTest
 
 
@@ -54,11 +54,11 @@ class TestSystemGatewayBasic(BaseSystemGatewayTest):
             response,
             expected_success=True,
             expected_output_contains=["test output"],
-            handle_should_be_completed=True,
+            result_should_be_completed=True,
             message="echo command test"
         )
         self.assertIsNone(response.error)
-        self.assertIsNotNone(response.handle)
+        self.assertIsNotNone(response.result)
 
     def test_execute_command_string_failure(self):
         """Test executing a command string that fails."""
@@ -68,12 +68,12 @@ class TestSystemGatewayBasic(BaseSystemGatewayTest):
         self.assertCommandResponse(
             response,
             expected_success=False,
-            handle_should_be_completed=True,
+            result_should_be_completed=True,
             message="invalid command test"
         )
         self.assertEqual(response.output, "")
         self.assertIsNotNone(response.error)
-        self.assertIsNotNone(response.handle)
+        self.assertIsNotNone(response.result)
 
     def test_execute_command_args_success(self):
         """Test executing command arguments successfully."""
@@ -82,8 +82,8 @@ class TestSystemGatewayBasic(BaseSystemGatewayTest):
 
         self.assertCommandSuccess(response, message="echo args test")
         self.assertIn("test args", response.output)
-        self.assertIsNotNone(response.handle)
-        self.assertHandleCompleted(response.handle)
+        self.assertIsNotNone(response.result)
+        self.assertResultCompleted(response.result)
 
     def test_execute_command_args_failure(self):
         """Test executing command arguments that fail."""
@@ -93,8 +93,8 @@ class TestSystemGatewayBasic(BaseSystemGatewayTest):
         self.assertCommandFail(response, message="invalid args test")
         self.assertEqual(response.output, "")
         self.assertIsNotNone(response.error)
-        self.assertIsNotNone(response.handle)
-        self.assertHandleCompleted(response.handle)
+        self.assertIsNotNone(response.result)
+        self.assertResultCompleted(response.result)
 
     def test_execute_command_with_empty_string(self):
         """Test executing an empty command string."""
@@ -117,29 +117,29 @@ class TestSystemGatewayBasic(BaseSystemGatewayTest):
         command = self.get_echo_command("handle test")
         response = self.run_async(SystemGateway.execute_command(command))
 
-        handle = response.handle
-        self.assertIsNotNone(handle)
-        self.assertIsInstance(handle.pid, int)
-        self.assertIsInstance(handle.command, str)
-        self.assertIsInstance(handle.args, list)
-        self.assertIsInstance(handle.start_time, str)
-        self.assertIsInstance(handle.end_time, str)
-        self.assertIsInstance(handle.return_code, int)
-        self.assertIsInstance(handle.is_running, bool)
+        result = response.result
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result.pid, int)
+        self.assertIsInstance(result.command, str)
+        self.assertIsInstance(result.args, list)
+        self.assertIsInstance(result.start_time, str)
+        self.assertIsInstance(result.end_time, str)
+        self.assertIsInstance(result.returncode, int)
+        self.assertIsInstance(result.success, bool)
 
-        # Verify handle is completed
-        self.assertFalse(handle.is_running)
-        self.assertIsNotNone(handle.end_time)
-        self.assertIsNotNone(handle.return_code)
+        # Verify result is completed
+        self.assertIsNotNone(result.end_time)
+        self.assertIsNotNone(result.returncode)
 
     def test_command_handle_command_string(self):
         """Test that command handle contains the correct command string."""
         command = self.get_echo_command("command string test")
-        response = self.run_async(SystemGateway.execute_command_args(command))
+        args = self.get_echo_args("command string test")
+        response = self.run_async(SystemGateway.execute_command_args(args))
 
-        handle = response.handle
-        self.assertEqual(handle.command, command)
-        self.assertEqual(handle.args, self.get_echo_args("command string test"))
+        result = response.result
+        self.assertEqual(result.command, command)
+        self.assertEqual(result.args, self.get_echo_args("command string test"))
 
     def test_multiple_commands_different_outputs(self):
         """Test executing multiple different commands."""
@@ -155,9 +155,10 @@ class TestSystemGatewayBasic(BaseSystemGatewayTest):
             responses.append(response)
 
         # All should succeed
+        expected_outputs = ["first", "second", "third"]
         for i, response in enumerate(responses):
             self.assertCommandSuccess(response)
-            self.assertIn(f"command {i + 1}", response.output.lower() or f"command {i + 1}")
+            self.assertIn(expected_outputs[i], response.output.lower())
 
     def test_command_with_unicode_output(self):
         """Test command with unicode characters in output."""
@@ -195,9 +196,9 @@ class TestSystemGatewayBasic(BaseSystemGatewayTest):
         self.assertCommandFail(response)
         self.assertEqual(response.output, "")
         self.assertEqual(response.error, "Test exception")
-        self.assertIsNotNone(response.handle)
-        self.assertHandleCompleted(response.handle)
-        self.assertEqual(response.handle.return_code, -1)
+        self.assertIsNotNone(response.result)
+        self.assertResultCompleted(response.result)
+        self.assertEqual(response.result.returncode, -1)
 
     def test_execute_command_with_whitespace(self):
         """Test executing commands with various whitespace."""

@@ -65,7 +65,7 @@ class ProfileUpdateResponse(BaseModel):
 
 class ChromeProcessHandle(BaseModel):
     """Handle for a Chrome process opened by the service."""
-    command_handle: Optional[dict] = None  # Will contain CommandHandle data
+    command_handle: Optional[dict] = None  # Will contain CommandResult data
     profile_id: str
     url: str
     is_running: bool = True

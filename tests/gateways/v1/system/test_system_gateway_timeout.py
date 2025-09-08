@@ -2,7 +2,7 @@
 Timeout handling tests for SystemGateway.
 """
 from tests.gateways.v1.system.base import BaseSystemGatewayTest
-from backend.src.schemas.v1.system import CommandResponse, CommandHandle
+from backend.src.schemas.v1.system import CommandResponse, CommandResult
 from backend.src.gateways.v1.system_gateway import SystemGateway
 import unittest
 from unittest.mock import patch, MagicMock
@@ -24,8 +24,8 @@ class TestSystemGatewayTimeout(BaseSystemGatewayTest):
         self.assertCommandSuccess(response)
         self.assertIn("timeout test", response.output)
         self.assertIsNone(response.error)
-        self.assertIsNotNone(response.handle)
-        self.assertHandleCompleted(response.handle)
+        self.assertIsNotNone(response.result)
+        self.assertResultCompleted(response.result)
 
     def test_execute_command_with_timeout_failure(self):
         """Test executing a command with timeout that fails."""
@@ -35,8 +35,8 @@ class TestSystemGatewayTimeout(BaseSystemGatewayTest):
         self.assertCommandFail(response)
         self.assertEqual(response.output, "")
         self.assertIsNotNone(response.error)
-        self.assertIsNotNone(response.handle)
-        self.assertHandleCompleted(response.handle)
+        self.assertIsNotNone(response.result)
+        self.assertResultCompleted(response.result)
 
     def test_execute_command_args_with_timeout_success(self):
         """Test executing command args with timeout that completes in time."""
@@ -46,8 +46,8 @@ class TestSystemGatewayTimeout(BaseSystemGatewayTest):
         self.assertCommandSuccess(response)
         self.assertIn("timeout args test", response.output)
         self.assertIsNone(response.error)
-        self.assertIsNotNone(response.handle)
-        self.assertHandleCompleted(response.handle)
+        self.assertIsNotNone(response.result)
+        self.assertResultCompleted(response.result)
 
     def test_execute_command_args_with_timeout_failure(self):
         """Test executing command args with timeout that fails."""
@@ -57,8 +57,8 @@ class TestSystemGatewayTimeout(BaseSystemGatewayTest):
         self.assertCommandFail(response)
         self.assertEqual(response.output, "")
         self.assertIsNotNone(response.error)
-        self.assertIsNotNone(response.handle)
-        self.assertHandleCompleted(response.handle)
+        self.assertIsNotNone(response.result)
+        self.assertResultCompleted(response.result)
 
     def test_execute_command_with_short_timeout(self):
         """Test executing a command with a very short timeout."""
@@ -115,30 +115,28 @@ class TestSystemGatewayTimeout(BaseSystemGatewayTest):
         self.assertCommandFail(response)
         self.assertEqual(response.output, "")
         self.assertEqual(response.error, "Command timed out after 1.0 seconds")
-        self.assertIsNotNone(response.handle)
-        self.assertHandleCompleted(response.handle)
-        self.assertEqual(response.handle.return_code, -1)
-        self.assertFalse(response.handle.is_running)
+        self.assertIsNotNone(response.result)
+        self.assertResultCompleted(response.result)
+        self.assertEqual(response.result.returncode, -1)
 
     def test_timeout_handle_structure(self):
         """Test that timeout creates proper handle structure."""
         command = self.get_echo_command("timeout handle test")
         response = self.run_async(SystemGateway.execute_command_with_timeout(command, timeout=5.0))
 
-        handle = response.handle
-        self.assertIsNotNone(handle)
-        self.assertIsInstance(handle.pid, int)
-        self.assertIsInstance(handle.command, str)
-        self.assertIsInstance(handle.args, list)
-        self.assertIsInstance(handle.start_time, str)
-        self.assertIsInstance(handle.end_time, str)
-        self.assertIsInstance(handle.return_code, int)
-        self.assertIsInstance(handle.is_running, bool)
+        result = response.result
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result.pid, int)
+        self.assertIsInstance(result.command, str)
+        self.assertIsInstance(result.args, list)
+        self.assertIsInstance(result.start_time, str)
+        self.assertIsInstance(result.end_time, str)
+        self.assertIsInstance(result.returncode, int)
+        self.assertIsInstance(result.success, bool)
 
-        # Verify handle is completed
-        self.assertFalse(handle.is_running)
-        self.assertIsNotNone(handle.end_time)
-        self.assertIsNotNone(handle.return_code)
+        # Verify result is completed
+        self.assertIsNotNone(result.end_time)
+        self.assertIsNotNone(result.returncode)
 
     def test_timeout_vs_no_timeout_consistency(self):
         """Test that timeout and no-timeout versions produce consistent results."""
