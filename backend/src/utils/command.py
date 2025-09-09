@@ -764,5 +764,16 @@ class AsyncCommand:
         return f"AsyncCommand(args={self.args}, state={self._state.value})"
 
 
-# Backward compatibility alias
-Command = AsyncCommand
+class CommonCommands:
+    @staticmethod
+    def kill_pid(pid: int, **kwargs) -> 'AsyncCommand':
+        return AsyncCommand.powershell(f'taskkill /PID {pid} /F', **kwargs)
+
+
+__all__ = [
+    "CommandState",
+    "CommandType",
+    "CommandExecutionResult",
+    "AsyncCommand",
+    "CommonCommands"
+]

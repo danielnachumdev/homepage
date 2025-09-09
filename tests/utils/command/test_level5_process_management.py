@@ -316,4 +316,3 @@ class TestLevel5ProcessManagement(BaseCommandTest):
             # Verify all PIDs are unique
             result_pids = [result.pid for result in results]
             self.assertEqual(len(set(result_pids)), 3, "All PIDs should be unique")
-

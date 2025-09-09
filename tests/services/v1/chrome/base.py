@@ -3,7 +3,6 @@ Base test class for Chrome service testing.
 """
 from backend.src.services.v1.chrome_service import ChromeService
 from tests.services.v1.base import BaseServiceTest
-from backend.src.gateways.v1.
 
 
 class CloseChromeTabContext:

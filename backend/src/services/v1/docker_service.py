@@ -1,22 +1,20 @@
 from typing import List, Optional
-from ...gateways.v1.system_gateway import SystemGateway
+from ...utils.command import AsyncCommand, CommandType
 from ...schemas.v1.docker import (
     ContainerNameRequest, LogsRequest, RemoveContainerRequest, RedeployRequest,
     ContainerInfoResponse, ContainerListResponse, ContainerOperationResponse,
     ContainerHealthResponse, ContainerLogsResponse, ContainerRemoveResponse,
     ContainerRedeployResponse, ContainerStatus, HealthStatus, DockerPsEntry
 )
-from ...schemas.v1.system import CommandResponse
 from ...utils.logger import get_logger
 import asyncio
 
 
 class DockerService:
-    """Service for managing Docker containers using SystemGateway."""
+    """Service for managing Docker containers using AsyncCommand."""
 
     def __init__(self):
         self.logger = get_logger("DockerService")
-        self.system_gateway = SystemGateway()
 
     async def get_container_info(self, container_name: str) -> ContainerInfoResponse:
         """Get detailed information about a specific Docker container."""
@@ -26,13 +24,14 @@ class DockerService:
             # Get detailed container information using docker inspect with JSON format
             command = f"docker inspect {container_name} --format json"
             self.logger.debug("Executing command: %s", command)
-            result = await self.system_gateway.execute_command(command)
+            async_cmd = AsyncCommand.cmd(command)
+            result = await async_cmd.execute()
 
             if result.success:
                 self.logger.debug("Successfully executed docker inspect command")
                 try:
                     import json
-                    container_data = json.loads(result.output)
+                    container_data = json.loads(result.stdout)
                     self.logger.debug("Successfully parsed container data JSON")
 
                     # Extract all the rich information from the inspect output
@@ -126,12 +125,12 @@ class DockerService:
                         error=f"JSON decode error: {str(e)}"
                     )
             else:
-                self.logger.error("Failed to execute docker inspect for %s: %s", container_name, result.error)
+                self.logger.error("Failed to execute docker inspect for %s: %s", container_name, result.stderr)
                 return ContainerInfoResponse(
                     success=False,
                     container_name=container_name,
                     message=f"Failed to get container information for {container_name}",
-                    error=result.error
+                    error=result.stderr
                 )
         except Exception as e:
             self.logger.error("Error getting container info for %s: %s", container_name, str(e))
@@ -281,13 +280,14 @@ class DockerService:
             flag = "-a" if all_containers else ""
             command = f"docker ps {flag} --format json"
             self.logger.debug("Executing command: %s", command)
-            result = await self.system_gateway.execute_command(command)
+            async_cmd = AsyncCommand.cmd(command)
+            result = await async_cmd.execute()
 
             if result.success:
                 self.logger.debug("Successfully executed docker ps command")
                 # Parse JSON output for each container
                 docker_entries = []
-                lines = result.output.strip().split('\n')
+                lines = result.stdout.strip().split('\n')
                 for line in lines:
                     if line.strip():
                         try:
@@ -416,11 +416,11 @@ class DockerService:
                     error=None
                 )
             else:
-                self.logger.error("Failed to execute docker ps command: %s", result.error)
+                self.logger.error("Failed to execute docker ps command: %s", result.stderr)
                 return ContainerListResponse(
                     success=False,
                     containers=[],
-                    error=result.error
+                    error=result.stderr
                 )
         except Exception as e:
             self.logger.error("Error listing containers: %s", str(e))
@@ -454,45 +454,48 @@ class DockerService:
 
             # Get additional details using docker inspect
             inspect_command = f"docker inspect {container_id}"
-            inspect_result = await self.system_gateway.execute_command(
-                inspect_command)
+            inspect_cmd = AsyncCommand.cmd(inspect_command)
+            inspect_result = await inspect_cmd.execute()
 
             if inspect_result.success:
                 # Extract image tag
                 image_tag_cmd = f"docker inspect --format='{{{{.Config.Image}}}}' {container_id}"
-                image_result = await self.system_gateway.execute_command(
-                    image_tag_cmd)
+                image_cmd = AsyncCommand.cmd(image_tag_cmd)
+                image_result = await image_cmd.execute()
                 if image_result.success:
-                    details["image_tag"] = image_result.output.strip()
+                    details["image_tag"] = image_result.stdout.strip()
 
                 # Extract health status
                 health_cmd = f"docker inspect --format='{{{{.State.Health.Status}}}}' {container_id}"
-                health_result = await self.system_gateway.execute_command(health_cmd)
-                if health_result.success and health_result.output.strip():
-                    details["health_status"] = health_result.output.strip()
+                health_async_cmd = AsyncCommand.cmd(health_cmd)
+                health_result = await health_async_cmd.execute()
+                if health_result.success and health_result.stdout.strip():
+                    details["health_status"] = health_result.stdout.strip()
 
                 # Extract size information
                 size_cmd = f"docker inspect --format='{{{{.Size}}}}' {container_id}"
-                size_result = await self.system_gateway.execute_command(size_cmd)
+                size_async_cmd = AsyncCommand.cmd(size_cmd)
+                size_result = await size_async_cmd.execute()
                 if size_result.success:
                     try:
-                        size_bytes = int(size_result.output.strip())
+                        size_bytes = int(size_result.stdout.strip())
                         details["size"] = self._format_size(size_bytes)
                     except ValueError:
-                        details["size"] = size_result.output.strip()
+                        details["size"] = size_result.stdout.strip()
 
                 # Extract mount information
                 mounts_cmd = f"docker inspect --format='{{{{range .Mounts}}{{.Source}}:{{.Destination}} {{end}}}}' {container_id}"
-                mounts_result = await self.system_gateway.execute_command(mounts_cmd)
-                if mounts_result.success and mounts_result.output.strip():
-                    details["mounts"] = mounts_result.output.strip().split()
+                mounts_async_cmd = AsyncCommand.cmd(mounts_cmd)
+                mounts_result = await mounts_async_cmd.execute()
+                if mounts_result.success and mounts_result.stdout.strip():
+                    details["mounts"] = mounts_result.stdout.strip().split()
 
                 # Extract network information
                 networks_cmd = f"docker inspect --format='{{{{range $key, $value := .NetworkSettings.Networks}}{{$key}} {{end}}}}' {container_id}"
-                networks_result = await self.system_gateway.execute_command(
-                    networks_cmd)
-                if networks_result.success and networks_result.output.strip():
-                    details["networks"] = networks_result.output.strip().split()
+                networks_async_cmd = AsyncCommand.cmd(networks_cmd)
+                networks_result = await networks_async_cmd.execute()
+                if networks_result.success and networks_result.stdout.strip():
+                    details["networks"] = networks_result.stdout.strip().split()
 
         except Exception as e:
             # If we can't get details, just continue with basic info
@@ -633,7 +636,8 @@ class DockerService:
         try:
             command = f"docker stop {container_name}"
             self.logger.debug("Executing command: %s", command)
-            result = await self.system_gateway.execute_command(command)
+            async_cmd = AsyncCommand.cmd(command)
+            result = await async_cmd.execute()
 
             if result.success:
                 self.logger.info("Successfully stopped container: %s", container_name)
@@ -647,13 +651,13 @@ class DockerService:
                     error=None
                 )
             else:
-                self.logger.error("Failed to stop container %s: %s", container_name, result.error)
+                self.logger.error("Failed to stop container %s: %s", container_name, result.stderr)
                 return ContainerOperationResponse(
                     success=False,
                     container_name=container_name,
                     operation="stop",
                     message=f"Failed to stop container {container_name}",
-                    error=result.error
+                    error=result.stderr
                 )
         except Exception as e:
             self.logger.error("Error stopping container %s: %s", container_name, str(e))
@@ -672,7 +676,8 @@ class DockerService:
         try:
             command = f"docker start {container_name}"
             self.logger.debug("Executing command: %s", command)
-            result = await self.system_gateway.execute_command(command)
+            async_cmd = AsyncCommand.cmd(command)
+            result = await async_cmd.execute()
 
             if result.success:
                 self.logger.info("Successfully started container: %s", container_name)
@@ -686,13 +691,13 @@ class DockerService:
                     error=None
                 )
             else:
-                self.logger.error("Failed to start container %s: %s", container_name, result.error)
+                self.logger.error("Failed to start container %s: %s", container_name, result.stderr)
                 return ContainerOperationResponse(
                     success=False,
                     container_name=container_name,
                     operation="start",
                     message=f"Failed to start container {container_name}",
-                    error=result.error
+                    error=result.stderr
                 )
         except Exception as e:
             self.logger.error("Error starting container %s: %s", container_name, str(e))
@@ -708,7 +713,8 @@ class DockerService:
         """Restart a Docker container by name."""
         try:
             command = f"docker restart {container_name}"
-            result = await self.system_gateway.execute_command(command)
+            async_cmd = AsyncCommand.cmd(command)
+            result = await async_cmd.execute()
 
             if result.success:
                 return ContainerOperationResponse(
@@ -726,7 +732,7 @@ class DockerService:
                     container_name=container_name,
                     operation="restart",
                     message=f"Failed to restart container {container_name}",
-                    error=result.error
+                    error=result.stderr
                 )
         except Exception as e:
             return ContainerOperationResponse(
@@ -742,10 +748,11 @@ class DockerService:
         try:
             # First check if container exists and get its status
             inspect_command = f"docker inspect --format='{{{{.State.Health.Status}}}}' {container_name}"
-            result = await self.system_gateway.execute_command(inspect_command)
+            async_cmd = AsyncCommand.cmd(inspect_command)
+            result = await async_cmd.execute()
 
             if result.success:
-                health_status_str = result.output.strip()
+                health_status_str = result.stdout.strip()
                 if health_status_str:
                     # Map the health status to our enum
                     if health_status_str == "healthy":
@@ -776,7 +783,7 @@ class DockerService:
                     success=False,
                     container_name=container_name,
                     health_status=HealthStatus.NONE,
-                    error=result.error
+                    error=result.stderr
                 )
         except Exception as e:
             return ContainerHealthResponse(
@@ -790,10 +797,11 @@ class DockerService:
         """Get recent logs from a Docker container."""
         try:
             command = f"docker logs --tail {tail_lines} {container_name}"
-            result = await self.system_gateway.execute_command(command)
+            async_cmd = AsyncCommand.cmd(command)
+            result = await async_cmd.execute()
 
             if result.success:
-                logs = result.output.strip().split('\n') if result.output.strip() else []
+                logs = result.stdout.strip().split('\n') if result.stdout.strip() else []
                 return ContainerLogsResponse(
                     success=True,
                     container_name=container_name,
@@ -807,7 +815,7 @@ class DockerService:
                     success=False,
                     container_name=container_name,
                     logs=[],
-                    error=result.error
+                    error=result.stderr
                 )
         except Exception as e:
             return ContainerLogsResponse(
@@ -822,7 +830,8 @@ class DockerService:
         try:
             flag = "-f" if force else ""
             command = f"docker rm {flag} {container_name}".strip()
-            result = await self.system_gateway.execute_command(command)
+            async_cmd = AsyncCommand.cmd(command)
+            result = await async_cmd.execute()
 
             if result.success:
                 return ContainerRemoveResponse(
@@ -840,7 +849,7 @@ class DockerService:
                     removed=False,
                     force_used=force,
                     message=f"Failed to remove container {container_name}",
-                    error=result.error
+                    error=result.stderr
                 )
         except Exception as e:
             return ContainerRemoveResponse(
@@ -905,7 +914,8 @@ class DockerService:
             deploy_command = self._build_redeploy_command(request, new_image)
 
             # Run the new container
-            run_result = await self.system_gateway.execute_command(deploy_command)
+            run_async_cmd = AsyncCommand.cmd(deploy_command)
+            run_result = await run_async_cmd.execute()
             if not run_result.success:
                 return ContainerRedeployResponse(
                     success=False,
@@ -914,14 +924,14 @@ class DockerService:
                     old_image=old_image,
                     new_image=new_image,
                     deploy_command=deploy_command,
-                    message=f"Failed to start new container: {run_result.error}",
-                    error=run_result.error
+                    message=f"Failed to start new container: {run_result.stderr}",
+                    error=run_result.stderr
                 )
 
             # Get the new container ID
-            new_id_result = await self.system_gateway.execute_command(
-                f"docker inspect --format='{{{{.Id}}}}' {request.container_name}")
-            new_container_id = new_id_result.output.strip() if new_id_result.success else None
+            new_id_async_cmd = AsyncCommand.cmd(f"docker inspect --format='{{{{.Id}}}}' {request.container_name}")
+            new_id_result = await new_id_async_cmd.execute()
+            new_container_id = new_id_result.stdout.strip() if new_id_result.success else None
 
             return ContainerRedeployResponse(
                 success=True,
@@ -971,9 +981,32 @@ class DockerService:
 
         return " ".join(cmd_parts)
 
-    async def execute_multiple_commands(self, commands: list[str]) -> list[CommandResponse]:
+    async def execute_multiple_commands(self, commands: list[str]) -> list:
         """Execute multiple Docker commands concurrently for better performance."""
-        return await self.system_gateway.execute_multiple_commands(commands)
+        # Create AsyncCommand instances for all commands
+        async_commands = [AsyncCommand.cmd(cmd) for cmd in commands]
+
+        # Execute all commands concurrently
+        tasks = [cmd.execute() for cmd in async_commands]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Convert results to a simple format
+        responses = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                responses.append({
+                    'success': False,
+                    'output': '',
+                    'error': str(result)
+                })
+            else:
+                responses.append({
+                    'success': result.success,
+                    'output': result.stdout,
+                    'error': result.stderr if not result.success else None
+                })
+
+        return responses
 
     async def batch_container_operations(self, container_names: list[str], operation: str) -> list[
             ContainerOperationResponse]:

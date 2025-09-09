@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
+from backend.src import CommandExecutionResult
+
 
 class ChromeProfileInfo(BaseModel):
     """Detailed Chrome profile information extracted from Preferences file."""
@@ -63,18 +65,17 @@ class ProfileUpdateResponse(BaseModel):
     message: str
 
 
-class ChromeProcessHandle(BaseModel):
+class ChromeOpenRequestResult(BaseModel):
     """Handle for a Chrome process opened by the service."""
-    command_handle: Optional[dict] = None  # Will contain CommandResult data
+    result: Optional[CommandExecutionResult] = None
     profile_id: str
     url: str
-    is_running: bool = True
 
 
 __all__ = [
     "ChromeProfile",
     "ChromeProfileInfo",
-    "ChromeProcessHandle",
+    "ChromeOpenRequestResult",
     "OpenUrlRequest",
     "OpenUrlResponse",
     "UpdateProfileVisibilityRequest",

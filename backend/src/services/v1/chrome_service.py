@@ -2,16 +2,13 @@ import os
 import json
 from typing import Optional, Any
 from urllib.parse import urlparse
-from datetime import datetime
 
 # Removed database imports - no longer needed since profiles are managed through settings API
 from jsonpath_ng import parse
 from ...utils.logger import get_logger
 # Removed get_db import - no longer needed since profiles are managed through settings API
-from ...schemas.v1.chrome import (
-    ChromeProfile, ChromeProfileInfo, ChromeProcessHandle
-)
-from ...schemas.v1.system import CommandResult
+from ...schemas.v1.chrome import ChromeProfile, ChromeProfileInfo, ChromeOpenRequestResult
+from ...utils.command import AsyncCommand, CommandType
 
 
 def extract_jsonpath_value(data: dict, jsonpath_expr: str) -> Optional[Any]:
@@ -47,12 +44,10 @@ class ChromeService:
                 preferences = json.load(f)
 
             # Use jsonpath for cleaner data extraction
-            profile_name = extract_jsonpath_value(
-                preferences, '$.profile.name')
+            profile_name = extract_jsonpath_value(preferences, '$.profile.name')
 
             # Extract account information using jsonpath
-            account_data = extract_jsonpath_value(
-                preferences, '$.account_info[0]') or {}
+            account_data = extract_jsonpath_value(preferences, '$.account_info[0]') or {}
 
             # Extract relevant account details
             account_id = extract_jsonpath_value(account_data, '$.account_id')
@@ -62,8 +57,7 @@ class ChromeService:
             picture_url = extract_jsonpath_value(account_data, '$.picture_url')
             locale = extract_jsonpath_value(account_data, '$.locale')
 
-            self.logger.debug("Successfully extracted profile information: name=%s, email=%s",
-                              profile_name, email)
+            self.logger.debug("Successfully extracted profile information: name=%s, email=%s", profile_name, email)
 
             return ChromeProfileInfo(
                 profile_name=profile_name,
@@ -92,8 +86,7 @@ class ChromeService:
         chrome_paths = [
             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-            os.path.join(os.environ.get('LOCALAPPDATA', ''),
-                         'Google', 'Chrome', 'Application', 'chrome.exe'),
+            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Google', 'Chrome', 'Application', 'chrome.exe'),
             "chrome.exe"  # Fallback to PATH
         ]
 
@@ -163,9 +156,8 @@ class ChromeService:
             raise ValueError("Profile ID must be a non-empty string")
         self.logger.debug("Profile ID validation successful")
 
-    async def open_url_in_profile(self, url: str, profile_id: str) -> ChromeProcessHandle:
-        """Open a URL in a specific Chrome profile using SystemGateway."""
-        from ...gateways.v1.system_gateway import SystemGateway
+    async def open_url_in_profile(self, url: str, profile_id: str) -> ChromeOpenRequestResult:
+        """Open a URL in a specific Chrome profile using AsyncCommand."""
 
         self.logger.info("Starting to open URL in Chrome profile: URL=%s, profile=%s", url, profile_id)
 
@@ -181,98 +173,19 @@ class ChromeService:
             # Build Chrome command using existing method
             self.logger.debug("Building Chrome command")
             command = self._build_chrome_command(normalized_url, profile)
-            command_str = " ".join(command)
 
-            # Execute using SystemGateway (no pipe to avoid hanging with GUI apps)
-            self.logger.debug("Executing Chrome command via SystemGateway")
-            system_gateway = SystemGateway()
-            result = await system_gateway.execute_command_args(command, is_cli=False)
-
-            if result.success:
-                self.logger.info("Successfully opened URL %s in profile %s", normalized_url, profile_id)
-
-                # Create process handle using CommandResult from SystemGateway
-                process_handle = ChromeProcessHandle(
-                    command_handle=result.result.model_dump() if result.result else None,
-                    profile_id=profile_id,
-                    url=normalized_url,
-                    is_running=True
-                )
-
-                # Track the process for cleanup
-                self._opened_processes.append(process_handle)
-                self.logger.debug("Created process handle with command handle: %s", result.result)
-
-                return process_handle
-            else:
-                self.logger.error("Failed to open URL %s in profile %s: %s", normalized_url, profile_id, result.output)
-                raise RuntimeError(f"Failed to open URL: {result.output}")
+            # Execute using AsyncCommand (GUI type for Chrome)
+            self.logger.debug("Executing Chrome command via AsyncCommand")
+            async_cmd = AsyncCommand(command, command_type=CommandType.GUI)
+            result = await async_cmd.execute()
+            return ChromeOpenRequestResult(
+                result=result,
+                profile_id=profile_id,
+                url=normalized_url,
+            )
         except Exception as e:
             self.logger.error("Error opening URL %s in profile %s: %s", url, profile_id, str(e))
             raise
-
-    async def close_chrome_process(self, process_handle: ChromeProcessHandle) -> bool:
-        """Close a Chrome process using its handle."""
-        pid = process_handle.command_handle.get('pid') if process_handle.command_handle else None
-        self.logger.info("Closing Chrome process: PID=%s, profile=%s", pid, process_handle.profile_id)
-
-        try:
-            if not process_handle.is_running:
-                self.logger.warning("Process is already marked as not running: PID=%s", pid)
-                return True
-
-            if pid:
-                # Try to terminate the process by PID
-                from ...gateways.v1.system_gateway import SystemGateway
-                system_gateway = SystemGateway()
-
-                # Use taskkill on Windows to terminate the process
-                command = f"taskkill /PID {pid} /F"
-                result = await system_gateway.execute_command(command)
-
-                if result.success:
-                    process_handle.is_running = False
-                    self.logger.info("Successfully closed Chrome process: PID=%s", pid)
-                    return True
-                else:
-                    self.logger.error(
-                        "Failed to close Chrome process: PID=%s, error=%s",
-                        pid,
-                        result.error)
-                    return False
-            else:
-                self.logger.warning("No PID available for process handle")
-                return False
-
-        except Exception as e:
-            self.logger.error("Error closing Chrome process PID=%s: %s", pid, str(e))
-            return False
-
-    async def close_all_chrome_processes(self) -> int:
-        """Close all tracked Chrome processes."""
-        self.logger.info("Closing all tracked Chrome processes: %d processes", len(self._opened_processes))
-
-        closed_count = 0
-        for process_handle in self._opened_processes[:]:  # Copy list to avoid modification during iteration
-            if await self.close_chrome_process(process_handle):
-                closed_count += 1
-                self._opened_processes.remove(process_handle)
-
-        self.logger.info("Closed %d out of %d Chrome processes", closed_count,
-                         len(self._opened_processes) + closed_count)
-        return closed_count
-
-    def get_opened_processes(self) -> list[ChromeProcessHandle]:
-        """Get list of all currently tracked Chrome processes."""
-        return self._opened_processes.copy()
-
-    def get_process_by_pid(self, pid: int) -> Optional[ChromeProcessHandle]:
-        """Get a Chrome process handle by PID."""
-        for process_handle in self._opened_processes:
-            handle_pid = process_handle.command_handle.get('pid') if process_handle.command_handle else None
-            if handle_pid == pid:
-                return process_handle
-        return None
 
 
 __all__ = [
