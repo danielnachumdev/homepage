@@ -18,9 +18,15 @@ class BaseCommandTest(BaseTest):
     def setUp(self) -> None:
         """Set up test fixtures before each test method."""
         super().setUp()
+        self._created_commands = []
 
     def tearDown(self) -> None:
         """Clean up after each test method."""
+        # Clean up any command processes
+        if hasattr(self, '_created_commands'):
+            for cmd in self._created_commands:
+                if hasattr(cmd, 'cleanup'):
+                    cmd.cleanup()
         super().tearDown()
 
     def create_simple_command(
@@ -32,7 +38,9 @@ class BaseCommandTest(BaseTest):
         """Create a simple command for testing."""
         if args is None:
             args = ['echo', 'test']
-        return AsyncCommand(args, command_type=command_type, **kwargs)
+        cmd = AsyncCommand(args, command_type=command_type, **kwargs)
+        self._created_commands.append(cmd)
+        return cmd
 
     def create_successful_command(self, **kwargs: Any) -> AsyncCommand:
         """Create a command that will succeed."""

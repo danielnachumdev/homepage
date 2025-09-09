@@ -99,16 +99,16 @@ class AsyncCommand:
     """
 
     def __init__(
-        self,
-        args: List[str],
-        command_type: CommandType = CommandType.CLI,
-        blocking: bool = True,
-        timeout: Optional[float] = None,
-        cwd: Optional[Union[str, Path]] = None,
-        env: Optional[Dict[str, str]] = None,
-        on_start: Optional[Callable[['AsyncCommand'], None]] = None,
-        on_complete: Optional[Callable[['AsyncCommand', CommandExecutionResult], None]] = None,
-        on_error: Optional[Callable[['AsyncCommand', Exception], None]] = None,
+            self,
+            args: List[str],
+            command_type: CommandType = CommandType.CLI,
+            blocking: bool = True,
+            timeout: Optional[float] = None,
+            cwd: Optional[Union[str, Path]] = None,
+            env: Optional[Dict[str, str]] = None,
+            on_start: Optional[Callable[['AsyncCommand'], None]] = None,
+            on_complete: Optional[Callable[['AsyncCommand', CommandExecutionResult], None]] = None,
+            on_error: Optional[Callable[['AsyncCommand', Exception], None]] = None,
     ):
         """
         Initialize the AsyncCommand.
@@ -124,7 +124,7 @@ class AsyncCommand:
             on_complete: Callback called when command completes
             on_error: Callback called when command fails
         """
-        self.args = args
+        self.args = [arg for arg in args if arg]
         self.command_type = command_type
         self.blocking = blocking  # Always True for async, kept for compatibility
         self.timeout = timeout
@@ -193,6 +193,24 @@ class AsyncCommand:
         if self._state != CommandState.PENDING:
             raise RuntimeError(f"Command is not in pending state: {self._state}")
 
+        # Check if args is empty - this is considered an error
+        if not self.args:
+            end_time = datetime.now()
+            result = CommandExecutionResult(
+                command=self,
+                success=False,
+                return_code=-1,
+                stdout="",
+                stderr="Empty command arguments provided",
+                execution_time=0.0,
+                start_time=self._start_time,
+                end_time=end_time,
+                state=CommandState.FAILED
+            )
+            self._result = result
+            self._state = CommandState.FAILED
+            return result
+
         # Set initial state
         self._state = CommandState.RUNNING
         self._start_time = datetime.now()
@@ -249,12 +267,11 @@ class AsyncCommand:
             if self.env:
                 env.update(self.env)
 
-            self._process = subprocess.Popen(
-                self.args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                shell=True,
+            # Use asyncio.create_subprocess_exec instead of subprocess.Popen to avoid threading issues
+            self._process = await asyncio.create_subprocess_exec(
+                *self.args,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
                 cwd=str(self.cwd) if self.cwd else None,
                 env=env
             )
@@ -270,11 +287,14 @@ class AsyncCommand:
 
             # Wait for completion with timeout
             try:
-                stdout, stderr = await asyncio.wait_for(
-                    asyncio.to_thread(self._process.communicate),
-                    timeout=effective_timeout
-                )
+                # Use asyncio.wait_for with the process directly instead of asyncio.to_thread
+                stdout, stderr = await asyncio.wait_for(self._process.communicate(),
+                                                        timeout=effective_timeout)
                 returncode = self._process.returncode
+
+                # Decode bytes to strings
+                stdout = stdout.decode('utf-8', errors='replace') if stdout else ""
+                stderr = stderr.decode('utf-8', errors='replace') if stderr else ""
 
                 if returncode == 0:
                     self.logger.info("CLI subprocess completed successfully (async)", extra={
@@ -308,7 +328,10 @@ class AsyncCommand:
 
                 try:
                     self._process.kill()
-                    stdout, stderr = await asyncio.to_thread(self._process.communicate)
+                    stdout, stderr = await self._process.communicate()
+                    # Decode bytes to strings
+                    stdout = stdout.decode('utf-8', errors='replace') if stdout else ""
+                    stderr = stderr.decode('utf-8', errors='replace') if stderr else ""
                 except (OSError, subprocess.SubprocessError, BaseException):
                     stdout, stderr = "", ""
                 returncode = -1
@@ -605,6 +628,18 @@ class AsyncCommand:
             })
             return False
 
+    def cleanup(self) -> None:
+        """Clean up resources and ensure proper shutdown."""
+        if self._process:
+            try:
+                if self._process.poll() is None:
+                    self._process.kill()
+                self._process.wait(timeout=1.0)
+            except (OSError, subprocess.SubprocessError, subprocess.TimeoutExpired):
+                pass
+            finally:
+                self._process = None
+
     async def wait(self) -> CommandExecutionResult:
         """
         Wait for the command to complete.
@@ -701,7 +736,7 @@ class AsyncCommand:
             AsyncCommand: Configured command instance
         """
         return AsyncCommand(
-            args=[command],
+            args=command.strip().split(),
             command_type=CommandType.CLI,
             **kwargs
         )

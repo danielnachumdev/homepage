@@ -40,6 +40,16 @@ class BaseTest(unittest.TestCase):
 
     def tearDown(self):
         """Clean up after each test method."""
+        # Cancel all pending tasks
+        pending = asyncio.all_tasks(self.loop)
+        for task in pending:
+            task.cancel()
+
+        # Run the loop to process cancellations
+        if pending:
+            self.loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+
+        # Close the loop
         self.loop.close()
 
     def run_async(self, coro: Union[Coroutine[Any, Any, T], Awaitable[T]]) -> T:
