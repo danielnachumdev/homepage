@@ -2,7 +2,7 @@
 Integration tests for SystemGateway.
 """
 from tests.gateways.v1.system.base import BaseSystemGatewayTest
-from backend.src.schemas.v1.system import CommandResponse, CommandHandle
+from backend.src.schemas.v1.system import CommandResponse, CommandResult
 from backend.src.gateways.v1.system_gateway import SystemGateway
 import unittest
 from unittest.mock import patch, MagicMock

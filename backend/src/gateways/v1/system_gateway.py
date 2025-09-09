@@ -15,10 +15,12 @@ def _execute_subprocess(args: List[str], command: str, timeout: Optional[float] 
     start_time_str = start_time.isoformat()
 
     logger.info("Starting subprocess execution", extra={
-        "command": command,
-        "command_args": args,
-        "timeout": timeout,
-        "start_time": start_time_str
+        "data": {
+            "command": command,
+            "command_args": args,
+            "timeout": timeout,
+            "start_time": start_time_str
+        }
     })
 
     process = subprocess.Popen(
@@ -33,40 +35,50 @@ def _execute_subprocess(args: List[str], command: str, timeout: Optional[float] 
     killed = False
 
     logger.debug("Subprocess created", extra={
-        "pid": pid,
-        "command": command
+        "data": {
+            "pid": pid,
+            "command": command
+        }
     })
 
     try:
         # Only apply timeout if it's a reasonable positive number (> 0.01 seconds)
         if timeout is not None and timeout > 0.01:
             logger.debug("Waiting for subprocess with timeout", extra={
-                "pid": pid,
-                "timeout": timeout,
-                "command": command
+                "data": {
+                    "pid": pid,
+                    "timeout": timeout,
+                    "command": command
+                }
             })
             stdout, stderr = process.communicate(timeout=timeout)
         else:
             logger.debug("Waiting for subprocess without timeout", extra={
-                "pid": pid,
-                "command": command
+                "data": {
+                    "pid": pid,
+                    "command": command
+                }
             })
             stdout, stderr = process.communicate()
         returncode = process.returncode
 
         logger.info("Subprocess completed successfully", extra={
-            "pid": pid,
-            "returncode": returncode,
-            "command": command,
-            "stdout_length": len(stdout) if stdout else 0,
-            "stderr_length": len(stderr) if stderr else 0
+            "data": {
+                "pid": pid,
+                "returncode": returncode,
+                "command": command,
+                "stdout_length": len(stdout) if stdout else 0,
+                "stderr_length": len(stderr) if stderr else 0
+            }
         })
 
     except subprocess.TimeoutExpired:
         logger.warning("Subprocess timed out, killing process", extra={
-            "pid": pid,
-            "timeout": timeout,
-            "command": command
+            "data": {
+                "pid": pid,
+                "timeout": timeout,
+                "command": command
+            }
         })
         process.kill()
         stdout, stderr = process.communicate()
@@ -76,11 +88,13 @@ def _execute_subprocess(args: List[str], command: str, timeout: Optional[float] 
         stderr = f"Command timed out after {timeout} seconds"
 
         logger.error("Subprocess killed due to timeout", extra={
-            "pid": pid,
-            "timeout": timeout,
-            "command": command,
-            "stdout_length": len(stdout) if stdout else 0,
-            "stderr_length": len(stderr) if stderr else 0
+            "data": {
+                "pid": pid,
+                "timeout": timeout,
+                "command": command,
+                "stdout_length": len(stdout) if stdout else 0,
+                "stderr_length": len(stderr) if stderr else 0
+            }
         })
 
     end_time = datetime.now()
@@ -103,13 +117,15 @@ def _execute_subprocess(args: List[str], command: str, timeout: Optional[float] 
     )
 
     logger.info("Subprocess execution completed", extra={
-        "pid": pid,
-        "command": command,
-        "success": result.success,
-        "duration_seconds": duration_seconds,
-        "timeout_occurred": timeout_occurred,
-        "killed": killed,
-        "returncode": returncode
+        "data": {
+            "pid": pid,
+            "command": command,
+            "success": result.success,
+            "duration_seconds": duration_seconds,
+            "timeout_occurred": timeout_occurred,
+            "killed": killed,
+            "returncode": returncode
+        }
     })
 
     return result
@@ -127,27 +143,35 @@ class SystemGateway:
         logger = get_logger(__name__)
 
         logger.debug("Parsing command string", extra={
-            "command": command
+            "data": {
+                "command": command
+            }
         })
 
         try:
             # Use shlex to properly parse the command, handling quotes and escaping
             args = shlex.split(command)
             logger.debug("Command parsed successfully with shlex", extra={
-                "command": command,
-                "command_args": args
+                "data": {
+                    "command": command,
+                    "command_args": args
+                }
             })
             return args
         except ValueError as e:
             # Fallback to simple split if shlex fails
             logger.warning("shlex parsing failed, using simple split", extra={
-                "command": command,
-                "error": str(e)
+                "data": {
+                    "command": command,
+                    "error": str(e)
+                }
             })
             args = command.split()
             logger.debug("Command parsed with simple split", extra={
-                "command": command,
-                "command_args": args
+                "data": {
+                    "command": command,
+                    "command_args": args
+                }
             })
             return args
 
@@ -158,9 +182,11 @@ class SystemGateway:
         command_str = " ".join(args)
 
         logger.info("Starting command execution", extra={
-            "command": command_str,
-            "command_args": args,
-            "timeout": timeout
+            "data": {
+                "command": command_str,
+                "command_args": args,
+                "timeout": timeout
+            }
         })
 
         try:
@@ -168,8 +194,10 @@ class SystemGateway:
             # Only apply asyncio timeout if it's a reasonable positive number (> 0.01 seconds)
             if timeout is not None and timeout > 0.01:
                 logger.debug("Executing command with asyncio timeout", extra={
-                    "command": command_str,
-                    "timeout": timeout
+                    "data": {
+                        "command": command_str,
+                        "timeout": timeout
+                    }
                 })
                 result = await asyncio.wait_for(
                     asyncio.to_thread(_execute_subprocess, args, command_str, timeout),
@@ -177,15 +205,19 @@ class SystemGateway:
                 )
             else:
                 logger.debug("Executing command without asyncio timeout", extra={
-                    "command": command_str
+                    "data": {
+                        "command": command_str
+                    }
                 })
                 result = await asyncio.to_thread(_execute_subprocess, args, command_str, timeout)
 
             logger.info("Command execution completed successfully", extra={
-                "command": command_str,
-                "success": result.success,
-                "returncode": result.returncode,
-                "duration_seconds": result.duration_seconds
+                "data": {
+                    "command": command_str,
+                    "success": result.success,
+                    "returncode": result.returncode,
+                    "duration_seconds": result.duration_seconds
+                }
             })
 
             return CommandResponse(
@@ -197,8 +229,10 @@ class SystemGateway:
 
         except asyncio.TimeoutError:
             logger.error("Command execution timed out at asyncio level", extra={
-                "command": command_str,
-                "timeout": timeout
+                "data": {
+                    "command": command_str,
+                    "timeout": timeout
+                }
             })
 
             # Create a timeout CommandResult
@@ -225,9 +259,11 @@ class SystemGateway:
             )
         except Exception as e:
             logger.error("Command execution failed with exception", extra={
-                "command": command_str,
-                "error": str(e),
-                "error_type": type(e).__name__
+                "data": {
+                    "command": command_str,
+                    "error": str(e),
+                    "error_type": type(e).__name__
+                }
             })
 
             # Create an error CommandResult
@@ -257,14 +293,14 @@ class SystemGateway:
     async def execute_command_args(args: list[str]) -> CommandResponse:
         """Execute a system command using a list of arguments directly."""
         logger = get_logger(__name__)
-        logger.info("Executing command with args", extra={"command_args": args})
+        logger.info("Executing command with args", extra={"data": {"command_args": args}})
         return await SystemGateway._execute_command_internal(args)
 
     @staticmethod
     async def execute_command(command: str) -> CommandResponse:
         """Execute a system command asynchronously from a string."""
         logger = get_logger(__name__)
-        logger.info("Executing command string", extra={"command": command})
+        logger.info("Executing command string", extra={"data": {"command": command}})
         args = SystemGateway._parse_command(command)
         return await SystemGateway._execute_command_internal(args)
 
@@ -272,7 +308,7 @@ class SystemGateway:
     async def execute_command_with_timeout(command: str, timeout: float = 30.0) -> CommandResponse:
         """Execute a system command asynchronously with a timeout."""
         logger = get_logger(__name__)
-        logger.info("Executing command with timeout", extra={"command": command, "timeout": timeout})
+        logger.info("Executing command with timeout", extra={"data": {"command": command, "timeout": timeout}})
         args = SystemGateway._parse_command(command)
         return await SystemGateway._execute_command_internal(args, timeout)
 
@@ -280,7 +316,7 @@ class SystemGateway:
     async def execute_command_args_with_timeout(args: list[str], timeout: float = 30.0) -> CommandResponse:
         """Execute a system command using a list of arguments with a timeout."""
         logger = get_logger(__name__)
-        logger.info("Executing command args with timeout", extra={"command_args": args, "timeout": timeout})
+        logger.info("Executing command args with timeout", extra={"data": {"command_args": args, "timeout": timeout}})
         return await SystemGateway._execute_command_internal(args, timeout)
 
     @staticmethod
@@ -289,9 +325,15 @@ class SystemGateway:
         """Execute multiple commands concurrently with a limit on concurrency."""
         logger = get_logger(__name__)
 
+        # Validate max_concurrent parameter
+        if max_concurrent <= 0:
+            raise ValueError(f"max_concurrent must be a strictly positive integer, got: {max_concurrent}")
+
         logger.info("Starting multiple command execution", extra={
-            "command_count": len(commands),
-            "max_concurrent": max_concurrent
+            "data": {
+                "command_count": len(commands),
+                "max_concurrent": max_concurrent
+            }
         })
 
         semaphore = asyncio.Semaphore(max_concurrent)
@@ -313,10 +355,12 @@ class SystemGateway:
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.error("Command execution failed in multiple commands", extra={
-                    "command_index": i,
-                    "command": commands[i],
-                    "error": str(result),
-                    "error_type": type(result).__name__
+                    "data": {
+                        "command_index": i,
+                        "command": commands[i],
+                        "error": str(result),
+                        "error_type": type(result).__name__
+                    }
                 })
                 responses.append(CommandResponse(
                     success=False,
@@ -328,10 +372,12 @@ class SystemGateway:
                 responses.append(result)
 
         logger.info("Multiple command execution completed", extra={
-            "total_commands": len(commands),
-            "successful_commands": len(commands) - exception_count,
-            "failed_commands": exception_count,
-            "max_concurrent": max_concurrent
+            "data": {
+                "total_commands": len(commands),
+                "successful_commands": len(commands) - exception_count,
+                "failed_commands": exception_count,
+                "max_concurrent": max_concurrent
+            }
         })
 
         return responses
