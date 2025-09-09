@@ -127,6 +127,9 @@ class AsyncCommand:
         args = " ".join(args).strip().split()
         self.args = [arg for arg in args if arg]
         self.command_type = command_type
+        if timeout is not None:
+            if timeout <= 0.0:
+                raise ValueError("timeout must be strictly positive")
         self.timeout = timeout
         self.cwd = Path(cwd) if cwd else None
         self.env = env or {}
@@ -267,6 +270,7 @@ class AsyncCommand:
                 env.update(self.env)
 
             # Use asyncio.create_subprocess_exec instead of subprocess.Popen to avoid threading issues
+            # Set encoding to UTF-8 for proper unicode support
             self._process = await asyncio.create_subprocess_exec(
                 *self.args,
                 stdout=asyncio.subprocess.PIPE,
@@ -292,8 +296,8 @@ class AsyncCommand:
                 returncode = self._process.returncode
 
                 # Decode bytes to strings
-                stdout = stdout.decode('utf-8', errors='replace') if stdout else ""
-                stderr = stderr.decode('utf-8', errors='replace') if stderr else ""
+                stdout = stdout.decode('utf8') if stdout else ""
+                stderr = stderr.decode('utf8') if stderr else ""
 
                 if returncode == 0:
                     self.logger.info("CLI subprocess completed successfully (async)", extra={

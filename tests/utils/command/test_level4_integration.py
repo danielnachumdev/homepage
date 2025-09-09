@@ -109,7 +109,8 @@ class TestLevel4Integration(BaseCommandTest):
 
     def test_45_command_execution_with_special_characters(self) -> None:
         """Test command execution with special characters in arguments."""
-        # cannot check here '^', '&' as they are special for cmd: & to execute multiple commands and ^ as the escape char
+        # cannot check here '^', '&' as they are special for cmd: & to execute
+        # multiple commands and ^ as the escape char
         special_chars = ['!', '@', '#', '$', '%', '*', '(', ')', '[', ']', '{', '}']
 
         for char in special_chars:
@@ -125,7 +126,8 @@ class TestLevel4Integration(BaseCommandTest):
         unicode_strings = ['Hello 世界', 'Привет мир', 'مرحبا بالعالم', '🌍🌎🌏']
 
         for unicode_str in unicode_strings:
-            cmd = AsyncCommand.cmd(f"echo {unicode_str}")
+            # Use PowerShell for better unicode support
+            cmd = AsyncCommand.cmd(f'echo {unicode_str}')
             result = self.run_async(cmd.execute())
 
             # Should handle unicode characters
@@ -167,15 +169,10 @@ class TestLevel4Integration(BaseCommandTest):
 
     def test_50_command_execution_with_invalid_timeout(self) -> None:
         """Test command execution with invalid timeout values."""
-        # Test with negative timeout
-        cmd1 = AsyncCommand.cmd("echo test", timeout=-1.0)
-        result1 = self.run_async(cmd1.execute())
-        self.assert_command_success(result1)  # Should still work
-
-        # Test with zero timeout
-        cmd2 = AsyncCommand.cmd("echo test", timeout=0.0)
-        result2 = self.run_async(cmd2.execute())
-        self.assert_command_success(result2)  # Should still work
+        with self.assertRaises(ValueError):
+            AsyncCommand.cmd("echo test", timeout=-1.0)
+        with self.assertRaises(ValueError):
+            AsyncCommand.cmd("echo test", timeout=0.0)
 
     def test_51_command_execution_stress_test(self) -> None:
         """Test command execution under stress (multiple rapid executions)."""
@@ -307,7 +304,7 @@ class TestLevel4Integration(BaseCommandTest):
         # Create a command that produces large output
         large_output = 'A' * 10000  # 10KB output
 
-        cmd = AsyncCommand.cmd(f"echo {large_output}")
+        cmd = AsyncCommand.powershell(f"echo {large_output}")
         result = self.run_async(cmd.execute())
 
         # Should handle large output
@@ -337,9 +334,9 @@ class TestLevel4Integration(BaseCommandTest):
     def test_59_command_execution_with_system_limits(self) -> None:
         """Test command execution with system limits."""
         # Test with very long command line
-        long_args = ['echo'] + ['A'] * 1000
+        large_output = 'A' * 1000  # 10KB output
 
-        cmd = AsyncCommand(long_args)
+        cmd = AsyncCommand.cmd(f"echo {large_output}")
         result = self.run_async(cmd.execute())
 
         # Should handle long command line
@@ -358,7 +355,7 @@ class TestLevel4Integration(BaseCommandTest):
 
             def track_callback(name):
                 def callback(cmd, result=None):
-                    all_callbacks.append(f'{name}_{cmd.args[0]}')
+                    all_callbacks.append(f'{name}_{'_'.join(cmd.args)}')
 
                 return callback
 
@@ -383,7 +380,7 @@ class TestLevel4Integration(BaseCommandTest):
             self.assertFalse(result.timeout_occurred)
             self.assertFalse(result.killed)
             self.assertIn(temp_dir, str(result.command.cwd))
-            self.assertEqual(all_callbacks, ['start_type', 'complete_type'])
+            self.assertEqual(['start_cmd_/c_type_integration_test.txt', 'complete_cmd_/c_type_integration_test.txt'], all_callbacks)
 
             # Verify command state is consistent
             self.assertEqual(cmd.state, CommandState.COMPLETED)

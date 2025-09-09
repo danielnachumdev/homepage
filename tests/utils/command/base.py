@@ -30,10 +30,10 @@ class BaseCommandTest(BaseTest):
         super().tearDown()
 
     def create_simple_command(
-        self,
-        args: Optional[List[str]] = None,
-        command_type: CommandType = CommandType.CLI,
-        **kwargs: Any
+            self,
+            args: Optional[List[str]] = None,
+            command_type: CommandType = CommandType.CLI,
+            **kwargs: Any
     ) -> AsyncCommand:
         """Create a simple command for testing."""
         if args is None:
@@ -70,9 +70,9 @@ class BaseCommandTest(BaseTest):
 
     def assert_command_success(self, result: CommandExecutionResult, expected_output: Optional[str] = None) -> None:
         """Assert that a command result indicates success."""
-        self.assertEqual(result.state, CommandState.COMPLETED)
+        self.assertEqual(CommandState.COMPLETED, result.state, result.stderr)
         self.assertTrue(result.success)
-        self.assertEqual(result.return_code, 0)
+        self.assertEqual(0, result.return_code)
         self.assertIsNotNone(result.pid)
         self.assertGreater(result.execution_time, 0)
         if expected_output:
@@ -99,10 +99,10 @@ class BaseCommandTest(BaseTest):
         self.assertTrue(result.killed)
 
     def mock_subprocess_success(
-        self,
-        stdout: str = "test output",
-        stderr: str = "",
-        returncode: int = 0
+            self,
+            stdout: str = "test output",
+            stderr: str = "",
+            returncode: int = 0
     ) -> patch:
         """Mock subprocess.Popen to return a successful result."""
         mock_process: MagicMock = MagicMock()
