@@ -211,15 +211,6 @@ class SystemGateway:
                 })
                 result = await asyncio.to_thread(_execute_subprocess, args, command_str, timeout)
 
-            logger.info("Command execution completed successfully", extra={
-                "data": {
-                    "command": command_str,
-                    "success": result.success,
-                    "returncode": result.returncode,
-                    "duration_seconds": result.duration_seconds
-                }
-            })
-
             return CommandResponse(
                 success=result.success,
                 output=result.stdout or "",
@@ -292,31 +283,23 @@ class SystemGateway:
     @staticmethod
     async def execute_command_args(args: list[str]) -> CommandResponse:
         """Execute a system command using a list of arguments directly."""
-        logger = get_logger(__name__)
-        logger.info("Executing command with args", extra={"data": {"command_args": args}})
         return await SystemGateway._execute_command_internal(args)
 
     @staticmethod
     async def execute_command(command: str) -> CommandResponse:
         """Execute a system command asynchronously from a string."""
-        logger = get_logger(__name__)
-        logger.info("Executing command string", extra={"data": {"command": command}})
         args = SystemGateway._parse_command(command)
         return await SystemGateway._execute_command_internal(args)
 
     @staticmethod
     async def execute_command_with_timeout(command: str, timeout: float = 30.0) -> CommandResponse:
         """Execute a system command asynchronously with a timeout."""
-        logger = get_logger(__name__)
-        logger.info("Executing command with timeout", extra={"data": {"command": command, "timeout": timeout}})
         args = SystemGateway._parse_command(command)
         return await SystemGateway._execute_command_internal(args, timeout)
 
     @staticmethod
     async def execute_command_args_with_timeout(args: list[str], timeout: float = 30.0) -> CommandResponse:
         """Execute a system command using a list of arguments with a timeout."""
-        logger = get_logger(__name__)
-        logger.info("Executing command args with timeout", extra={"data": {"command_args": args, "timeout": timeout}})
         return await SystemGateway._execute_command_internal(args, timeout)
 
     @staticmethod
