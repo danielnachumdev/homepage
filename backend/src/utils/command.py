@@ -11,7 +11,7 @@ import subprocess
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Union, Callable, Dict
+from typing import List, Optional, Union, Callable, Dict, Literal
 from datetime import datetime
 
 try:
@@ -27,12 +27,14 @@ except ImportError:
             for key, value in kwargs.items():
                 setattr(self, key, value)
 
+
     class CommandResponse:
         """Response object for command execution."""
 
         def __init__(self, **kwargs):
             for key, value in kwargs.items():
                 setattr(self, key, value)
+
 
     def get_logger(name):
         import logging
@@ -102,7 +104,6 @@ class AsyncCommand:
             self,
             args: List[str],
             command_type: CommandType = CommandType.CLI,
-            blocking: bool = True,
             timeout: Optional[float] = None,
             cwd: Optional[Union[str, Path]] = None,
             env: Optional[Dict[str, str]] = None,
@@ -116,7 +117,6 @@ class AsyncCommand:
         Args:
             args: Command arguments as a list of strings
             command_type: Type of command (CLI or GUI)
-            blocking: Whether the command should block execution (always True for async)
             timeout: Timeout in seconds (None for no timeout)
             cwd: Working directory for command execution
             env: Environment variables for command execution
@@ -124,9 +124,9 @@ class AsyncCommand:
             on_complete: Callback called when command completes
             on_error: Callback called when command fails
         """
+        args = " ".join(args).strip().split()
         self.args = [arg for arg in args if arg]
         self.command_type = command_type
-        self.blocking = blocking  # Always True for async, kept for compatibility
         self.timeout = timeout
         self.cwd = Path(cwd) if cwd else None
         self.env = env or {}
@@ -182,7 +182,6 @@ class AsyncCommand:
                 "command": " ".join(self.args),
                 "command_args": self.args,
                 "command_type": self.command_type.value,
-                "blocking": self.blocking,
                 "timeout": timeout or self.timeout,
                 "cwd": str(self.cwd) if self.cwd else None,
                 "env_keys": list(self.env.keys()) if self.env else None
@@ -724,7 +723,7 @@ class AsyncCommand:
         )
 
     @staticmethod
-    def shell(command: str, **kwargs) -> 'AsyncCommand':
+    def from_str(command: str, **kwargs) -> 'AsyncCommand':
         """
         Create a shell command.
 
@@ -735,11 +734,26 @@ class AsyncCommand:
         Returns:
             AsyncCommand: Configured command instance
         """
+        kwargs['command_type'] = kwargs.get('command_type', CommandType.CLI)
         return AsyncCommand(
             args=command.strip().split(),
-            command_type=CommandType.CLI,
             **kwargs
         )
+
+    @staticmethod
+    def cmd(command: str, **kwargs) -> 'AsyncCommand':
+        command = f"cmd /c {command.strip()}"
+        return AsyncCommand.from_str(command, **kwargs)
+
+    @staticmethod
+    def powershell(command: str, **kwargs) -> 'AsyncCommand':
+        command = f"powershell -Command {command.strip()}"
+        return AsyncCommand.from_str(command, **kwargs)
+
+    @staticmethod
+    def wsl(command: str, **kwargs) -> 'AsyncCommand':
+        command = f"wsl {command.strip()}"
+        return AsyncCommand.from_str(command, **kwargs)
 
     def __repr__(self) -> str:
         """String representation of the command."""

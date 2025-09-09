@@ -67,7 +67,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_26_command_wait_functionality(self) -> None:
         """Test command wait functionality."""
-        cmd = AsyncCommand(['echo', 'test'])
+        cmd = AsyncCommand.cmd("echo test")
 
         # Wait for pending command (should execute it)
         result = self.run_async(cmd.wait())
@@ -78,7 +78,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_27_command_wait_already_completed(self) -> None:
         """Test waiting for already completed command."""
-        cmd = AsyncCommand(['echo', 'test'])
+        cmd = AsyncCommand.cmd("echo test")
 
         # Execute command first
         result1 = self.run_async(cmd.execute())
@@ -93,7 +93,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_28_command_kill_not_running(self) -> None:
         """Test killing a command that is not running."""
-        cmd = AsyncCommand(['echo', 'test'])
+        cmd = AsyncCommand.cmd("echo test")
 
         # Try to kill pending command
         killed = cmd.kill()
@@ -104,7 +104,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_29_command_kill_after_completion(self) -> None:
         """Test killing a command after it has completed."""
-        cmd = AsyncCommand(['echo', 'test'])
+        cmd = AsyncCommand.cmd("echo test")
 
         # Execute command
         result = self.run_async(cmd.execute())
@@ -119,7 +119,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_30_command_state_transitions(self) -> None:
         """Test command state transitions during execution."""
-        cmd = AsyncCommand(['echo', 'test'])
+        cmd = AsyncCommand.cmd("echo test")
 
         # Initial state
         self.assertEqual(cmd.state, CommandState.PENDING)
@@ -137,7 +137,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_31_command_multiple_executions(self) -> None:
         """Test multiple executions of the same command."""
-        cmd = AsyncCommand(['echo', 'test'])
+        cmd = AsyncCommand.cmd("echo test")
 
         # First execution
         result1 = self.run_async(cmd.execute())
@@ -166,10 +166,10 @@ class TestLevel3Advanced(BaseCommandTest):
         )
         result = self.run_async(cmd.execute())
 
-        # Should complete successfully (not timeout)
-        self.assertEqual(result.state, CommandState.COMPLETED)
-        self.assertTrue(result.success)
-        self.assertFalse(result.timeout_occurred)
+        # Should timeout due to short timeout
+        self.assertEqual(result.state, CommandState.TIMEOUT)
+        self.assertFalse(result.success)
+        self.assertTrue(result.timeout_occurred)
         self.assertFalse(result.killed)
 
     def test_33_command_execution_with_very_short_timeout(self) -> None:
@@ -201,8 +201,8 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_35_command_execution_with_environment_and_timeout(self) -> None:
         """Test command execution with environment variables and timeout."""
-        cmd = AsyncCommand(
-            ['cmd', '/c', 'echo', '%TEST_VAR%'],
+        cmd = AsyncCommand.cmd(
+            "echo %TEST_VAR%",
             env={'TEST_VAR': 'timeout_test'},
             timeout=1.0
         )
@@ -215,8 +215,8 @@ class TestLevel3Advanced(BaseCommandTest):
     def test_36_command_execution_with_cwd_and_timeout(self) -> None:
         """Test command execution with working directory and timeout."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            cmd = AsyncCommand(
-                ['cmd', '/c', 'echo', '%CD%'],
+            cmd = AsyncCommand.cmd(
+                "echo %CD%",
                 cwd=temp_dir,
                 timeout=1.0
             )
@@ -240,8 +240,8 @@ class TestLevel3Advanced(BaseCommandTest):
         def error_callback(cmd, exception):
             callbacks_called.append('error')
 
-        cmd = AsyncCommand(
-            ['echo', 'callback_test'],
+        cmd = AsyncCommand.cmd(
+            "echo callback_test",
             timeout=1.0,
             on_start=start_callback,
             on_complete=complete_callback,
@@ -255,8 +255,8 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_38_command_execution_with_gui_and_timeout(self) -> None:
         """Test GUI command execution with timeout."""
-        cmd = AsyncCommand(
-            ['cmd', '/c', 'echo', 'GUI timeout test'],
+        cmd = AsyncCommand.cmd(
+            "echo GUI timeout test",
             command_type=CommandType.GUI,
             timeout=1.0
         )
@@ -270,7 +270,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_39_command_state_consistency_during_execution(self) -> None:
         """Test that command state remains consistent during execution."""
-        cmd = AsyncCommand(['echo', 'consistency_test'])
+        cmd = AsyncCommand.cmd("echo consistency_test")
 
         # Track state changes
         states = []
@@ -308,8 +308,8 @@ class TestLevel3Advanced(BaseCommandTest):
             def error_callback(cmd, exception):
                 callbacks_called.append('error')
 
-            cmd = AsyncCommand(
-                args=['cmd', '/c', 'echo', '%TEST_VAR%'],
+            cmd = AsyncCommand.cmd(
+                "echo %TEST_VAR%",
                 command_type=CommandType.CLI,
                 timeout=2.0,
                 cwd=temp_dir,

@@ -37,14 +37,18 @@ class BaseCommandTest(BaseTest):
     ) -> AsyncCommand:
         """Create a simple command for testing."""
         if args is None:
-            args = ['echo', 'test']
-        cmd = AsyncCommand(args, command_type=command_type, **kwargs)
+            # Use Windows-compatible command
+            cmd = AsyncCommand.cmd("echo test", command_type=command_type, **kwargs)
+        else:
+            cmd = AsyncCommand(args, command_type=command_type, **kwargs)
         self._created_commands.append(cmd)
         return cmd
 
     def create_successful_command(self, **kwargs: Any) -> AsyncCommand:
         """Create a command that will succeed."""
-        return self.create_simple_command(['echo', 'Hello World'], **kwargs)
+        cmd = AsyncCommand.cmd("echo Hello World", **kwargs)
+        self._created_commands.append(cmd)
+        return cmd
 
     def create_failing_command(self, **kwargs: Any) -> AsyncCommand:
         """Create a command that will fail."""
@@ -52,7 +56,9 @@ class BaseCommandTest(BaseTest):
 
     def create_timeout_command(self, timeout: float = 0.1, **kwargs: Any) -> AsyncCommand:
         """Create a command that will timeout."""
-        return self.create_simple_command(['ping', '127.0.0.1', '-n', '100'], timeout=timeout, **kwargs)
+        cmd = AsyncCommand.cmd("ping 127.0.0.1 -n 100", timeout=timeout, **kwargs)
+        self._created_commands.append(cmd)
+        return cmd
 
     def create_gui_command(self, **kwargs: Any) -> AsyncCommand:
         """Create a GUI command for testing."""

@@ -26,9 +26,9 @@ class TestLevel4Integration(BaseCommandTest):
     def test_41_multiple_commands_sequential_execution(self) -> None:
         """Test executing multiple commands sequentially."""
         commands = [
-            AsyncCommand(['echo', 'First']),
-            AsyncCommand(['echo', 'Second']),
-            AsyncCommand(['echo', 'Third'])
+            AsyncCommand.cmd("echo First"),
+            AsyncCommand.cmd("echo Second"),
+            AsyncCommand.cmd("echo Third")
         ]
 
         results = []
@@ -47,11 +47,11 @@ class TestLevel4Integration(BaseCommandTest):
         """Test executing multiple commands with different parameters."""
         with tempfile.TemporaryDirectory() as temp_dir:
             commands = [
-                AsyncCommand(['echo', 'Basic'], command_type=CommandType.CLI),
-                AsyncCommand(['cmd', '/c', 'echo', 'GUI'], command_type=CommandType.GUI),
-                AsyncCommand(['cmd', '/c', 'echo', '%TEST_VAR%'], env={'TEST_VAR': 'env_test'}),
-                AsyncCommand(['cmd', '/c', 'echo', '%CD%'], cwd=temp_dir),
-                AsyncCommand(['echo', 'Timeout'], timeout=1.0)
+                AsyncCommand.cmd("echo Basic", command_type=CommandType.CLI),
+                AsyncCommand.cmd("echo GUI", command_type=CommandType.GUI),
+                AsyncCommand.cmd("echo %TEST_VAR%", env={'TEST_VAR': 'env_test'}),
+                AsyncCommand.cmd("echo %CD%", cwd=temp_dir),
+                AsyncCommand.cmd("echo Timeout", timeout=1.0)
             ]
 
             results = []
@@ -78,10 +78,7 @@ class TestLevel4Integration(BaseCommandTest):
             'TEMP': 'custom_temp'
         }
 
-        cmd = AsyncCommand(
-            ['cmd', '/c', 'echo', '%VAR1% %VAR2% %VAR3%'],
-            env=complex_env
-        )
+        cmd = AsyncCommand.cmd("echo %VAR1% %VAR2% %VAR3%", env=complex_env)
         result = self.run_async(cmd.execute())
 
         # Verify all environment variables were passed
@@ -112,22 +109,23 @@ class TestLevel4Integration(BaseCommandTest):
 
     def test_45_command_execution_with_special_characters(self) -> None:
         """Test command execution with special characters in arguments."""
-        special_chars = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '[', ']', '{', '}']
+        # cannot check here '^', '&' as they are special for cmd: & to execute multiple commands and ^ as the escape char
+        special_chars = ['!', '@', '#', '$', '%', '*', '(', ')', '[', ']', '{', '}']
 
         for char in special_chars:
-            cmd = AsyncCommand(['cmd', '/c', 'echo', f'test{char}'])
+            cmd = AsyncCommand.cmd(f"echo test{char}")
             result = self.run_async(cmd.execute())
 
             # Should handle special characters gracefully
             self.assert_command_success(result)
-            self.assertIn(f'test{char}', result.stdout)
+            self.assertIn(f'test{char}', result.stdout, f"Expected: test{char} but got {result.stdout}")
 
     def test_46_command_execution_with_unicode_characters(self) -> None:
         """Test command execution with unicode characters."""
         unicode_strings = ['Hello 世界', 'Привет мир', 'مرحبا بالعالم', '🌍🌎🌏']
 
         for unicode_str in unicode_strings:
-            cmd = AsyncCommand(['cmd', '/c', 'echo', unicode_str])
+            cmd = AsyncCommand.cmd(f"echo {unicode_str}")
             result = self.run_async(cmd.execute())
 
             # Should handle unicode characters
@@ -138,7 +136,7 @@ class TestLevel4Integration(BaseCommandTest):
         """Test command execution with very long arguments."""
         long_string = 'A' * 1000  # 1000 character string
 
-        cmd = AsyncCommand(['cmd', '/c', 'echo', long_string])
+        cmd = AsyncCommand.cmd(f"echo {long_string}")
         result = self.run_async(cmd.execute())
 
         # Should handle long arguments
@@ -147,10 +145,8 @@ class TestLevel4Integration(BaseCommandTest):
 
     def test_48_command_execution_with_empty_environment(self) -> None:
         """Test command execution with empty environment variables."""
-        cmd = AsyncCommand(
-            ['cmd', '/c', 'echo', '%NONEXISTENT_VAR%'],
-            env={}
-        )
+        cmd = AsyncCommand.cmd("echo %NONEXISTENT_VAR%", env={}
+                               )
         result = self.run_async(cmd.execute())
 
         # Should handle empty environment gracefully
@@ -161,10 +157,7 @@ class TestLevel4Integration(BaseCommandTest):
         """Test command execution with nonexistent working directory."""
         nonexistent_dir = Path('/nonexistent/directory/that/does/not/exist')
 
-        cmd = AsyncCommand(
-            ['echo', 'test'],
-            cwd=nonexistent_dir
-        )
+        cmd = AsyncCommand.cmd("echo test", cwd=nonexistent_dir)
         result = self.run_async(cmd.execute())
 
         # Should fail gracefully with nonexistent directory
@@ -175,12 +168,12 @@ class TestLevel4Integration(BaseCommandTest):
     def test_50_command_execution_with_invalid_timeout(self) -> None:
         """Test command execution with invalid timeout values."""
         # Test with negative timeout
-        cmd1 = AsyncCommand(['echo', 'test'], timeout=-1.0)
+        cmd1 = AsyncCommand.cmd("echo test", timeout=-1.0)
         result1 = self.run_async(cmd1.execute())
         self.assert_command_success(result1)  # Should still work
 
         # Test with zero timeout
-        cmd2 = AsyncCommand(['echo', 'test'], timeout=0.0)
+        cmd2 = AsyncCommand.cmd("echo test", timeout=0.0)
         result2 = self.run_async(cmd2.execute())
         self.assert_command_success(result2)  # Should still work
 
@@ -188,7 +181,7 @@ class TestLevel4Integration(BaseCommandTest):
         """Test command execution under stress (multiple rapid executions)."""
         commands = []
         for i in range(10):
-            cmd = AsyncCommand(['echo', f'stress_test_{i}'])
+            cmd = AsyncCommand.cmd(f"echo stress_test_{i}")
             commands.append(cmd)
 
         # Execute all commands rapidly
@@ -226,11 +219,11 @@ class TestLevel4Integration(BaseCommandTest):
     def test_53_command_execution_with_mixed_success_failure(self) -> None:
         """Test command execution with mixed success and failure scenarios."""
         commands = [
-            AsyncCommand(['echo', 'success1']),
+            AsyncCommand.cmd("echo success1"),
             AsyncCommand(['nonexistent_command_12345']),
-            AsyncCommand(['echo', 'success2']),
+            AsyncCommand.cmd("echo success2"),
             AsyncCommand(['another_nonexistent_command']),
-            AsyncCommand(['echo', 'success3'])
+            AsyncCommand.cmd("echo success3")
         ]
 
         results = []
@@ -253,10 +246,11 @@ class TestLevel4Integration(BaseCommandTest):
         def create_callback(name):
             def callback(cmd, result=None):
                 callback_chain.append(name)
+
             return callback
 
-        cmd = AsyncCommand(
-            ['echo', 'callback_chain_test'],
+        cmd = AsyncCommand.cmd(
+            "echo callback_chain_test",
             on_start=create_callback('start'),
             on_complete=create_callback('complete'),
             on_error=create_callback('error')
@@ -292,7 +286,7 @@ class TestLevel4Integration(BaseCommandTest):
 
     def test_56_command_execution_performance_benchmark(self) -> None:
         """Test command execution performance."""
-        cmd = AsyncCommand(['echo', 'performance_test'])
+        cmd = AsyncCommand.cmd("echo performance_test")
 
         # Measure execution time
         start_time = time.time()
@@ -313,7 +307,7 @@ class TestLevel4Integration(BaseCommandTest):
         # Create a command that produces large output
         large_output = 'A' * 10000  # 10KB output
 
-        cmd = AsyncCommand(['cmd', '/c', 'echo', large_output])
+        cmd = AsyncCommand.cmd(f"echo {large_output}")
         result = self.run_async(cmd.execute())
 
         # Should handle large output
@@ -323,7 +317,7 @@ class TestLevel4Integration(BaseCommandTest):
 
     def test_58_command_execution_reliability_test(self) -> None:
         """Test command execution reliability (multiple executions of same command)."""
-        cmd = AsyncCommand(['echo', 'reliability_test'])
+        cmd = AsyncCommand.cmd("echo reliability_test")
 
         # Execute the same command multiple times
         results = []
@@ -365,6 +359,7 @@ class TestLevel4Integration(BaseCommandTest):
             def track_callback(name):
                 def callback(cmd, result=None):
                     all_callbacks.append(f'{name}_{cmd.args[0]}')
+
                 return callback
 
             # Create complex command with all features
