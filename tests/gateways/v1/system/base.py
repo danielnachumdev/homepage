@@ -21,7 +21,7 @@ class BaseSystemGatewayTest(BaseTest):
     def get_echo_command(self, text: str) -> str:
         """Get platform-specific echo command."""
         if self.is_windows:
-            return f'cmd /c echo {text}'
+            return f'cmd /c echo "{text}"'
         else:
             return f'echo "{text}"'
 

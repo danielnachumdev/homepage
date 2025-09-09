@@ -23,7 +23,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
 
             # Create file
             if self.is_windows:
-                create_cmd = f'echo {test_content} > "{test_file}"'
+                create_cmd = f'cmd /c echo {test_content} > "{test_file}"'
             else:
                 create_cmd = f'echo "{test_content}" > "{test_file}"'
 
@@ -32,7 +32,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
 
             # Read file
             if self.is_windows:
-                read_cmd = f'type "{test_file}"'
+                read_cmd = f'cmd /c type "{test_file}"'
             else:
                 read_cmd = f'cat "{test_file}"'
 
@@ -42,7 +42,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
 
             # List directory
             if self.is_windows:
-                list_cmd = f'dir "{temp_dir}"'
+                list_cmd = f'cmd /c dir "{temp_dir}"'
             else:
                 list_cmd = f'ls "{temp_dir}"'
 
@@ -54,7 +54,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
         """Test environment variable access using system commands."""
         # Test getting environment variable
         if self.is_windows:
-            env_cmd = 'echo %PATH%'
+            env_cmd = 'cmd /c echo %PATH%'
         else:
             env_cmd = 'echo $PATH'
 
@@ -67,7 +67,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
         """Test getting system information using system commands."""
         # Test getting OS info
         if self.is_windows:
-            os_cmd = 'ver'
+            os_cmd = 'cmd /c ver'
         else:
             os_cmd = 'uname -a'
 
@@ -77,7 +77,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
 
         # Test getting current directory
         if self.is_windows:
-            pwd_cmd = 'cd'
+            pwd_cmd = 'cmd /c cd'
         else:
             pwd_cmd = 'pwd'
 
@@ -99,7 +99,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
 
         # Test getting process count
         if self.is_windows:
-            count_cmd = 'tasklist | find /c /v ""'
+            count_cmd = 'cmd /c tasklist | find /c /v ""'
         else:
             count_cmd = 'ps aux | wc -l'
 
@@ -111,7 +111,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
         """Test network-related commands."""
         # Test ping (with short timeout to avoid long waits)
         if self.is_windows:
-            ping_cmd = 'ping -n 1 127.0.0.1'
+            ping_cmd = 'cmd /c ping -n 1 127.0.0.1'
         else:
             ping_cmd = 'ping -c 1 127.0.0.1'
 
@@ -131,7 +131,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
         try:
             # Read and parse JSON
             if self.is_windows:
-                read_cmd = f'type "{json_file}"'
+                read_cmd = f'cmd /c type "{json_file}"'
             else:
                 read_cmd = f'cat "{json_file}"'
 
@@ -156,7 +156,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
             for i in range(5):
                 test_file = os.path.join(temp_dir, f"concurrent_file_{i}.txt")
                 if self.is_windows:
-                    cmd = f'echo "File {i} content" > "{test_file}"'
+                    cmd = f'cmd /c echo "File {i} content" > "{test_file}"'
                 else:
                     cmd = f'echo "File {i} content" > "{test_file}"'
                 commands.append(cmd)
@@ -182,18 +182,19 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
 
         # Test command with invalid arguments
         if self.is_windows:
-            invalid_args_response = self.run_async(SystemGateway.execute_command("dir /invalid_flag"))
+            invalid_args_response = self.run_async(SystemGateway.execute_command("cmd /c dir /invalid_flag"))
         else:
             invalid_args_response = self.run_async(SystemGateway.execute_command("ls --invalid-flag"))
 
-        # This might succeed or fail depending on the system, but should not crash
-        self.assertCommandSuccess(invalid_args_response)
+        # This should fail with invalid arguments
+        self.assertCommandFail(invalid_args_response)
+        self.assertIsNotNone(invalid_args_response.error)
 
     def test_timeout_integration(self):
         """Test timeout with real long-running commands."""
         # Test with a command that would normally take a long time
         if self.is_windows:
-            long_cmd = 'timeout /t 5 /nobreak'
+            long_cmd = 'ping -n 10 127.0.0.1'
         else:
             long_cmd = 'sleep 5'
 
@@ -208,13 +209,22 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
 
     def test_mixed_command_types_integration(self):
         """Test mixed command types in concurrent execution."""
-        commands = [
-            self.get_echo_command("string command"),
-            self.get_echo_args("args command"),
-            "echo 'quoted command'",
-            ["echo", "list", "command"],
-            self.get_echo_command("another string")
-        ]
+        if self.is_windows:
+            commands = [
+                self.get_echo_command("string command"),
+                self.get_echo_args("args command"),
+                "cmd /c echo quoted command",
+                ["cmd", "/c", "echo", "list", "command"],
+                self.get_echo_command("another string")
+            ]
+        else:
+            commands = [
+                self.get_echo_command("string command"),
+                self.get_echo_args("args command"),
+                "echo 'quoted command'",
+                ["echo", "list", "command"],
+                self.get_echo_command("another string")
+            ]
 
         responses = self.run_async(SystemGateway.execute_multiple_commands(commands))
 
@@ -227,13 +237,17 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
         """Test handling of large command output."""
         # Generate large output
         if self.is_windows:
-            large_cmd = 'for /l %i in (1,1,100) do @echo Line %i'
+            large_cmd = 'cmd /c for /l %i in (1,1,100) do @echo Line %i'
         else:
             large_cmd = 'for i in {1..100}; do echo "Line $i"; done'
 
         large_response = self.run_async(SystemGateway.execute_command(large_cmd))
         self.assertCommandSuccess(large_response)
-        self.assertGreater(len(large_response.output), 1000)  # Should have substantial output
+        # Windows for loop generates less output, so adjust expectation
+        if self.is_windows:
+            self.assertGreater(len(large_response.output), 500)  # Should have substantial output
+        else:
+            self.assertGreater(len(large_response.output), 1000)  # Should have substantial output
 
     def test_special_characters_integration(self):
         """Test commands with special characters in real scenarios."""
@@ -243,7 +257,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
             special_content = "Content with special chars: !@#$%^&*()"
 
             if self.is_windows:
-                create_cmd = f'echo {special_content} > "{special_file}"'
+                create_cmd = f'cmd /c echo {special_content} > "{special_file}"'
             else:
                 create_cmd = f'echo "{special_content}" > "{special_file}"'
 
@@ -258,7 +272,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
         unicode_content = "Unicode test: 你好世界 🌍 café naïve résumé"
 
         if self.is_windows:
-            unicode_cmd = f'echo {unicode_content}'
+            unicode_cmd = f'cmd /c echo {unicode_content}'
         else:
             unicode_cmd = f'echo "{unicode_content}"'
 
@@ -297,10 +311,16 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
     def test_cross_platform_compatibility_integration(self):
         """Test cross-platform compatibility."""
         # Test basic commands that should work on both platforms
-        basic_commands = [
-            "echo 'cross platform test'",
-            ["echo", "cross", "platform", "test"]
-        ]
+        if self.is_windows:
+            basic_commands = [
+                "cmd /c echo cross platform test",
+                ["cmd", "/c", "echo", "cross", "platform", "test"]
+            ]
+        else:
+            basic_commands = [
+                "echo 'cross platform test'",
+                ["echo", "cross", "platform", "test"]
+            ]
 
         for command in basic_commands:
             if isinstance(command, str):

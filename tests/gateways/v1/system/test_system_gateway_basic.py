@@ -138,7 +138,9 @@ class TestSystemGatewayBasic(BaseSystemGatewayTest):
         response = self.run_async(SystemGateway.execute_command_args(args))
 
         result = response.result
-        self.assertEqual(result.command, command)
+        # The command string is reconstructed from args, so it won't have quotes
+        expected_command = " ".join(args)
+        self.assertEqual(result.command, expected_command)
         self.assertEqual(result.args, self.get_echo_args("command string test"))
 
     def test_multiple_commands_different_outputs(self):

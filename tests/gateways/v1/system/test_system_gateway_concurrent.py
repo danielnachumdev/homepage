@@ -179,8 +179,9 @@ class TestSystemGatewayConcurrent(BaseSystemGatewayTest):
         self.assertCommandSuccess(responses[0])
         self.assertIn("normal command", responses[0].output)
 
-        # Second might fail or succeed depending on platform
-        self.assertCommandSuccess(responses[1])
+        # Second should fail (invalid command)
+        self.assertCommandFail(responses[1])
+        self.assertIsNotNone(responses[1].error)
 
         # Third should succeed
         self.assertCommandSuccess(responses[2])
@@ -269,16 +270,17 @@ class TestSystemGatewayConcurrent(BaseSystemGatewayTest):
             self.assertIn(f"Special chars {i + 1}", response.output)
 
     def test_execute_multiple_commands_zero_concurrency(self):
-        """Test executing multiple commands with zero concurrency (should still work)."""
+        """Test executing multiple commands with zero concurrency (should raise ValueError)."""
         commands = [
             self.get_echo_command("zero concurrency 1"),
             self.get_echo_command("zero concurrency 2")
         ]
 
-        responses = self.run_async(SystemGateway.execute_multiple_commands(commands, max_concurrent=0))
+        # Should raise ValueError for zero concurrency
+        with self.assertRaises(ValueError) as context:
+            self.run_async(SystemGateway.execute_multiple_commands(commands, max_concurrent=0))
 
-        # Should still have responses (semaphore with 0 limit might behave unexpectedly)
-        self.assertIsInstance(responses, list)
+        self.assertIn("max_concurrent must be a strictly positive integer", str(context.exception))
 
     def test_execute_multiple_commands_very_high_concurrency(self):
         """Test executing multiple commands with very high concurrency limit."""
@@ -299,8 +301,10 @@ class TestSystemGatewayConcurrent(BaseSystemGatewayTest):
     @patch('asyncio.gather')
     def test_execute_multiple_commands_gather_exception(self, mock_gather):
         """Test handling of exceptions in asyncio.gather."""
-        # Mock asyncio.gather to return an exception
-        mock_gather.return_value = [Exception("Test gather exception")]
+        # Mock asyncio.gather to return a coroutine that resolves to an exception
+        async def mock_gather_coro(*args, **kwargs):
+            return [Exception("Test gather exception")]
+        mock_gather.return_value = mock_gather_coro()
 
         commands = [self.get_echo_command("test")]
         responses = self.run_async(SystemGateway.execute_multiple_commands(commands))
