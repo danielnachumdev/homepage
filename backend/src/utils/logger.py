@@ -3,6 +3,31 @@ import sys
 from typing import Optional
 
 
+class ExtraDataFormatter(logging.Formatter):
+    """Custom formatter that includes extra data from log records."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        # Get the base formatted message
+        base_message = super().format(record)
+
+        # Check for data in two ways:
+        # 1. Direct 'data' attribute
+        # 2. 'data' key inside 'extra' dict
+        data = getattr(record, 'data', None)
+        if data is None:
+            extra = getattr(record, 'extra', None)
+            if extra and isinstance(extra, dict):
+                data = extra.get('data')
+
+        if data and isinstance(data, dict):
+            # Format data as key=value pairs, sorted alphabetically by key
+            sorted_items = sorted(data.items())
+            data_str = " | " + " | ".join([f"{k}={v}" for k, v in sorted_items])
+            return base_message + data_str
+
+        return base_message
+
+
 def setup_logger(
     name: str = "homepage_backend",
     level: int = logging.INFO,
@@ -35,7 +60,7 @@ def setup_logger(
     console_handler.setLevel(level)
 
     # Create formatter
-    formatter = logging.Formatter(format_string)
+    formatter = ExtraDataFormatter(format_string)
     console_handler.setFormatter(formatter)
 
     # Add handler to logger
@@ -71,6 +96,7 @@ default_logger = setup_logger()
 
 
 __all__ = [
+    "ExtraDataFormatter",
     "setup_logger",
     "get_logger",
     "default_logger"
