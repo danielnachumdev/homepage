@@ -29,11 +29,11 @@ class TestSpeedTestServiceBasic(BaseSpeedTestServiceTest):
         self.assertIsNotNone(self.service.logger)
         # Note: We don't test private attributes directly in real testing
 
-    async def test_perform_speed_test_success(self):
+    def test_perform_speed_test_success(self):
         """Test successful speed test execution."""
         # This test will use the real speedtest module
         # Note: This test requires internet connection and may take time
-        result = await self.service.perform_speed_test()
+        result = self.run_async(self.service.perform_speed_test())
 
         # The result depends on internet connectivity and speedtest availability
         self.assertIsNotNone(result)
@@ -49,14 +49,14 @@ class TestSpeedTestServiceBasic(BaseSpeedTestServiceTest):
             self.assertIsNotNone(speed_result.timestamp)
 
             # Verify last result was stored (test public interface)
-            last_result = await self.service.get_last_result()
+            last_result = self.run_async(self.service.get_last_result())
             if last_result.success:
                 self.assertIsNotNone(last_result.result)
 
-    async def test_perform_speed_test_with_request(self):
+    def test_perform_speed_test_with_request(self):
         """Test speed test with custom request."""
         request = SpeedTestRequest(interval_seconds=5)
-        result = await self.service.perform_speed_test(request)
+        result = self.run_async(self.service.perform_speed_test(request))
 
         # The result depends on internet connectivity
         self.assertIsNotNone(result)
@@ -64,11 +64,11 @@ class TestSpeedTestServiceBasic(BaseSpeedTestServiceTest):
         if result.success:
             self.assertIsNotNone(result.result)
 
-    async def test_perform_speed_test_exception(self):
+    def test_perform_speed_test_exception(self):
         """Test speed test with network issues."""
         # This test will use the real speedtest module
         # It may fail due to network issues, which is expected
-        result = await self.service.perform_speed_test()
+        result = self.run_async(self.service.perform_speed_test())
 
         # The result depends on network connectivity
         self.assertIsNotNone(result)

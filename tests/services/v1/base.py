@@ -21,7 +21,7 @@ class BaseDatabaseServiceTest(BaseServiceTest):
         super().setUp()
         # Create an in-memory database for testing
         self.test_db = DatabaseFactory.get_database(db_type="memory")
-
+        self.run_async(self.test_db.connect())
         # Mock the get_db function to return our test database
         self.get_db_patcher = patch('backend.src.db.dependencies.get_db')
         self.mock_get_db = self.get_db_patcher.start()
@@ -32,7 +32,7 @@ class BaseDatabaseServiceTest(BaseServiceTest):
         self.get_db_patcher.stop()
         super().tearDown()
 
-    async def create_test_setting(
+    def create_test_setting(
             self,
             setting_id: str,
             category: str,
@@ -50,10 +50,10 @@ class BaseDatabaseServiceTest(BaseServiceTest):
             "description": description,
             "is_user_editable": str(is_user_editable).lower()
         }
-        await self.test_db.insert("settings", data)
+        self.run_async(self.test_db.insert("settings", data))
         return data
 
-    async def get_test_setting(self, setting_id: str) -> Optional[Dict[str, Any]]:
+    def get_test_setting(self, setting_id: str) -> Optional[Dict[str, Any]]:
         """Helper method to get a test setting from the database."""
         where_clause = WhereClause(
             conditions=[
@@ -61,15 +61,15 @@ class BaseDatabaseServiceTest(BaseServiceTest):
             ]
         )
         query = SelectQuery(table="settings", where=where_clause)
-        records = await self.test_db.get(query)
+        records = self.run_async(self.test_db.get(query))
         return records[0] if records else None
 
-    async def get_all_test_settings(self) -> List[Dict[str, Any]]:
+    def get_all_test_settings(self) -> List[Dict[str, Any]]:
         """Helper method to get all test settings from the database."""
         query = SelectQuery(table="settings")
-        return await self.test_db.get(query)
+        return self.run_async(self.test_db.get(query))
 
-    async def update_test_setting(self, setting_id: str, value: Any) -> int:
+    def update_test_setting(self, setting_id: str, value: Any) -> int:
         """Helper method to update a test setting in the database."""
         where_clause = WhereClause(
             conditions=[
@@ -81,7 +81,7 @@ class BaseDatabaseServiceTest(BaseServiceTest):
             where=where_clause,
             data={"value": value}
         )
-        return await self.test_db.update(query)
+        return self.run_async(self.test_db.update(query))
 
 
 __all__ = [

@@ -17,11 +17,11 @@ class TestDockerServiceOperations(BaseDockerServiceTest):
         super().setUp()
         self.service = DockerService()
 
-    async def test_get_container_info_success(self):
+    def test_get_container_info_success(self):
         """Test successful container info retrieval."""
         # This test will use the real SystemGateway
         # Note: This test may fail if Docker is not running or container doesn't exist
-        result = await self.service.get_container_info("test_container")
+        result = self.run_async(self.service.get_container_info("test_container"))
 
         # The result depends on whether Docker is available and container exists
         # We just test that the method doesn't crash and returns a valid response
@@ -30,10 +30,10 @@ class TestDockerServiceOperations(BaseDockerServiceTest):
         if result.success:
             self.assertEqual(result.container_name, "test_container")
 
-    async def test_get_container_info_failure(self):
+    def test_get_container_info_failure(self):
         """Test container info retrieval failure."""
         # Test with a container that likely doesn't exist
-        result = await self.service.get_container_info("nonexistent_container_12345")
+        result = self.run_async(self.service.get_container_info("nonexistent_container_12345"))
 
         # This should fail gracefully
         self.assertIsNotNone(result)
@@ -42,11 +42,11 @@ class TestDockerServiceOperations(BaseDockerServiceTest):
             self.assertEqual(result.container_name,
                              "nonexistent_container_12345")
 
-    async def test_list_containers_success(self):
+    def test_list_containers_success(self):
         """Test successful container listing."""
         # This test will use the real SystemGateway
         # Note: This test may fail if Docker is not running
-        result = await self.service.list_containers()
+        result = self.run_async(self.service.list_containers())
 
         # The result depends on whether Docker is available
         # We just test that the method doesn't crash and returns a valid response
@@ -56,10 +56,10 @@ class TestDockerServiceOperations(BaseDockerServiceTest):
             self.assertIsInstance(result.containers, list)
             self.assertIsInstance(result.total_count, int)
 
-    async def test_list_containers_all(self):
+    def test_list_containers_all(self):
         """Test listing all containers including stopped ones."""
         # This test will use the real SystemGateway
-        result = await self.service.list_containers(all_containers=True)
+        result = self.run_async(self.service.list_containers(all_containers=True))
 
         # The result depends on whether Docker is available
         self.assertIsNotNone(result)

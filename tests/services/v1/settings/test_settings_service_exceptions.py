@@ -15,50 +15,50 @@ class TestSettingsServiceExceptions(BaseDatabaseServiceTest):
         super().setUp()
         self.service = SettingsService()
 
-    async def test_get_all_settings_exception_handling(self):
+    def test_get_all_settings_exception_handling(self):
         """Test exception handling in get_all_settings."""
         # Mock database to raise an exception
         with patch.object(self.service.db, 'get', side_effect=Exception("Database error")):
-            result = await self.service.get_all_settings()
+            result = self.run_async(self.service.get_all_settings())
 
             self.assertFalse(result.success)
             self.assertIn("Error retrieving settings", result.message)
             self.assertEqual(len(result.settings), 0)
 
-    async def test_get_setting_exception_handling(self):
+    def test_get_setting_exception_handling(self):
         """Test exception handling in get_setting."""
         # Mock database to raise an exception
         with patch.object(self.service.db, 'get', side_effect=Exception("Database error")):
-            result = await self.service.get_setting("test_setting")
+            result = self.run_async(self.service.get_setting("test_setting"))
 
             self.assertIsNone(result)
 
-    async def test_update_setting_exception_handling(self):
+    def test_update_setting_exception_handling(self):
         """Test exception handling in update_setting."""
         request = SettingUpdateRequest(id="test_setting", value="new_value")
 
         # Mock database to raise an exception
         with patch.object(self.service.db, 'update', side_effect=Exception("Database error")):
-            result = await self.service.update_setting(request)
+            result = self.run_async(self.service.update_setting(request))
 
             self.assertFalse(result.success)
             self.assertIn("Error updating setting", result.message)
 
-    async def test_create_or_update_setting_exception_handling(self):
+    def test_create_or_update_setting_exception_handling(self):
         """Test exception handling in create_or_update_setting."""
         # Mock database to raise an exception
         with patch.object(self.service.db, 'insert', side_effect=Exception("Database error")):
-            result = await self.service.create_or_update_setting(
+            result = self.run_async(self.service.create_or_update_setting(
                 setting_id="test_setting",
                 category="category",
                 setting_type="type",
                 value="value"
-            )
+            ))
 
             self.assertFalse(result.success)
             self.assertIn("Error creating/updating setting", result.message)
 
-    async def test_bulk_update_settings_exception_handling(self):
+    def test_bulk_update_settings_exception_handling(self):
         """Test exception handling in bulk_update_settings."""
         request = BulkSettingsUpdateRequest(
             settings=[SettingUpdateRequest(id="setting1", value="value1")]
@@ -66,7 +66,7 @@ class TestSettingsServiceExceptions(BaseDatabaseServiceTest):
 
         # Mock database to raise an exception
         with patch.object(self.service.db, 'get', side_effect=Exception("Database error")):
-            result = await self.service.bulk_update_settings(request)
+            result = self.run_async(self.service.bulk_update_settings(request))
 
             self.assertFalse(result.success)
             self.assertIn("Error in bulk update", result.message)

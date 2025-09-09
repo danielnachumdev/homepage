@@ -207,7 +207,7 @@ class ChromeService:
 
                 # Track the process for cleanup
                 self._opened_processes.append(process_handle)
-                self.logger.debug("Created process handle with command handle: %s", result.handle)
+                self.logger.debug("Created process handle with command handle: %s", result.result)
 
                 return process_handle
             else:
