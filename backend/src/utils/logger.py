@@ -1,31 +1,82 @@
 import logging
 import sys
+import io
 from typing import Optional
+
+
+class UTF8StreamHandler(logging.StreamHandler):
+    """Custom StreamHandler that ensures UTF-8 encoding."""
+
+    def __init__(self, stream=None):
+        if stream is None:
+            stream = sys.stdout
+        super().__init__(stream)
+        # Ensure the stream uses UTF-8 encoding
+        if hasattr(stream, 'reconfigure'):
+            try:
+                stream.reconfigure(encoding='utf-8', errors='replace')
+            except (AttributeError, OSError):
+                pass
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            # Ensure the message is properly encoded
+            if isinstance(msg, str):
+                # Write as UTF-8 bytes to handle Unicode properly
+                self.stream.write(msg + self.terminator)
+            else:
+                self.stream.write(str(msg) + self.terminator)
+            self.flush()
+        except UnicodeError:
+            # Fallback for Unicode issues
+            try:
+                self.stream.write(f"Unicode error in log: {record.getMessage()}\n")
+                self.flush()
+            except Exception:
+                # Last resort - write to stderr
+                sys.stderr.write(f"Critical logging error: {record.getMessage()}\n")
 
 
 class ExtraDataFormatter(logging.Formatter):
     """Custom formatter that includes extra data from log records."""
 
     def format(self, record: logging.LogRecord) -> str:
-        # Get the base formatted message
-        base_message = super().format(record)
+        try:
+            # Get the base formatted message
+            base_message = super().format(record)
 
-        # Check for data in two ways:
-        # 1. Direct 'data' attribute
-        # 2. 'data' key inside 'extra' dict
-        data = getattr(record, 'data', None)
-        if data is None:
-            extra = getattr(record, 'extra', None)
-            if extra and isinstance(extra, dict):
-                data = extra.get('data')
+            # Check for data in two ways:
+            # 1. Direct 'data' attribute
+            # 2. 'data' key inside 'extra' dict
+            data = getattr(record, 'data', None)
+            if data is None:
+                extra = getattr(record, 'extra', None)
+                if extra and isinstance(extra, dict):
+                    data = extra.get('data')
 
-        if data and isinstance(data, dict):
-            # Format data as key=value pairs, sorted alphabetically by key
-            sorted_items = sorted(data.items())
-            data_str = " | " + " | ".join([f"{k}={v}" for k, v in sorted_items])
-            return base_message + data_str
+            if data and isinstance(data, dict):
+                # Format data as key=value pairs, sorted alphabetically by key
+                # Handle Unicode characters safely
+                sorted_items = sorted(data.items())
+                data_pairs = []
+                for k, v in sorted_items:
+                    try:
+                        # Ensure both key and value are properly encoded
+                        k_str = str(k) if k is not None else 'None'
+                        v_str = str(v) if v is not None else 'None'
+                        data_pairs.append(f"{k_str}={v_str}")
+                    except UnicodeError:
+                        # Fallback for problematic Unicode characters
+                        data_pairs.append(f"{repr(k)}={repr(v)}")
 
-        return base_message
+                data_str = " | " + " | ".join(data_pairs)
+                return base_message + data_str
+
+            return base_message
+        except UnicodeError as e:
+            # Fallback for any Unicode issues
+            return f"Unicode error in log formatting: {e} | {record.getMessage()}"
 
 
 def setup_logger(
@@ -55,8 +106,8 @@ def setup_logger(
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
-    # Create console handler that outputs to stdout
-    console_handler = logging.StreamHandler(sys.stdout)
+    # Create console handler that outputs to stdout with UTF-8 encoding
+    console_handler = UTF8StreamHandler(sys.stdout)
     console_handler.setLevel(level)
 
     # Create formatter
@@ -96,6 +147,7 @@ default_logger = setup_logger()
 
 
 __all__ = [
+    "UTF8StreamHandler",
     "ExtraDataFormatter",
     "setup_logger",
     "get_logger",
