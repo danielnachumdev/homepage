@@ -138,14 +138,8 @@ class ChromeService:
 
         # Check if URL has a scheme (http, https, file, etc.)
         if not parsed_url.scheme:
-            # If no scheme, assume it's a web URL and add https://
-            if url.startswith(('www.', 'http://', 'https://')):
-                self.logger.error("Invalid URL format: %s", url)
-                raise ValueError(f"Invalid URL format: {url}")
-            else:
-                url = f"https://{url}"
-                parsed_url = urlparse(url)
-                self.logger.debug("Added https:// scheme to URL: %s", url)
+            self.logger.error("Invalid URL format: %s", url)
+            raise ValueError(f"Invalid URL format: {url}")
 
         # Validate that the scheme is supported by Chrome
         if parsed_url.scheme not in ('http', 'https', 'file', 'chrome', 'chrome-extension', 'data', 'about'):
@@ -189,17 +183,17 @@ class ChromeService:
             command = self._build_chrome_command(normalized_url, profile)
             command_str = " ".join(command)
 
-            # Execute using SystemGateway
+            # Execute using SystemGateway (no pipe to avoid hanging with GUI apps)
             self.logger.debug("Executing Chrome command via SystemGateway")
             system_gateway = SystemGateway()
-            result = await system_gateway.execute_command_args(command)
+            result = await system_gateway.execute_command_args(command, is_cli=False)
 
             if result.success:
                 self.logger.info("Successfully opened URL %s in profile %s", normalized_url, profile_id)
 
                 # Create process handle using CommandResult from SystemGateway
                 process_handle = ChromeProcessHandle(
-                    command_handle=result.result.dict() if result.result else None,
+                    command_handle=result.result.model_dump() if result.result else None,
                     profile_id=profile_id,
                     url=normalized_url,
                     is_running=True

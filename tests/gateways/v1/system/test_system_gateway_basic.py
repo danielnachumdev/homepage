@@ -1,11 +1,8 @@
 """
 Basic functionality tests for SystemGateway.
 """
-import asyncio
-from unittest.mock import patch, MagicMock
-import unittest
-from backend.src.gateways.v1.system_gateway import SystemGateway
-from backend.src.schemas.v1.system import CommandResponse, CommandResult
+from unittest.mock import patch
+from backend.src import SystemGateway
 from tests.gateways.v1.system.base import BaseSystemGatewayTest
 
 
@@ -186,14 +183,14 @@ class TestSystemGatewayBasic(BaseSystemGatewayTest):
         self.assertCommandFail(response)
         self.assertIsNotNone(response.error)
 
-    @patch('asyncio.to_thread')
+    @patch('backend.src.gateways.v1.system_gateway.command_executor.asyncio.to_thread')
     def test_execute_command_internal_exception_handling(self, mock_to_thread):
-        """Test exception handling in _execute_command_internal."""
+        """Test exception handling in command execution."""
         # Mock asyncio.to_thread to raise an exception
         mock_to_thread.side_effect = Exception("Test exception")
 
         args = self.get_echo_args("test")
-        response = self.run_async(SystemGateway._execute_command_internal(args))
+        response = self.run_async(SystemGateway.execute_command_args(args))
 
         self.assertCommandFail(response)
         self.assertEqual(response.output, "")

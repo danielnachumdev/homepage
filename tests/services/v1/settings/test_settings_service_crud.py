@@ -2,11 +2,9 @@
 Tests for SettingsService CRUD operations.
 """
 from unittest.mock import patch
-from tests.services.v1.base import BaseDatabaseServiceTest
 from backend.src.services.v1.settings_service import SettingsService
-from backend.src.schemas.v1.settings import (
-    SettingValue, SettingUpdateRequest, BulkSettingsUpdateRequest
-)
+from backend.src.schemas.v1.settings import SettingValue, SettingUpdateRequest, BulkSettingsUpdateRequest
+from ..base import BaseDatabaseServiceTest
 
 
 class TestSettingsServiceCRUD(BaseDatabaseServiceTest):

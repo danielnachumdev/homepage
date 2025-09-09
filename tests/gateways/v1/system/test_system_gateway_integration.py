@@ -115,7 +115,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
         else:
             ping_cmd = 'ping -c 1 127.0.0.1'
 
-        ping_response = self.run_async(SystemGateway.execute_command_with_timeout(ping_cmd, timeout=10.0))
+        ping_response = self.run_async(SystemGateway.execute_command(ping_cmd, timeout=10.0))
         self.assertCommandSuccess(ping_response)
         self.assertIn("127.0.0.1", ping_response.output)
 
@@ -200,7 +200,7 @@ class TestSystemGatewayIntegration(BaseSystemGatewayTest):
 
         # Test with short timeout
         timeout_response = self.run_async(
-            SystemGateway.execute_command_with_timeout(long_cmd, timeout=1.0)
+            SystemGateway.execute_command(long_cmd, timeout=1.0)
         )
 
         # Should timeout

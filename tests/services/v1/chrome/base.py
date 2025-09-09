@@ -1,22 +1,29 @@
 """
 Base test class for Chrome service testing.
 """
+from backend.src.services.v1.chrome_service import ChromeService
 from tests.services.v1.base import BaseServiceTest
-from backend.src.gateways.v1.system_gateway import SystemGateway
+from backend.src.gateways.v1.
+
+
+class CloseChromeTabContext:
+    def __init__(self):
+        self.chrome_service = ChromeService()
+
+    def __enter__(self):
+        self.before = set(h.pid for h in self.chrome_service.get_opened_processes())
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        after = set(h.pid for h in self.chrome_service.get_opened_processes())
+        diff = after - self.before
+        for pid in diff:
+            pass  # KILL PID USING SYSTEM GATEWAY OR CHROME SERVICE HANDLER METHOD
 
 
 class BaseChromeServiceTest(BaseServiceTest):
     """Base test class for Chrome service tests."""
-
-    def setUp(self):
-        """Set up test fixtures before each test method."""
-        super().setUp()
-        # Use real SystemGateway for testing
-        self.system_gateway = SystemGateway()
-
-    def tearDown(self):
-        """Clean up after each test method."""
-        super().tearDown()
+    AutoCloseTabContext = CloseChromeTabContext
 
 
 __all__ = [

@@ -121,67 +121,42 @@ class TestChromeService(BaseChromeServiceTest):
 
     def test_open_url_in_profile_success(self):
         """Test successful URL opening in profile."""
-        # This test will use the real SystemGateway
-        # Note: This test may fail if Chrome is not installed or accessible
-        try:
-            self.run_async(
-                self.service.open_url_in_profile(
-                    "https://example.com", "test_profile")
-            )
-            # If we get here, the function completed successfully (returned None)
-            self.assertTrue(True)
-        except (RuntimeError, OSError, FileNotFoundError, PermissionError, ImportError):
-            # These are expected if Chrome is not available
-            pass
+        self.run_async(self.service.open_url_in_profile("https://example.com", "test_profile"))
 
     def test_open_url_in_profile_invalid_url(self):
         """Test URL opening with invalid URL."""
         # Test with an invalid URL - should raise ValueError
         with self.assertRaises(ValueError):
-            self.run_async(
-                self.service.open_url_in_profile(
-                    "invalid-url", "test_profile")
-            )
+            self.run_async(self.service.open_url_in_profile("invalid-url", "test_profile"))
 
     def test_open_url_in_profile_empty_url(self):
         """Test URL opening with empty URL."""
         # Test with empty URL - should raise ValueError
         with self.assertRaises(ValueError):
-            self.run_async(
-                self.service.open_url_in_profile("", "test_profile")
-            )
+            self.run_async(self.service.open_url_in_profile("", "test_profile"))
 
     def test_open_url_in_profile_none_url(self):
         """Test URL opening with None URL."""
         # Test with None URL - should raise ValueError
         with self.assertRaises(ValueError):
-            self.run_async(
-                self.service.open_url_in_profile(None, "test_profile")
-            )
+            self.run_async(self.service.open_url_in_profile(None, "test_profile"))
 
     def test_open_url_in_profile_invalid_profile_id(self):
         """Test URL opening with invalid profile ID."""
         # Test with empty profile ID - should raise ValueError
         with self.assertRaises(ValueError):
-            self.run_async(
-                self.service.open_url_in_profile("https://example.com", "")
-            )
+            self.run_async(self.service.open_url_in_profile("https://example.com", ""))
 
     def test_open_url_in_profile_unsupported_scheme(self):
         """Test URL opening with unsupported scheme."""
         # Test with unsupported scheme - should raise ValueError
         with self.assertRaises(ValueError):
-            self.run_async(
-                self.service.open_url_in_profile(
-                    "ftp://example.com", "test_profile")
-            )
+            self.run_async(self.service.open_url_in_profile("ftp://example.com", "test_profile"))
 
     def test_open_url_in_profile_url_normalization(self):
         """Test URL normalization (adding https:// prefix)."""
         # Test that URLs without scheme get https:// prefix added
-        self.run_async(
-            self.service.open_url_in_profile("example.com", "test_profile")
-        )
+        self.run_async(self.service.open_url_in_profile("example.com", "test_profile"))
 
     def test_validate_and_normalize_url_valid_urls(self):
         """Test URL validation and normalization with valid URLs."""
