@@ -14,7 +14,7 @@ from typing import Set
 
 from backend.src.utils.command import AsyncCommand, CommandType, CommandState
 from tests.utils.command.base import BaseCommandTest
-from tests.utils.command.process_context import CalculatorKillContext
+from tests.utils.command.process_kill_context import CalculatorKillContext
 
 
 class TestLevel5ProcessManagement(BaseCommandTest):

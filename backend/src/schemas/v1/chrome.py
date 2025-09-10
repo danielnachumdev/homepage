@@ -67,6 +67,8 @@ class ProfileUpdateResponse(BaseModel):
 
 class ChromeOpenRequestResult(BaseModel):
     """Handle for a Chrome process opened by the service."""
+    model_config = {"arbitrary_types_allowed": True}
+
     result: Optional[CommandExecutionResult] = None
     profile_id: str
     url: str

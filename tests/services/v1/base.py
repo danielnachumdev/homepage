@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from danielutils.abstractions.db import SelectQuery, UpdateQuery, WhereClause, Condition, Operator
 
 from backend.src.db.database_factory import DatabaseFactory
-from ...base import BaseTest
+from tests.base import BaseTest
 
 
 class BaseServiceTest(BaseTest):

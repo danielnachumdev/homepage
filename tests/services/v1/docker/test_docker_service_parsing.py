@@ -124,10 +124,8 @@ class TestDockerServiceParsing(BaseDockerServiceTest):
         """Test size formatting."""
         self.assertEqual(self.service._format_size(1024), "1024.0 B")
         self.assertEqual(self.service._format_size(1024 * 1024), "1024.0 KB")
-        self.assertEqual(self.service._format_size(
-            1024 * 1024 * 1024), "1024.0 MB")
-        self.assertEqual(self.service._format_size(
-            1024 * 1024 * 1024 * 1024), "1024.0 GB")
+        self.assertEqual(self.service._format_size(1024 * 1024 * 1024), "1024.0 MB")
+        self.assertEqual(self.service._format_size(1024 * 1024 * 1024 * 1024), "1024.0 GB")
 
     def test_build_deploy_command(self):
         """Test basic deploy command building."""
@@ -167,8 +165,7 @@ class TestDockerServiceParsing(BaseDockerServiceTest):
             }
         }
 
-        command = self.service._build_deploy_command_from_inspect(
-            container_data)
+        command = self.service._build_deploy_command_from_inspect(container_data)
 
         self.assertIn("docker run -d", command)
         self.assertIn("--name test_container", command)

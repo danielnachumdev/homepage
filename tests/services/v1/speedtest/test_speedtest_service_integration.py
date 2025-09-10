@@ -58,8 +58,7 @@ class TestSpeedTestServiceIntegration(BaseSpeedTestServiceTest):
 
         # Verify last result is the second one
         last_result = self.run_async(self.service.get_last_result())
-        self.assertEqual(last_result.result.timestamp,
-                         result2.result.timestamp)
+        self.assertEqual(last_result.result.timestamp, result2.result.timestamp)
 
     def test_speed_formatting_edge_cases(self):
         """Test speed formatting edge cases."""

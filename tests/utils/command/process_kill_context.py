@@ -41,7 +41,8 @@ class ProcessKillContext:
         """Get list of currently running application process PIDs."""
         try:
             # Use tasklist to find application processes
-            cmd = AsyncCommand.powershell(f'tasklist /FI "IMAGENAME eq {self.app_name}" /FO CSV')
+            cmd = AsyncCommand(
+                ["powershell", "-Command", "tasklist", "/FI", f"\"IMAGENAME eq {self.app_name}\"", "/FO", "CSV"])
             result = self.test_instance.run_async(cmd.execute())
 
             if not result.success:

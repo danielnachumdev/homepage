@@ -86,6 +86,9 @@ class CommandExecutionResult:
         return f"CommandExecutionResult(command={self.command}, success={self.success}, return_code={self.return_code}, stdout='{self.stdout}', stderr='{self.stderr}', execution_time={self.execution_time}, state={self.state}, killed={self.killed}, timeout_occurred={self.timeout_occurred}, start_time={self.start_time}, end_time={self.end_time}, pid={self.pid}, command_type={self.command_type}, exception={self.exception}) - {status}"
 
 
+logger = get_logger(__name__)
+
+
 class AsyncCommand:
     """
     Generic async command execution class with comprehensive state tracking and result handling.
@@ -124,8 +127,7 @@ class AsyncCommand:
             on_complete: Callback called when command completes
             on_error: Callback called when command fails
         """
-        args = " ".join(args).strip().split()
-        self.args = [arg for arg in args if arg]
+        self.args = args
         self.command_type = command_type
         if timeout is not None:
             if timeout <= 0.0:
@@ -144,7 +146,7 @@ class AsyncCommand:
         self._start_time: Optional[datetime] = None
 
         # Logger
-        self.logger = get_logger(__name__)
+        self.logger = logger
 
     @property
     def state(self) -> CommandState:
@@ -727,6 +729,70 @@ class AsyncCommand:
         )
 
     @staticmethod
+    def _parse_command_string(command: str) -> List[str]:
+        """
+        Parse a command string into a list of arguments, handling quoted strings properly.
+
+        This method intelligently splits command strings while preserving spaces within
+        single or double quotes. It handles both single and double quotes correctly.
+
+        Args:
+            command: The command string to parse
+
+        Returns:
+            List[str]: List of parsed command arguments
+
+        Examples:
+            >>> _parse_command_string('echo "hello world"')
+            ['echo', 'hello world']
+            >>> _parse_command_string("git commit -m 'fix bug'")
+            ['git', 'commit', '-m', 'fix bug']
+            >>> _parse_command_string('cmd "arg with spaces" --flag value')
+            ['cmd', 'arg with spaces', '--flag', 'value']
+        """
+        if not command.strip():
+            return []
+
+        args = []
+        current_arg = ""
+        in_quotes = False
+        quote_char = None
+
+        i = 0
+        while i < len(command):
+            char = command[i]
+
+            if not in_quotes:
+                if char in ['"', "'"]:
+                    # Start of quoted string
+                    in_quotes = True
+                    quote_char = char
+                elif char == ' ':
+                    # Space outside quotes - end of current argument
+                    if current_arg:
+                        args.append(current_arg)
+                        current_arg = ""
+                else:
+                    # Regular character
+                    current_arg += char
+            else:
+                if char == quote_char:
+                    # End of quoted string
+                    in_quotes = False
+                    quote_char = None
+                else:
+                    # Character inside quotes
+                    current_arg += char
+
+            i += 1
+
+        # Add the last argument if there is one
+        if current_arg:
+            args.append(current_arg)
+
+        return args
+
+    @staticmethod
     def from_str(command: str, **kwargs) -> 'AsyncCommand':
         """
         Create a shell command.
@@ -739,8 +805,12 @@ class AsyncCommand:
             AsyncCommand: Configured command instance
         """
         kwargs['command_type'] = kwargs.get('command_type', CommandType.CLI)
+        if '"' in command or "'" in command:
+            logger.warning(
+                "Command '{}' contains quotes which can lead to the command failing due to parsing. It is recommended to build explicitly using the constructor to be able to escape the quotes correctly.".format(
+                    command))
         return AsyncCommand(
-            args=command.strip().split(),
+            args=AsyncCommand._parse_command_string(command),
             **kwargs
         )
 
