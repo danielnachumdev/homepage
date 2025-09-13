@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Box,
     TextField,
@@ -19,7 +19,7 @@ import {
     ArrowDropDown as ArrowDropDownIcon,
 } from '@mui/icons-material';
 import type { SearchEngineStrategy } from './SearchEngineStrategy';
-import { useSearchEngine } from '../../hooks/useSearchEngine';
+import { useSearchEngine, useFocus } from '../../hooks';
 import styles from './SearchComponent.module.css';
 
 interface SearchComponentProps {
@@ -34,11 +34,56 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     onSearchNewTab,
 }) => {
     const { selectedEngine, availableEngines, setSelectedEngine } = useSearchEngine();
+    const focus = useFocus();
     const [query, setQuery] = useState('');
     const [engineMenuAnchor, setEngineMenuAnchor] = useState<null | HTMLElement>(null);
     const [modeMenuAnchor, setModeMenuAnchor] = useState<null | HTMLElement>(null);
     const [searchMode, setSearchMode] = useState<SearchMode>('newTab');
     const [isFocused, setIsFocused] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const hasInitiallyFocused = useRef(false);
+
+    // Auto-focus the search input when component mounts
+    useEffect(() => {
+        if (!hasInitiallyFocused.current) {
+            // Use setTimeout to ensure the DOM is fully rendered
+            const focusTimeout = setTimeout(() => {
+                focus(searchInputRef.current);
+                hasInitiallyFocused.current = true;
+            }, 100);
+
+            return () => clearTimeout(focusTimeout);
+        }
+    }, []); // Empty dependency array - only run once on mount
+
+    // Re-focus when selectedEngine changes (in case it affects input readiness)
+    useEffect(() => {
+        if (searchInputRef.current && !isFocused && hasInitiallyFocused.current) {
+            const focusTimeout = setTimeout(() => {
+                focus(searchInputRef.current);
+            }, 50);
+
+            return () => clearTimeout(focusTimeout);
+        }
+    }, [selectedEngine, isFocused]); // Removed focus from dependencies
+
+    // Global keyboard listener to focus search input on any keypress
+    useEffect(() => {
+        const handleGlobalKeyPress = (event: KeyboardEvent) => {
+            // Only focus if the event target is not already an input, textarea, or contenteditable
+            const target = event.target as HTMLElement;
+            const isInputElement = target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.contentEditable === 'true';
+
+            if (!isInputElement && searchInputRef.current && !isFocused) {
+                focus(searchInputRef.current);
+            }
+        };
+
+        document.addEventListener('keydown', handleGlobalKeyPress);
+        return () => document.removeEventListener('keydown', handleGlobalKeyPress);
+    }, [isFocused]); // Removed focus from dependencies
 
     const handleSearch = () => {
         if (query.trim()) {
@@ -94,6 +139,11 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
         setModeMenuAnchor(null);
     };
 
+    const handleContainerClick = () => {
+        // Focus the input when clicking anywhere in the search container
+        focus(searchInputRef.current);
+    };
+
     const getSearchButtonText = () => {
         return searchMode === 'newTab' ? 'New Tab' : 'Search';
     };
@@ -103,10 +153,11 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     };
 
     return (
-        <Box className={styles.searchContainer}>
+        <Box className={styles.searchContainer} onClick={handleContainerClick}>
             <Box className={styles.searchRow}>
                 <Paper elevation={isFocused ? 8 : 2} className={styles.searchBox}>
                     <TextField
+                        ref={searchInputRef}
                         fullWidth
                         placeholder={`Search with ${selectedEngine.name}...`}
                         value={query}
