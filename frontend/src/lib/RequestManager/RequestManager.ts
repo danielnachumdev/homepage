@@ -108,9 +108,14 @@ export class RequestManager {
             // Add timeout if specified
             let timeoutId: number | undefined;
             if (processedConfig.timeout) {
-                const controller = new AbortController();
-                fetchConfig.signal = controller.signal;
-                timeoutId = window.setTimeout(() => controller.abort(), processedConfig.timeout);
+                try {
+                    const controller = new AbortController();
+                    fetchConfig.signal = controller.signal;
+                    timeoutId = window.setTimeout(() => controller.abort(), processedConfig.timeout);
+                } catch (error) {
+                    // Fallback for environments where AbortController is not available
+                    console.warn('AbortController not available, timeout will not work');
+                }
             }
 
             // Make the request
