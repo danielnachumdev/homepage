@@ -9,7 +9,9 @@ import {
   mockSuccess,
   mockError,
   mockNetworkError,
-  mockTimeout
+  mockTimeout,
+  getFetchMock,
+  getFetchCalls
 } from '../utils/fetch-mock'
 
 describe('useBackendStatus Hook', () => {
@@ -27,7 +29,7 @@ describe('useBackendStatus Hook', () => {
 
   describe('Success Scenarios', () => {
     it('should return connected status when API call succeeds', async () => {
-      mockEndpoint('/health', mockSuccess({
+      const mock = mockEndpoint('/health', mockSuccess({
         status: 'healthy',
         service: 'homepage-backend'
       }))
@@ -39,6 +41,12 @@ describe('useBackendStatus Hook', () => {
         expect(result.current.error).toBe(null)
         expect(result.current.lastChecked).toBeInstanceOf(Date)
       })
+
+      // Verify the API was called
+      expect(mock.getCallCount()).toBe(1)
+      expect(mock.wasCalledWith('/health')).toBe(true)
+      const lastCall = mock.getLastCall()
+      expect(lastCall?.options?.method).toBe('GET')
     })
 
     it('should handle different healthy response formats', async () => {
@@ -204,7 +212,7 @@ describe('useBackendStatus Hook', () => {
     })
 
     it('should handle rapid successive calls', async () => {
-      mockEndpoint('/health', mockSuccess({ status: 'healthy' }))
+      const mock = mockEndpoint('/health', mockSuccess({ status: 'healthy' }))
 
       const { result } = renderHook(() => useBackendStatus(50))
 
@@ -216,6 +224,33 @@ describe('useBackendStatus Hook', () => {
       // Wait a bit and check it's still working
       await new Promise(resolve => setTimeout(resolve, 200))
       expect(result.current.isConnected).toBe(true)
+
+      // Verify multiple calls were made
+      expect(mock.getCallCount()).toBeGreaterThan(1)
+    })
+
+    it('should verify API call frequency matches interval', async () => {
+      const mock = mockEndpoint('/health', mockSuccess({ status: 'healthy' }))
+
+      const { result } = renderHook(() => useBackendStatus(100))
+
+      // Wait for initial call
+      await waitFor(() => {
+        expect(result.current.isConnected).toBe(true)
+      })
+
+      // Wait for at least one more call
+      await new Promise(resolve => setTimeout(resolve, 150))
+
+      // Should have made at least 2 calls (initial + periodic)
+      expect(mock.getCallCount()).toBeGreaterThanOrEqual(2)
+
+      // All calls should be GET requests to /health
+      const calls = mock.getCalls()
+      calls.forEach(call => {
+        expect(call.options?.method).toBe('GET')
+        expect(call.url).toContain('/health')
+      })
     })
   })
 })

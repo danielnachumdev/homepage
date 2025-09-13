@@ -1,6 +1,6 @@
-import { vi } from 'vitest'
+import { vi, type MockedFunction } from 'vitest'
 
-// Types for our mock system
+// Types for our fetch mock system
 export interface MockResponse {
     status: number
     statusText?: string
@@ -11,29 +11,54 @@ export interface MockResponse {
     error?: Error
 }
 
-export interface MockConfig {
-    [endpoint: string]: MockResponse | MockResponse[]
+export interface MockCall {
+    url: string
+    options?: RequestInit
+    timestamp: number
 }
 
-// Global mock state
-let mockConfig: MockConfig = {}
-let originalFetch: typeof global.fetch
+export interface MockEndpoint {
+    calls: MockCall[]
+    getCallCount: () => number
+    getCalls: () => MockCall[]
+    getLastCall: () => MockCall | undefined
+    getCall: (index: number) => MockCall | undefined
+    wasCalledWith: (url: string, options?: Partial<RequestInit>) => boolean
+    wasCalledTimes: (count: number) => boolean
+    reset: () => void
+    // Direct access to Vitest mock
+    mock: MockedFunction<typeof fetch>
+}
 
-// Initialize the mock system
+// Global state
+let originalFetch: typeof fetch
+let vitestMock: MockedFunction<typeof fetch> | null = null
+let mockCalls: MockCall[] = []
+let mockConfig: Map<string, MockResponse> = new Map()
+
+// Initialize fetch mocking
 export const initFetchMock = () => {
     // Store original fetch
-    originalFetch = global.fetch
+    originalFetch = globalThis.fetch
 
-    // Create mock fetch
-    global.fetch = vi.fn().mockImplementation(async (url: string | URL, options?: RequestInit) => {
-        const urlString = typeof url === 'string' ? url : url.toString()
+    // Create Vitest mock for fetch
+    vitestMock = vi.fn().mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const urlString = typeof input === 'string' ? input : input.toString()
+        const method = init?.method || 'GET'
 
-        // Find matching mock configuration
-        const mockResponse = findMockResponse(urlString, options?.method || 'GET')
+        // Track the call
+        const call: MockCall = {
+            url: urlString,
+            options: init ? { ...init } : undefined,
+            timestamp: Date.now()
+        }
+        mockCalls.push(call)
+
+        // Find matching mock response
+        const mockResponse = findMockResponse(urlString, method)
 
         if (!mockResponse) {
-            console.warn(`No mock found for ${options?.method || 'GET'} ${urlString}`)
-            // Return a default error response instead of calling original fetch to avoid recursion
+            console.log(`🔴 MOCK: No mock found for ${method} ${urlString}`)
             return new Response(
                 JSON.stringify({ error: 'No mock found', success: false }),
                 {
@@ -44,13 +69,17 @@ export const initFetchMock = () => {
             )
         }
 
+        console.log(`🟡 MOCK: Found mock for ${method} ${urlString} -> ${mockResponse.status} ${mockResponse.statusText || getStatusText(mockResponse.status)}`)
+
         // Handle rejection
         if (mockResponse.shouldReject) {
+            console.log(`🔴 MOCK: Throwing error for ${method} ${urlString}: ${mockResponse.error?.message || 'Mock fetch error'}`)
             throw mockResponse.error || new Error('Mock fetch error')
         }
 
         // Handle delay
         if (mockResponse.delay) {
+            console.log(`⏳ MOCK: Adding delay of ${mockResponse.delay}ms for ${method} ${urlString}`)
             await new Promise(resolve => setTimeout(resolve, mockResponse.delay))
         }
 
@@ -65,6 +94,8 @@ export const initFetchMock = () => {
             }
         }
 
+        // For error status codes, we need to return a Response that will cause the RequestManager to throw
+        // The RequestManager checks response.ok, which is false for 4xx and 5xx status codes
         const response = new Response(
             responseBody,
             {
@@ -74,50 +105,113 @@ export const initFetchMock = () => {
             }
         )
 
+        const isError = !response.ok
+        const statusIcon = isError ? '🔴' : '🟢'
+        console.log(`${statusIcon} MOCK: Returning ${method} ${urlString} -> ${response.status} ${response.statusText} (ok: ${response.ok})`)
+
         return response
-    })
+    }) as MockedFunction<typeof fetch>
+
+    // Replace global fetch
+    globalThis.fetch = vitestMock
 }
 
-// Clean up the mock system
+// Clean up fetch mocking
 export const cleanupFetchMock = () => {
     if (originalFetch) {
-        global.fetch = originalFetch
+        globalThis.fetch = originalFetch
     }
-    mockConfig = {}
+    mockCalls = []
+    mockConfig.clear()
+    vitestMock = null
 }
 
 // Reset mocks between tests
 export const resetFetchMock = () => {
-    mockConfig = {}
-    if (global.fetch && vi.isMockFunction(global.fetch)) {
-        vi.mocked(global.fetch).mockClear()
+    mockCalls = []
+    mockConfig.clear()
+    if (vitestMock) {
+        vitestMock.mockClear()
     }
-}
-
-// Set up mock responses
-export const mockFetch = (config: MockConfig) => {
-    mockConfig = { ...mockConfig, ...config }
 }
 
 // Set up a single endpoint mock
-export const mockEndpoint = (endpoint: string, response: MockResponse | MockResponse[]) => {
-    mockConfig[endpoint] = response
+export const mockEndpoint = (endpoint: string, response: MockResponse): MockEndpoint => {
+    if (!vitestMock) {
+        throw new Error('initFetchMock() must be called before mockEndpoint()')
+    }
+
+    // Store the mock response
+    mockConfig.set(endpoint, response)
+
+    // Create a filtered view of calls for this endpoint
+    const getCallsForEndpoint = () => {
+        return mockCalls.filter(call => isUrlMatch(call.url, endpoint))
+    }
+
+    return {
+        calls: getCallsForEndpoint(),
+        getCallCount: () => getCallsForEndpoint().length,
+        getCalls: () => [...getCallsForEndpoint()],
+        getLastCall: () => {
+            const calls = getCallsForEndpoint()
+            return calls[calls.length - 1]
+        },
+        getCall: (index: number) => {
+            const calls = getCallsForEndpoint()
+            return calls[index]
+        },
+        wasCalledWith: (url: string, options?: Partial<RequestInit>) => {
+            return getCallsForEndpoint().some(call => {
+                // Extract the path from the full URL for comparison
+                const callPath = call.url.replace(/^https?:\/\/[^\/]+/, '')
+                const expectedPath = url.replace(/^https?:\/\/[^\/]+/, '')
+
+                const urlMatch = callPath === expectedPath || callPath.includes(expectedPath) || expectedPath.includes(callPath)
+                if (!urlMatch) return false
+
+                if (!options) return true
+
+                // Check method
+                if (options.method && call.options?.method !== options.method) return false
+
+                // Check headers
+                if (options.headers) {
+                    const callHeaders = call.options?.headers as Record<string, string> || {}
+                    const expectedHeaders = options.headers as Record<string, string>
+                    for (const [key, value] of Object.entries(expectedHeaders)) {
+                        if (callHeaders[key] !== value) return false
+                    }
+                }
+
+                // Check body
+                if (options.body && call.options?.body !== options.body) return false
+
+                return true
+            })
+        },
+        wasCalledTimes: (count: number) => getCallsForEndpoint().length === count,
+        reset: () => {
+            // Remove calls for this endpoint
+            mockCalls = mockCalls.filter(call => !isUrlMatch(call.url, endpoint))
+        },
+        // Direct access to the underlying Vitest mock
+        mock: vitestMock
+    }
 }
 
-// Find the appropriate mock response for a URL and method
+// Find matching mock response
 const findMockResponse = (url: string, method: string): MockResponse | null => {
     // Try exact match first
     const exactKey = `${method.toUpperCase()} ${url}`
-    if (mockConfig[exactKey]) {
-        const response = mockConfig[exactKey]
-        return Array.isArray(response) ? response[0] : response
+    if (mockConfig.has(exactKey)) {
+        return mockConfig.get(exactKey)!
     }
 
     // Try pattern matching
-    for (const [pattern, response] of Object.entries(mockConfig)) {
+    for (const [pattern, response] of mockConfig.entries()) {
         if (isUrlMatch(url, pattern)) {
-            const responseArray = Array.isArray(response) ? response : [response]
-            return responseArray[0]
+            return response
         }
     }
 
@@ -140,6 +234,13 @@ const isUrlMatch = (url: string, pattern: string): boolean => {
 
     // Contains match
     if (cleanPattern.includes(url) || url.includes(cleanPattern)) return true
+
+    // Path matching (extract path from full URL)
+    const urlPath = url.replace(/^https?:\/\/[^\/]+/, '')
+    const patternPath = cleanPattern.replace(/^https?:\/\/[^\/]+/, '')
+
+    if (urlPath === patternPath) return true
+    if (urlPath.includes(patternPath) || patternPath.includes(urlPath)) return true
 
     return false
 }
@@ -188,23 +289,25 @@ export const mockTimeout = (delay = 5000): MockResponse => ({
     error: new Error('Request timed out')
 })
 
-// Test scenario builder utility
-export const createTestScenario = (name: string, config: MockConfig) => ({
-    name,
-    setup: () => mockFetch(config),
-    cleanup: resetFetchMock
-})
+// Direct access to Vitest mock for advanced usage
+export const getFetchMock = (): MockedFunction<typeof fetch> | null => {
+    return vitestMock
+}
+
+export const getFetchCalls = () => {
+    return vitestMock?.mock.calls || []
+}
 
 // Export everything
 export default {
     initFetchMock,
     cleanupFetchMock,
     resetFetchMock,
-    mockFetch,
     mockEndpoint,
     mockSuccess,
     mockError,
     mockNetworkError,
     mockTimeout,
-    createTestScenario
+    getFetchMock,
+    getFetchCalls
 }
