@@ -1009,7 +1009,7 @@ class DockerService:
         return responses
 
     async def batch_container_operations(self, container_names: list[str], operation: str) -> list[
-            ContainerOperationResponse]:
+        ContainerOperationResponse]:
         """Execute the same operation on multiple containers concurrently."""
         self.logger.info("Starting batch %s operation on %d containers: %s",
                          operation, len(container_names), container_names)
@@ -1036,9 +1036,7 @@ class DockerService:
                     operation=operation,
                     previous_status=ContainerStatus.RUNNING,
                     current_status=ContainerStatus.STOPPED if result.success else None,
-                    message=f"Container {
-                        container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {
-                        container_names[i]}",
+                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
                     error=result.error
                 ))
             elif operation == "start":
@@ -1048,9 +1046,7 @@ class DockerService:
                     operation=operation,
                     previous_status=ContainerStatus.STOPPED,
                     current_status=ContainerStatus.RUNNING if result.success else None,
-                    message=f"Container {
-                        container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {
-                        container_names[i]}",
+                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
                     error=result.error
                 ))
             elif operation == "restart":
@@ -1060,16 +1056,14 @@ class DockerService:
                     operation=operation,
                     previous_status=ContainerStatus.RUNNING,
                     current_status=ContainerStatus.RUNNING if result.success else None,
-                    message=f"Container {
-                        container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {
-                        container_names[i]}",
+                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
                     error=result.error
                 ))
 
         success_count = sum(1 for r in responses if r.success)
         failure_count = len(responses) - success_count
-        self.logger.info("Batch %s operation completed: %d successful, %d failed",
-                         operation, success_count, failure_count)
+        self.logger.info("Batch %s operation completed: %d successful, %d failed", operation, success_count,
+                         failure_count)
 
         return responses
 

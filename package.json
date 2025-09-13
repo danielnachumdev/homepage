@@ -1,0 +1,21 @@
+{
+    "name": "homepage",
+    "version": "1.0.0",
+    "description": "Homepage project with React frontend and FastAPI backend",
+    "scripts": {
+        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+        "dev:backend": ".\\backend\\venv\\Scripts\\python.exe .\\backend\\__main__.py",
+        "dev:frontend": "cd frontend && npm run dev"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    },
+    "keywords": [
+        "react",
+        "fastapi",
+        "homepage",
+        "fullstack"
+    ],
+    "author": "",
+    "license": "ISC"
+}

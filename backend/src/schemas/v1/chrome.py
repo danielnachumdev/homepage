@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
-from backend.src import CommandExecutionResult
+from ...utils.command import CommandExecutionResult
 
 
 class ChromeProfileInfo(BaseModel):
