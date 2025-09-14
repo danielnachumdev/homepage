@@ -836,12 +836,8 @@ class AsyncCommand:
     def wsl(command: str, **kwargs) -> 'AsyncCommand':
         """Create a WSL command with proper argument handling."""
         stripped_command = command.strip()
-        # For WSL, we need to properly quote the command if it contains spaces
-        if ' ' in stripped_command:
-            escaped_command = stripped_command.replace('"', '\\"')
-            args = ["wsl", f'"{escaped_command}"']
-        else:
-            args = ["wsl", stripped_command]
+        # For WSL, we pass the command directly to bash -c
+        args = ["wsl", "bash", "-c", stripped_command]
         return AsyncCommand(args, **kwargs)
 
     def __await__(self):
