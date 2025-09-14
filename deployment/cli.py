@@ -35,7 +35,7 @@ class DeploymentCLI:
         python deploy.py info                         # Get CLI information
     """
 
-    def __init__(self, project_root: Optional[str] = None, log_level: str = "INFO"):
+    def __init__(self, project_root: Optional[str] = None):
         """
         Initialize the deployment CLI.
 
@@ -43,16 +43,16 @@ class DeploymentCLI:
             project_root: Path to the project root directory (defaults to current working directory)
             log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
         """
-        self.project_root = Path(project_root) if project_root else Path.cwd()
-        self._logger = setup_logger("deployment_cli", log_level)
+        self._project_root = Path(project_root) if project_root else Path.cwd()
+        self._logger = setup_logger(__name__)
 
         # Get dynamic registries from base classes
         self._steps_registry = self._build_steps_registry()
         self._strategies_registry = self._build_strategies_registry()
 
         # Initialize subcommand handlers
-        self.step = self.Step(self)
-        self.strategy = self.Strategy(self)
+        self.step = self._Step(self)
+        self.strategy = self._Strategy(self)
 
     def _build_steps_registry(self) -> Dict[str, Any]:
         """
@@ -101,7 +101,7 @@ class DeploymentCLI:
         kebab = re.sub(r'(?<!^)(?=[A-Z])', '-', class_name)
         return kebab.lower()
 
-    class Step:
+    class _Step:
         """
         Step Management Commands
         
@@ -112,52 +112,19 @@ class DeploymentCLI:
             install STEP_NAME       # Install a specific step
             uninstall STEP_NAME     # Uninstall a specific step
             validate STEP_NAME      # Check if step is properly configured
-            info STEP_NAME          # Get detailed step information
         """
-        
+
         def __init__(self, cli_instance):
-            self.cli = cli_instance
-
-        def help(self) -> None:
-            """Show help information for step commands."""
-            print("""
-Step Management Commands
-
-Manage individual deployment steps (backend, frontend, dependencies, etc.)
-
-USAGE:
-    python deploy.py step <command> [options]
-
-COMMANDS:
-    list                    # List all available steps
-    install <STEP_NAME>     # Install a specific step
-    uninstall <STEP_NAME>   # Uninstall a specific step
-    validate <STEP_NAME>    # Check if step is properly configured
-    info <STEP_NAME>        # Get detailed step information
-    help                    # Show this help message
-
-EXAMPLES:
-    python deploy.py step list
-    python deploy.py step install native-backend-deploy-step
-    python deploy.py step validate native-frontend-deploy-step
-    python deploy.py step info docker-deploy-step
-
-AVAILABLE STEPS:
-            """)
-            # Show available steps
-            steps = self.list()
-            for name, description in steps.items():
-                print(f"    {name:<35} {description}")
-            print()
+            self._cli = cli_instance
 
         def list(self) -> Dict[str, str]:
             """List available deployment steps."""
             steps_info = {}
 
-            for name, step_class in self.cli._steps_registry.items():
+            for name, step_class in self._cli._steps_registry.items():
                 try:
                     # Create a temporary instance to get description
-                    temp_instance = step_class(project_root=str(self.cli.project_root))
+                    temp_instance = step_class(project_root=str(self._cli._project_root))
                     description = temp_instance.description
                 except Exception as e:
                     description = f"Error getting description: {e}"
@@ -168,21 +135,17 @@ AVAILABLE STEPS:
 
         async def install(self, step_name: str, **kwargs) -> bool:
             """Install a deployment step."""
-            return await self.cli._install_step(step_name, **kwargs)
+            return await self._cli._install_step(step_name, **kwargs)
 
         async def uninstall(self, step_name: str, **kwargs) -> bool:
             """Uninstall a deployment step."""
-            return await self.cli._uninstall_step(step_name, **kwargs)
+            return await self._cli._uninstall_step(step_name, **kwargs)
 
-        async def check(self, step_name: str, **kwargs) -> bool:
+        async def validate(self, step_name: str, **kwargs) -> bool:
             """Check if a step is properly configured."""
-            return await self.cli._check_step(step_name, **kwargs)
+            return await self._cli._validate_step(step_name, **kwargs)
 
-        async def info(self, step_name: str, **kwargs) -> Dict[str, Any]:
-            """Get detailed information about a step."""
-            return await self.cli._step_info(step_name, **kwargs)
-
-    class Strategy:
+    class _Strategy:
         """
         Strategy Management Commands
         
@@ -193,52 +156,19 @@ AVAILABLE STEPS:
             install STRATEGY_NAME   # Deploy a strategy (install all its steps)
             uninstall STRATEGY_NAME # Stop a strategy (uninstall all its steps)
             validate STRATEGY_NAME  # Check if strategy is properly configured
-            info STRATEGY_NAME      # Get detailed strategy information
         """
-        
+
         def __init__(self, cli_instance):
-            self.cli = cli_instance
-
-        def help(self) -> None:
-            """Show help information for strategy commands."""
-            print("""
-Strategy Management Commands
-
-Manage deployment strategies (collections of steps)
-
-USAGE:
-    python deploy.py strategy <command> [options]
-
-COMMANDS:
-    list                    # List all available strategies
-    install <STRATEGY>      # Deploy a strategy (install all its steps)
-    uninstall <STRATEGY>    # Stop a strategy (uninstall all its steps)
-    validate <STRATEGY>     # Check if strategy is properly configured
-    info <STRATEGY>         # Get detailed strategy information
-    help                    # Show this help message
-
-EXAMPLES:
-    python deploy.py strategy list
-    python deploy.py strategy install docker-deploy-strategy
-    python deploy.py strategy validate docker-deploy-strategy
-    python deploy.py strategy info docker-deploy-strategy
-
-AVAILABLE STRATEGIES:
-            """)
-            # Show available strategies
-            strategies = self.list()
-            for name, description in strategies.items():
-                print(f"    {name:<35} {description}")
-            print()
+            self._cli = cli_instance
 
         def list(self) -> Dict[str, str]:
             """List available deployment strategies."""
             strategies_info = {}
 
-            for name, strategy_class in self.cli._strategies_registry.items():
+            for name, strategy_class in self._cli._strategies_registry.items():
                 try:
                     # Create a temporary instance to get description
-                    temp_instance = strategy_class(project_root=str(self.cli.project_root))
+                    temp_instance = strategy_class(project_root=str(self._cli._project_root))
                     description = temp_instance.description
                 except Exception as e:
                     description = f"Error getting description: {e}"
@@ -249,19 +179,15 @@ AVAILABLE STRATEGIES:
 
         async def install(self, strategy_name: str, **kwargs) -> bool:
             """Install a strategy (deploy all its steps)."""
-            return await self.cli._deploy_strategy(strategy_name, **kwargs)
+            return await self._cli._deploy_strategy(strategy_name, **kwargs)
 
         async def uninstall(self, strategy_name: str, **kwargs) -> bool:
             """Uninstall a strategy (stop all its steps)."""
-            return await self.cli._stop_strategy(strategy_name, **kwargs)
+            return await self._cli._stop_strategy(strategy_name, **kwargs)
 
         async def validate(self, strategy_name: str, **kwargs) -> bool:
             """Validate a strategy (check if all its steps are properly configured)."""
-            return await self.cli._validate_strategy(strategy_name, **kwargs)
-
-        async def info(self, strategy_name: str, **kwargs) -> Dict[str, Any]:
-            """Get detailed information about a strategy."""
-            return await self.cli._strategy_info(strategy_name, **kwargs)
+            return await self._cli._validate_strategy(strategy_name, **kwargs)
 
     # Internal methods (prefixed with _ to avoid Fire conflicts)
     async def _install_step(self, step_name: str, **kwargs) -> bool:
@@ -286,7 +212,7 @@ AVAILABLE STRATEGIES:
         try:
             # Create step instance
             step_class = self._steps_registry[step_name]
-            step = step_class(project_root=str(self.project_root), **kwargs)
+            step = step_class(project_root=str(self._project_root), **kwargs)
 
             # Validate before installation
             self._logger.info("Validating step: %s", step_name)
@@ -332,7 +258,7 @@ AVAILABLE STRATEGIES:
         try:
             # Create step instance
             step_class = self._steps_registry[step_name]
-            step = step_class(project_root=str(self.project_root), **kwargs)
+            step = step_class(project_root=str(self._project_root), **kwargs)
 
             # Uninstall the step
             self._logger.info("Uninstalling step: %s", step_name)
@@ -374,7 +300,7 @@ AVAILABLE STRATEGIES:
             # Create strategy instance
             strategy_class = self._strategies_registry[strategy_name]
             strategy = strategy_class(
-                project_root=str(self.project_root), **kwargs)
+                project_root=str(self._project_root), **kwargs)
 
             # Install the strategy
             self._logger.info("Installing strategy: %s", strategy_name)
@@ -417,7 +343,7 @@ AVAILABLE STRATEGIES:
             # Create strategy instance
             strategy_class = self._strategies_registry[strategy_name]
             strategy = strategy_class(
-                project_root=str(self.project_root), **kwargs)
+                project_root=str(self._project_root), **kwargs)
 
             # Uninstall the strategy
             self._logger.info("Uninstalling strategy: %s", strategy_name)
@@ -437,7 +363,7 @@ AVAILABLE STRATEGIES:
                 "Unexpected error uninstalling strategy %s: %s", strategy_name, e)
             return False
 
-    async def _check_step(self, step_name: str, **kwargs) -> bool:
+    async def _validate_step(self, step_name: str, **kwargs) -> bool:
         """
         Check if a step is properly configured.
 
@@ -459,7 +385,7 @@ AVAILABLE STRATEGIES:
         try:
             # Create step instance
             step_class = self._steps_registry[step_name]
-            step = step_class(project_root=str(self.project_root), **kwargs)
+            step = step_class(project_root=str(self._project_root), **kwargs)
 
             # Validate the step
             success = await step.validate()
@@ -496,7 +422,7 @@ AVAILABLE STRATEGIES:
         try:
             # Create step instance
             step_class = self._steps_registry[step_name]
-            step = step_class(project_root=str(self.project_root), **kwargs)
+            step = step_class(project_root=str(self._project_root), **kwargs)
 
             # Get metadata
             metadata = await step.get_metadata()
@@ -530,7 +456,7 @@ AVAILABLE STRATEGIES:
         try:
             # Create strategy instance
             strategy_class = self._strategies_registry[strategy_name]
-            strategy = strategy_class(project_root=str(self.project_root), **kwargs)
+            strategy = strategy_class(project_root=str(self._project_root), **kwargs)
 
             # Get all steps and validate each one
             steps = strategy.get_steps()
@@ -539,7 +465,7 @@ AVAILABLE STRATEGIES:
             for step in steps:
                 step_name = self._class_name_to_kebab(step.__class__.__name__)
                 self._logger.info("Validating step: %s", step_name)
-                
+
                 if not await step.validate():
                     self._logger.error("Step validation failed: %s", step_name)
                     all_valid = False
@@ -578,7 +504,7 @@ AVAILABLE STRATEGIES:
         try:
             # Create strategy instance
             strategy_class = self._strategies_registry[strategy_name]
-            strategy = strategy_class(project_root=str(self.project_root), **kwargs)
+            strategy = strategy_class(project_root=str(self._project_root), **kwargs)
 
             # Get metadata
             metadata = await strategy.get_metadata()
@@ -590,66 +516,15 @@ AVAILABLE STRATEGIES:
                 "Unexpected error getting strategy metadata %s: %s", strategy_name, e)
             return {}
 
-    def help(self) -> None:
-        """Show help information for the deployment CLI."""
-        print("""
-Homepage Deployment CLI
 
-Manage deployment steps and strategies for the homepage application.
-
-USAGE:
-    python deploy.py <command> [options]
-
-COMMANDS:
-    step list                    # List available deployment steps
-    step install <STEP_NAME>     # Install a specific step
-    step uninstall <STEP_NAME>   # Uninstall a specific step
-    step validate <STEP_NAME>    # Check if step is properly configured
-    step info <STEP_NAME>        # Get detailed step information
-    
-    strategy list                # List available deployment strategies
-    strategy install <STRATEGY>  # Deploy a strategy (install all its steps)
-    strategy uninstall <STRATEGY> # Stop a strategy (uninstall all its steps)
-    strategy validate <STRATEGY> # Check if strategy is properly configured
-    strategy info <STRATEGY>     # Get detailed strategy information
-    
-    info                         # Get general CLI information
-    help                         # Show this help message
-
-EXAMPLES:
-    python deploy.py step list
-    python deploy.py step install native-backend-deploy-step
-    python deploy.py strategy install docker-deploy-strategy
-    python deploy.py step validate native-frontend-deploy-step
-
-For more information about a specific command, use:
-    python deploy.py <command> help
-        """)
-
-    def info(self) -> Dict[str, Any]:
-        """
-        Get general information about the deployment CLI.
-
-        Returns:
-            Dictionary containing CLI information
-        """
-        return {
-            "project_root": str(self.project_root),
-            "available_steps": list(self._steps_registry.keys()),
-            "available_strategies": list(self._strategies_registry.keys()),
-            "steps_count": len(self._steps_registry),
-            "strategies_count": len(self._strategies_registry)
-        }
-
-
-def entrypoint():
+def main():
     """
     Main entry point for the deployment CLI.
-    
+
     Handles specific help cases before delegating to Fire.
     """
     import sys
-    
+
     try:
         import fire
     except ImportError as e:
@@ -659,29 +534,8 @@ def entrypoint():
         sys.exit(1)
 
     try:
-        args = sys.argv[1:]
-        
-        if not args:
-            # No arguments - show main help
-            cli = DeploymentCLI()
-            cli.help()
-            return
+        fire.Fire(DeploymentCLI())
 
-        if args[0] == "step" and len(args) == 1:
-            # "python deploy.py step" - show step help
-            cli = DeploymentCLI()
-            cli.step.help()
-            return
-
-        if args[0] == "strategy" and len(args) == 1:
-            # "python deploy.py strategy" - show strategy help
-            cli = DeploymentCLI()
-            cli.strategy.help()
-            return
-
-        # Use Fire for all other command processing
-        fire.Fire(DeploymentCLI)
-        
     except KeyboardInterrupt:
         print("\nOperation cancelled by user")
         sys.exit(1)
@@ -690,14 +544,8 @@ def entrypoint():
         sys.exit(1)
 
 
-def main():
-    """Legacy main function for backward compatibility."""
-    entrypoint()
-
-
 if __name__ == "__main__":
     main()
-
 
 __all__ = [
     "DeploymentCLI"
