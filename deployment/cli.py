@@ -118,6 +118,38 @@ class DeploymentCLI:
         def __init__(self, cli_instance):
             self.cli = cli_instance
 
+        def help(self) -> None:
+            """Show help information for step commands."""
+            print("""
+Step Management Commands
+
+Manage individual deployment steps (backend, frontend, dependencies, etc.)
+
+USAGE:
+    python deploy.py step <command> [options]
+
+COMMANDS:
+    list                    # List all available steps
+    install <STEP_NAME>     # Install a specific step
+    uninstall <STEP_NAME>   # Uninstall a specific step
+    validate <STEP_NAME>    # Check if step is properly configured
+    info <STEP_NAME>        # Get detailed step information
+    help                    # Show this help message
+
+EXAMPLES:
+    python deploy.py step list
+    python deploy.py step install native-backend-deploy-step
+    python deploy.py step validate native-frontend-deploy-step
+    python deploy.py step info docker-deploy-step
+
+AVAILABLE STEPS:
+            """)
+            # Show available steps
+            steps = self.list()
+            for name, description in steps.items():
+                print(f"    {name:<35} {description}")
+            print()
+
         def list(self) -> Dict[str, str]:
             """List available deployment steps."""
             steps_info = {}
@@ -166,6 +198,38 @@ class DeploymentCLI:
         
         def __init__(self, cli_instance):
             self.cli = cli_instance
+
+        def help(self) -> None:
+            """Show help information for strategy commands."""
+            print("""
+Strategy Management Commands
+
+Manage deployment strategies (collections of steps)
+
+USAGE:
+    python deploy.py strategy <command> [options]
+
+COMMANDS:
+    list                    # List all available strategies
+    install <STRATEGY>      # Deploy a strategy (install all its steps)
+    uninstall <STRATEGY>    # Stop a strategy (uninstall all its steps)
+    validate <STRATEGY>     # Check if strategy is properly configured
+    info <STRATEGY>         # Get detailed strategy information
+    help                    # Show this help message
+
+EXAMPLES:
+    python deploy.py strategy list
+    python deploy.py strategy install docker-deploy-strategy
+    python deploy.py strategy validate docker-deploy-strategy
+    python deploy.py strategy info docker-deploy-strategy
+
+AVAILABLE STRATEGIES:
+            """)
+            # Show available strategies
+            strategies = self.list()
+            for name, description in strategies.items():
+                print(f"    {name:<35} {description}")
+            print()
 
         def list(self) -> Dict[str, str]:
             """List available deployment strategies."""
@@ -526,6 +590,42 @@ class DeploymentCLI:
                 "Unexpected error getting strategy metadata %s: %s", strategy_name, e)
             return {}
 
+    def help(self) -> None:
+        """Show help information for the deployment CLI."""
+        print("""
+Homepage Deployment CLI
+
+Manage deployment steps and strategies for the homepage application.
+
+USAGE:
+    python deploy.py <command> [options]
+
+COMMANDS:
+    step list                    # List available deployment steps
+    step install <STEP_NAME>     # Install a specific step
+    step uninstall <STEP_NAME>   # Uninstall a specific step
+    step validate <STEP_NAME>    # Check if step is properly configured
+    step info <STEP_NAME>        # Get detailed step information
+    
+    strategy list                # List available deployment strategies
+    strategy install <STRATEGY>  # Deploy a strategy (install all its steps)
+    strategy uninstall <STRATEGY> # Stop a strategy (uninstall all its steps)
+    strategy validate <STRATEGY> # Check if strategy is properly configured
+    strategy info <STRATEGY>     # Get detailed strategy information
+    
+    info                         # Get general CLI information
+    help                         # Show this help message
+
+EXAMPLES:
+    python deploy.py step list
+    python deploy.py step install native-backend-deploy-step
+    python deploy.py strategy install docker-deploy-strategy
+    python deploy.py step validate native-frontend-deploy-step
+
+For more information about a specific command, use:
+    python deploy.py <command> help
+        """)
+
     def info(self) -> Dict[str, Any]:
         """
         Get general information about the deployment CLI.
@@ -542,12 +642,14 @@ class DeploymentCLI:
         }
 
 
-def main():
+def entrypoint():
     """
-    Main entry point for when the CLI module is executed directly.
-
-    Uses Google Fire to create a CLI from the DeploymentCLI class.
+    Main entry point for the deployment CLI.
+    
+    Handles specific help cases before delegating to Fire.
     """
+    import sys
+    
     try:
         import fire
     except ImportError as e:
@@ -557,15 +659,40 @@ def main():
         sys.exit(1)
 
     try:
-        # Create CLI instance and use Fire to generate the command-line interface
-        cli = DeploymentCLI()
-        fire.Fire(cli)
+        args = sys.argv[1:]
+        
+        if not args:
+            # No arguments - show main help
+            cli = DeploymentCLI()
+            cli.help()
+            return
+
+        if args[0] == "step" and len(args) == 1:
+            # "python deploy.py step" - show step help
+            cli = DeploymentCLI()
+            cli.step.help()
+            return
+
+        if args[0] == "strategy" and len(args) == 1:
+            # "python deploy.py strategy" - show strategy help
+            cli = DeploymentCLI()
+            cli.strategy.help()
+            return
+
+        # Use Fire for all other command processing
+        fire.Fire(DeploymentCLI)
+        
     except KeyboardInterrupt:
         print("\nOperation cancelled by user")
         sys.exit(1)
     except Exception as e:
         print(f"Unexpected error: {e}")
         sys.exit(1)
+
+
+def main():
+    """Legacy main function for backward compatibility."""
+    entrypoint()
 
 
 if __name__ == "__main__":
