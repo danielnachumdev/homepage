@@ -4,10 +4,8 @@ Docker deployment step for the homepage project.
 This step handles deploying the application using Docker Compose.
 """
 
-import os
-import subprocess
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 from deployment.steps.base_step import Step
 from backend.src.utils.command import AsyncCommand
 from backend.src.gateways.v1.docker_gateway.compose import DockerComposeGateway

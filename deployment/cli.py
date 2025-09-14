@@ -4,9 +4,9 @@ Command Line Interface for the deployment system.
 This module provides a CLI class that can be used with Google Fire
 to manage deployment steps and strategies.
 """
-
+import sys
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 from .steps import *
 from .strategies import *
@@ -35,16 +35,16 @@ class DeploymentCLI:
         python deploy.py info                         # Get CLI information
     """
 
-    def __init__(self, project_root: Optional[str] = None):
+    def __init__(self, verbose: bool = False):
         """
         Initialize the deployment CLI.
 
         Args:
-            project_root: Path to the project root directory (defaults to current working directory)
-            log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
+            verbose: Enable verbose logging (shows all logs including AsyncCommand)
         """
-        self._project_root = Path(project_root) if project_root else Path.cwd()
-        self._logger = setup_logger(__name__)
+        # Set project root to parent of parent of this file (cli.py)
+        self._project_root = Path(__file__).parent.parent
+        self._logger = setup_logger(__name__, verbose=verbose)
 
         # Get dynamic registries from base classes
         self._steps_registry = self._build_steps_registry()
@@ -521,9 +521,8 @@ def main():
     """
     Main entry point for the deployment CLI.
 
-    Handles specific help cases before delegating to Fire.
+    Uses Fire to handle all command processing.
     """
-    import sys
 
     try:
         import fire
@@ -534,6 +533,7 @@ def main():
         sys.exit(1)
 
     try:
+        # Use Fire with the class instead of an instance
         fire.Fire(DeploymentCLI())
 
     except KeyboardInterrupt:

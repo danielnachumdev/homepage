@@ -38,6 +38,7 @@ class Step(ABC):
             # Add to registry if not already present
             if cls not in cls._steps:
                 cls._steps.append(cls)
+        cls.logger = setup_logger(cls.__module__)
 
     @classmethod
     def get_registered_steps(cls) -> List[Type['Step']]:
@@ -59,7 +60,6 @@ class Step(ABC):
         """
         self.name = name
         self.description = description or f"Step: {name}"
-        self.logger = setup_logger(f"step.{name}")
         self._installed = False
 
     @property
