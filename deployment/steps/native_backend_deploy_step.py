@@ -224,19 +224,18 @@ class NativeBackendDeployStep(Step):
         self.logger.info("Backend deployment validation passed")
         return True
 
-    def get_metadata(self) -> dict:
+    async def get_metadata(self) -> dict:
         """
         Get metadata about this step including backend-specific information.
 
         Returns:
             Dict containing step metadata
         """
-        metadata = super().get_metadata()
+        metadata = await super().get_metadata()
         try:
             # Get interpreter info
-            interpreter_path = await find_python_interpreter(
-                self.project_root, self.backend_dir)
-            interpreter_info = get_interpreter_info(interpreter_path)
+            interpreter_path = await find_python_interpreter(self.project_root, self.backend_dir)
+            interpreter_info = await get_interpreter_info(interpreter_path)
 
             # Check for log files
             log_dir = self.backend_dir / 'logs'
@@ -269,7 +268,7 @@ class NativeBackendDeployStep(Step):
             })
         return metadata
 
-    def is_process_running(self) -> bool:
+    async def is_process_running(self) -> bool:
         """
         Check if the backend process is currently running.
 
@@ -277,11 +276,11 @@ class NativeBackendDeployStep(Step):
             bool: True if process is running, False otherwise
         """
         from deployment.utils import is_backend_running
-        backend_status = is_backend_running(
+        backend_status = await is_backend_running(
             str(self.project_root), str(self.backend_dir))
         return backend_status.found
 
-    def get_process_info(self) -> dict:
+    async def get_process_info(self) -> dict:
         """
         Get information about the current backend process.
 
@@ -289,7 +288,7 @@ class NativeBackendDeployStep(Step):
             Dict containing process information
         """
         from deployment.utils import is_backend_running
-        backend_status = is_backend_running(
+        backend_status = await is_backend_running(
             str(self.project_root), str(self.backend_dir))
 
         if not backend_status.found:

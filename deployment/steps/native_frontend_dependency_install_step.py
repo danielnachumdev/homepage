@@ -150,14 +150,14 @@ class NativeFrontendDependencyInstallStep(Step):
             "Frontend dependency installation validation passed")
         return True
 
-    def get_metadata(self) -> dict:
+    async def get_metadata(self) -> dict:
         """
         Get metadata about this step including frontend-specific information.
 
         Returns:
             Dict containing step metadata
         """
-        metadata = super().get_metadata()
+        metadata = await super().get_metadata()
 
         try:
             # Check if package.json exists

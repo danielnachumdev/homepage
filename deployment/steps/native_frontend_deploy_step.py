@@ -199,14 +199,14 @@ class NativeFrontendDeployStep(Step):
         self.logger.info("Frontend deployment validation passed")
         return True
 
-    def get_metadata(self) -> dict:
+    async def get_metadata(self) -> dict:
         """
         Get metadata about this step including frontend-specific information.
 
         Returns:
             Dict containing step metadata
         """
-        metadata = super().get_metadata()
+        metadata = await super().get_metadata()
 
         try:
             # Check if package.json exists
@@ -258,7 +258,7 @@ class NativeFrontendDeployStep(Step):
             })
         return metadata
 
-    def is_process_running(self) -> bool:
+    async def is_process_running(self) -> bool:
         """
         Check if the frontend process is currently running.
 
@@ -266,11 +266,11 @@ class NativeFrontendDeployStep(Step):
             bool: True if process is running, False otherwise
         """
         from deployment.utils import is_frontend_running
-        frontend_status = is_frontend_running(
+        frontend_status = await is_frontend_running(
             str(self.project_root), str(self.frontend_dir))
         return frontend_status.found
 
-    def get_process_info(self) -> dict:
+    async def get_process_info(self) -> dict:
         """
         Get information about the current frontend process.
 
@@ -278,7 +278,7 @@ class NativeFrontendDeployStep(Step):
             Dict containing process information
         """
         from deployment.utils import is_frontend_running
-        frontend_status = is_frontend_running(
+        frontend_status = await is_frontend_running(
             str(self.project_root), str(self.frontend_dir))
 
         if not frontend_status.found:

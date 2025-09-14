@@ -203,7 +203,7 @@ class Strategy(ABC):
             self.logger.info(f"Rolling back step '{step.name}'")
             await step.uninstall()
 
-    def get_metadata(self) -> Dict[str, Any]:
+    async def get_metadata(self) -> Dict[str, Any]:
         """
         Get metadata about this strategy.
 
@@ -217,7 +217,7 @@ class Strategy(ABC):
             "installed": self._installed,
             "type": self.__class__.__name__,
             "step_count": len(steps),
-            "steps": [step.get_metadata() for step in steps]
+            "steps": [await step.get_metadata() for step in steps]
         }
 
     def get_status(self) -> Dict[str, Any]:

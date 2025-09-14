@@ -181,20 +181,19 @@ class NativeBackendDependencyInstallStep(Step):
         self.logger.info("Dependency installation validation passed")
         return True
 
-    def get_metadata(self) -> dict:
+    async def get_metadata(self) -> dict:
         """
         Get metadata about this step including dependency-specific information.
 
         Returns:
             Dict containing step metadata
         """
-        metadata = super().get_metadata()
+        metadata = await super().get_metadata()
 
         try:
             # Get interpreter info
-            interpreter_path = find_python_interpreter(
-                self.project_root, self.backend_dir)
-            interpreter_info = get_interpreter_info(interpreter_path)
+            interpreter_path = await find_python_interpreter(self.project_root, self.backend_dir)
+            interpreter_info = await get_interpreter_info(interpreter_path)
 
             # Get requirements info
             requirements_file = find_requirements_file(self.backend_dir)

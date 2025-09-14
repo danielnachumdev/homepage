@@ -144,7 +144,7 @@ async def get_interpreter_info(interpreter_path: str) -> InterpreterInfo:
         )
 
 
-def list_available_interpreters(project_root: Optional[str] = None,
+async def list_available_interpreters(project_root: Optional[str] = None,
                                 backend_dir: Optional[str] = None) -> List[InterpreterInfo]:
     """
     List all available Python interpreters in order of preference.
@@ -193,7 +193,7 @@ def list_available_interpreters(project_root: Optional[str] = None,
     # Test each candidate and collect info
     interpreters = []
     for interpreter_path in interpreter_candidates:
-        info = get_interpreter_info(str(interpreter_path))
+        info = await get_interpreter_info(str(interpreter_path))
         if info.working:
             interpreters.append(info)
 

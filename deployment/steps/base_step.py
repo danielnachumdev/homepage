@@ -101,7 +101,7 @@ class Step(ABC):
             "Subclasses must implement validate method")
 
 
-    def get_metadata(self) -> Dict[str, Any]:
+    async def get_metadata(self) -> Dict[str, Any]:
         """
         Get metadata about this step.
 

@@ -297,14 +297,14 @@ $Shortcut.Save()
         self.logger.info("Windows startup validation passed")
         return True
 
-    def get_metadata(self) -> dict:
+    async def get_metadata(self) -> dict:
         """
         Get metadata about this step including Windows-specific information.
 
         Returns:
             Dict containing step metadata
         """
-        metadata = super().get_metadata()
+        metadata = await super().get_metadata()
 
         try:
             # Check if startup script exists

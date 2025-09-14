@@ -198,14 +198,14 @@ class DockerDeployStep(Step):
         self.logger.info("Docker deployment validation passed")
         return True
 
-    def get_metadata(self) -> dict:
+    async def get_metadata(self) -> dict:
         """
         Get metadata about this step including Docker-specific information.
 
         Returns:
             Dict containing step metadata
         """
-        metadata = super().get_metadata()
+        metadata = await super().get_metadata()
         metadata.update({
             "project_root": str(self.project_root),
             "compose_file": str(self.compose_file),

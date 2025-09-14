@@ -56,14 +56,14 @@ class DockerDeployStrategy(Strategy):
 
         return [docker_step]
 
-    def get_metadata(self) -> dict:
+    async def get_metadata(self) -> dict:
         """
         Get metadata about this strategy including Docker-specific information.
 
         Returns:
             Dict containing strategy metadata
         """
-        metadata = super().get_metadata()
+        metadata = await super().get_metadata()
         metadata.update({
             "project_root": self.project_root,
             "compose_file": self.compose_file,
