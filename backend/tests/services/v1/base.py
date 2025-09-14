@@ -5,7 +5,7 @@ from unittest.mock import patch
 from typing import Any, Dict, List, Optional
 from danielutils.abstractions.db import SelectQuery, UpdateQuery, WhereClause, Condition, Operator
 
-from backend.src.db.database_factory import DatabaseFactory
+from backend.src.db import DatabaseFactory, DatabaseInitializer
 from backend.tests.base import BaseTest
 
 
@@ -22,10 +22,15 @@ class BaseDatabaseServiceTest(BaseServiceTest):
         # Create an in-memory database for testing
         self.test_db = DatabaseFactory.get_database(db_type="memory")
         self.run_async(self.test_db.connect())
-        # Mock the get_db function to return our test database
+        
+        # Mock the get_db function to return our test database BEFORE initializing
         self.get_db_patcher = patch('backend.src.db.dependencies.get_db')
         self.mock_get_db = self.get_db_patcher.start()
         self.mock_get_db.return_value = self.test_db
+        
+        # Initialize the database with tables using DatabaseInitializer
+        initializer = DatabaseInitializer()
+        self.run_async(initializer.init_db(self.test_db))
 
     def tearDown(self):
         """Clean up after each test method."""
