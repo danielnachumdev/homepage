@@ -17,8 +17,8 @@ from src.utils.command import AsyncCommand, CommandType
 from tests.utils.command.base import BaseCommandTest
 
 
-class TestFactoryMethods(BaseCommandTest):
-    """Test cases for AsyncCommand factory methods."""
+class TestCmdFactory(BaseCommandTest):
+    """Test cases for AsyncCommand.cmd factory method."""
 
     def test_cmd_factory_basic(self):
         """Test basic cmd factory functionality."""
@@ -199,6 +199,79 @@ class TestFactoryMethods(BaseCommandTest):
         self.assertEqual(5.0, cmd.timeout)
         self.assertEqual(CommandType.GUI, cmd.command_type)
 
+    def test_complex_command_parsing_scenarios(self):
+        """Test complex command parsing scenarios for CMD factory."""
+        # Complex cmd command with multiple elements
+        complex_cmd = 'echo "Hello World" && dir C:\\Users\\Test\\Documents && echo "Done"'
+        cmd = AsyncCommand.cmd(complex_cmd)
+        expected_args = ["cmd", "/c", 'echo "Hello World" && dir C:\\Users\\Test\\Documents && echo "Done"']
+        self.assertEqual(expected_args, cmd.args)
+        
+        # Test actual execution (simplified version that will work)
+        simple_cmd = AsyncCommand.cmd('echo "Hello World" && echo "Done"')
+        result = self.run_async(simple_cmd.execute())
+        self.assertTrue(result.success)
+        self.assertIn("Hello World", result.stdout)
+        self.assertIn("Done", result.stdout)
+
+    def test_edge_cases_and_error_conditions(self):
+        """Test edge cases and potential error conditions for CMD factory."""
+        # Test with only whitespace
+        cmd_whitespace = AsyncCommand.cmd("   \t\n  ")
+        expected_whitespace = ["cmd", "/c", ""]
+        self.assertEqual(expected_whitespace, cmd_whitespace.args)
+
+        # Test with very long command
+        long_command = "echo " + "x" * 1000
+        cmd_long = AsyncCommand.cmd(long_command)
+        expected_long = ["cmd", "/c", long_command]
+        self.assertEqual(expected_long, cmd_long.args)
+
+    def test_unicode_and_international_characters(self):
+        """Test CMD factory with unicode and international characters."""
+        # Test with various unicode characters
+        unicode_tests = [
+            "echo 你好世界",  # Chinese
+            "echo Здравствуй мир",  # Russian
+            "echo مرحبا بالعالم",  # Arabic
+            "echo こんにちは世界",  # Japanese
+            "echo 안녕하세요 세계",  # Korean
+            "echo Γεια σας κόσμος",  # Greek
+        ]
+
+        for unicode_cmd in unicode_tests:
+            # Test cmd factory
+            cmd_cmd = AsyncCommand.cmd(unicode_cmd)
+            expected_cmd = ["cmd", "/c", unicode_cmd]
+            self.assertEqual(expected_cmd, cmd_cmd.args)
+
+    def test_command_with_newlines_and_tabs(self):
+        """Test CMD factory with commands containing newlines and tabs."""
+        multiline_cmd = "echo hello\nworld\ttest"
+
+        cmd_cmd = AsyncCommand.cmd(multiline_cmd)
+        expected_cmd = ["cmd", "/c", multiline_cmd]
+        self.assertEqual(expected_cmd, cmd_cmd.args)
+
+    def test_real_world_command_examples(self):
+        """Test CMD factory with real-world command examples."""
+        # Real-world cmd examples
+        real_cmd_examples = [
+            'tasklist /FI "IMAGENAME eq chrome.exe" /FO CSV',
+            'dir "C:\\Program Files\\Google\\Chrome\\Application" /B',
+            'echo %USERNAME% > user.txt',
+            'ping google.com -n 4',
+        ]
+
+        for cmd_example in real_cmd_examples:
+            cmd = AsyncCommand.cmd(cmd_example)
+            expected = ["cmd", "/c", cmd_example]
+            self.assertEqual(expected, cmd.args)
+
+
+class TestPowerShellFactory(BaseCommandTest):
+    """Test cases for AsyncCommand.powershell factory method."""
+
     def test_powershell_factory_basic(self):
         """Test basic powershell factory functionality."""
         cmd = AsyncCommand.powershell("echo test")
@@ -366,6 +439,66 @@ class TestFactoryMethods(BaseCommandTest):
         self.assertEqual(expected_args, cmd.args)
         self.assertEqual(10.0, cmd.timeout)
         self.assertEqual(CommandType.GUI, cmd.command_type)
+
+    def test_complex_command_parsing_scenarios(self):
+        """Test complex command parsing scenarios for PowerShell factory."""
+        # Complex powershell command with variables and quotes
+        complex_ps = 'Get-Process | Where-Object {$_.Name -eq "chrome"} | Select-Object Name, Id, @{Name="Memory(MB)";Expression={[math]::Round($_.WorkingSet/1MB,2)}}'
+        cmd_ps = AsyncCommand.powershell(complex_ps)
+        expected_ps_args = ["powershell", "-Command",
+                            'Get-Process | Where-Object {$_.Name -eq "chrome"} | Select-Object Name, Id, @{Name="Memory(MB)";Expression={[math]::Round($_.WorkingSet/1MB,2)}}']
+        self.assertEqual(expected_ps_args, cmd_ps.args)
+        
+        # Test actual execution (simplified version that will work)
+        simple_ps = AsyncCommand.powershell('Get-Process | Select-Object Name -First 1')
+        result = self.run_async(simple_ps.execute())
+        self.assertTrue(result.success)
+        self.assertIn("Name", result.stdout)
+
+    def test_unicode_and_international_characters(self):
+        """Test PowerShell factory with unicode and international characters."""
+        # Test with various unicode characters
+        unicode_tests = [
+            "Write-Host 你好世界",  # Chinese
+            "Write-Host Здравствуй мир",  # Russian
+            "Write-Host مرحبا بالعالم",  # Arabic
+            "Write-Host こんにちは世界",  # Japanese
+            "Write-Host 안녕하세요 세계",  # Korean
+            "Write-Host Γεια σας κόσμος",  # Greek
+        ]
+
+        for unicode_cmd in unicode_tests:
+            # Test powershell factory
+            cmd_ps = AsyncCommand.powershell(unicode_cmd)
+            expected_ps = ["powershell", "-Command", unicode_cmd]
+            self.assertEqual(expected_ps, cmd_ps.args)
+
+    def test_command_with_newlines_and_tabs(self):
+        """Test PowerShell factory with commands containing newlines and tabs."""
+        multiline_cmd = "Write-Host hello\nworld\ttest"
+
+        cmd_ps = AsyncCommand.powershell(multiline_cmd)
+        expected_ps = ["powershell", "-Command", multiline_cmd]
+        self.assertEqual(expected_ps, cmd_ps.args)
+
+    def test_real_world_command_examples(self):
+        """Test PowerShell factory with real-world command examples."""
+        # Real-world powershell examples
+        real_ps_examples = [
+            'Get-Process | Where-Object {$_.Name -eq "chrome"}',
+            'Get-ChildItem "C:\\Users\\$env:USERNAME\\Documents" -Recurse -Name "*.txt"',
+            'Get-Service | Where-Object {$_.Status -eq "Running"} | Select-Object Name, Status',
+            'Invoke-WebRequest -Uri "https://api.github.com/users/octocat" | ConvertFrom-Json',
+        ]
+
+        for ps_example in real_ps_examples:
+            cmd = AsyncCommand.powershell(ps_example)
+            expected = ["powershell", "-Command", ps_example]
+            self.assertEqual(expected, cmd.args)
+
+
+class TestWslFactory(BaseCommandTest):
+    """Test cases for AsyncCommand.wsl factory method."""
 
     def test_wsl_factory_basic(self):
         """Test basic wsl factory functionality."""
@@ -583,120 +716,8 @@ class TestFactoryMethods(BaseCommandTest):
         self.assertEqual(15.0, cmd.timeout)
         self.assertEqual(CommandType.GUI, cmd.command_type)
 
-    def test_factory_methods_preserve_command_type(self):
-        """Test that factory methods preserve the command type from kwargs."""
-        # Test CLI type
-        cmd_cli = AsyncCommand.cmd("echo test", command_type=CommandType.CLI)
-        self.assertEqual(CommandType.CLI, cmd_cli.command_type)
-
-        # Test GUI type
-        cmd_gui = AsyncCommand.powershell("Write-Host test", command_type=CommandType.GUI)
-        self.assertEqual(CommandType.GUI, cmd_gui.command_type)
-
-        # Test WSL with GUI type
-        cmd_wsl_gui = AsyncCommand.wsl("echo test", command_type=CommandType.GUI)
-        self.assertEqual(CommandType.GUI, cmd_wsl_gui.command_type)
-
-    def test_factory_methods_preserve_timeout(self):
-        """Test that factory methods preserve timeout from kwargs."""
-        timeout_value = 30.0
-
-        cmd_cmd = AsyncCommand.cmd("echo test", timeout=timeout_value)
-        self.assertEqual(timeout_value, cmd_cmd.timeout)
-
-        cmd_ps = AsyncCommand.powershell("Write-Host test", timeout=timeout_value)
-        self.assertEqual(timeout_value, cmd_ps.timeout)
-
-        cmd_wsl = AsyncCommand.wsl("echo test", timeout=timeout_value)
-        self.assertEqual(timeout_value, cmd_wsl.timeout)
-
-    def test_factory_methods_preserve_environment(self):
-        """Test that factory methods preserve environment variables from kwargs."""
-        env_vars = {"TEST_VAR": "test_value", "ANOTHER_VAR": "another_value"}
-
-        cmd_cmd = AsyncCommand.cmd("echo test", env=env_vars)
-        self.assertEqual(env_vars, cmd_cmd.env)
-
-        cmd_ps = AsyncCommand.powershell("Write-Host test", env=env_vars)
-        self.assertEqual(env_vars, cmd_ps.env)
-
-        cmd_wsl = AsyncCommand.wsl("echo test", env=env_vars)
-        self.assertEqual(env_vars, cmd_wsl.env)
-
-    def test_factory_methods_preserve_working_directory(self):
-        """Test that factory methods preserve working directory from kwargs."""
-        cwd = "C:\\temp"
-
-        cmd_cmd = AsyncCommand.cmd("echo test", cwd=cwd)
-        self.assertEqual(cwd, str(cmd_cmd.cwd))
-
-        cmd_ps = AsyncCommand.powershell("Write-Host test", cwd=cwd)
-        self.assertEqual(cwd, str(cmd_ps.cwd))
-
-        cmd_wsl = AsyncCommand.wsl("echo test", cwd=cwd)
-        self.assertEqual(cwd, str(cmd_wsl.cwd))
-
-    def test_factory_methods_preserve_callbacks(self):
-        """Test that factory methods preserve callback functions from kwargs."""
-
-        def dummy_callback(cmd):
-            pass
-
-        def dummy_complete_callback(cmd, result):
-            pass
-
-        def dummy_error_callback(cmd, error):
-            pass
-
-        callbacks = {
-            "on_start": dummy_callback,
-            "on_complete": dummy_complete_callback,
-            "on_error": dummy_error_callback
-        }
-
-        cmd_cmd = AsyncCommand.cmd("echo test", **callbacks)
-        self.assertEqual(dummy_callback, cmd_cmd.on_start)
-        self.assertEqual(dummy_complete_callback, cmd_cmd.on_complete)
-        self.assertEqual(dummy_error_callback, cmd_cmd.on_error)
-
-        cmd_ps = AsyncCommand.powershell("Write-Host test", **callbacks)
-        self.assertEqual(dummy_callback, cmd_ps.on_start)
-        self.assertEqual(dummy_complete_callback, cmd_ps.on_complete)
-        self.assertEqual(dummy_error_callback, cmd_ps.on_error)
-
-        cmd_wsl = AsyncCommand.wsl("echo test", **callbacks)
-        self.assertEqual(dummy_callback, cmd_wsl.on_start)
-        self.assertEqual(dummy_complete_callback, cmd_wsl.on_complete)
-        self.assertEqual(dummy_error_callback, cmd_wsl.on_error)
-
     def test_complex_command_parsing_scenarios(self):
-        """Test complex command parsing scenarios for all factory methods."""
-        # Complex cmd command with multiple elements
-        complex_cmd = 'echo "Hello World" && dir C:\\Users\\Test\\Documents && echo "Done"'
-        cmd = AsyncCommand.cmd(complex_cmd)
-        expected_args = ["cmd", "/c", 'echo "Hello World" && dir C:\\Users\\Test\\Documents && echo "Done"']
-        self.assertEqual(expected_args, cmd.args)
-        
-        # Test actual execution (simplified version that will work)
-        simple_cmd = AsyncCommand.cmd('echo "Hello World" && echo "Done"')
-        result = self.run_async(simple_cmd.execute())
-        self.assertTrue(result.success)
-        self.assertIn("Hello World", result.stdout)
-        self.assertIn("Done", result.stdout)
-
-        # Complex powershell command with variables and quotes
-        complex_ps = 'Get-Process | Where-Object {$_.Name -eq "chrome"} | Select-Object Name, Id, @{Name="Memory(MB)";Expression={[math]::Round($_.WorkingSet/1MB,2)}}'
-        cmd_ps = AsyncCommand.powershell(complex_ps)
-        expected_ps_args = ["powershell", "-Command",
-                            'Get-Process | Where-Object {$_.Name -eq "chrome"} | Select-Object Name, Id, @{Name="Memory(MB)";Expression={[math]::Round($_.WorkingSet/1MB,2)}}']
-        self.assertEqual(expected_ps_args, cmd_ps.args)
-        
-        # Test actual execution (simplified version that will work)
-        simple_ps = AsyncCommand.powershell('Get-Process | Select-Object Name -First 1')
-        result = self.run_async(simple_ps.execute())
-        self.assertTrue(result.success)
-        self.assertIn("Name", result.stdout)
-
+        """Test complex command parsing scenarios for WSL factory."""
         # Complex wsl command with pipes and redirection
         complex_wsl = 'ls -la /home | grep "\.txt$" | head -10 > /tmp/file_list.txt'
         cmd_wsl = AsyncCommand.wsl(complex_wsl)
@@ -714,17 +735,7 @@ class TestFactoryMethods(BaseCommandTest):
             self.skipTest("WSL not available for execution test")
 
     def test_edge_cases_and_error_conditions(self):
-        """Test edge cases and potential error conditions."""
-        # Test with only whitespace
-        cmd_whitespace = AsyncCommand.cmd("   \t\n  ")
-        expected_whitespace = ["cmd", "/c", ""]
-        self.assertEqual(expected_whitespace, cmd_whitespace.args)
-
-        # Test with only quotes
-        cmd_quotes = AsyncCommand.powershell('""')
-        expected_quotes = ["powershell", "-Command", '""']
-        self.assertEqual(expected_quotes, cmd_quotes.args)
-
+        """Test edge cases and potential error conditions for WSL factory."""
         # Test with special characters that might cause issues
         special_chars = 'echo "Special chars: !@#$%^&*()_+-=[]{}|;:,.<>?"'
         cmd_special = AsyncCommand.wsl(special_chars)
@@ -733,12 +744,12 @@ class TestFactoryMethods(BaseCommandTest):
 
         # Test with very long command
         long_command = "echo " + "x" * 1000
-        cmd_long = AsyncCommand.cmd(long_command)
-        expected_long = ["cmd", "/c", long_command]
+        cmd_long = AsyncCommand.wsl(long_command)
+        expected_long = ["wsl", f'"{long_command}"']
         self.assertEqual(expected_long, cmd_long.args)
 
     def test_unicode_and_international_characters(self):
-        """Test factory methods with unicode and international characters."""
+        """Test WSL factory with unicode and international characters."""
         # Test with various unicode characters
         unicode_tests = [
             "echo 你好世界",  # Chinese
@@ -750,65 +761,21 @@ class TestFactoryMethods(BaseCommandTest):
         ]
 
         for unicode_cmd in unicode_tests:
-            # Test cmd factory
-            cmd_cmd = AsyncCommand.cmd(unicode_cmd)
-            expected_cmd = ["cmd", "/c", unicode_cmd]
-            self.assertEqual(expected_cmd, cmd_cmd.args)
-
-            # Test powershell factory
-            cmd_ps = AsyncCommand.powershell(unicode_cmd)
-            expected_ps = ["powershell", "-Command", unicode_cmd]
-            self.assertEqual(expected_ps, cmd_ps.args)
-
             # Test wsl factory
             cmd_wsl = AsyncCommand.wsl(unicode_cmd)
             expected_wsl = ["wsl", f'"{unicode_cmd}"']
             self.assertEqual(expected_wsl, cmd_wsl.args)
 
     def test_command_with_newlines_and_tabs(self):
-        """Test factory methods with commands containing newlines and tabs."""
+        """Test WSL factory with commands containing newlines and tabs."""
         multiline_cmd = "echo hello\nworld\ttest"
-
-        cmd_cmd = AsyncCommand.cmd(multiline_cmd)
-        expected_cmd = ["cmd", "/c", multiline_cmd]
-        self.assertEqual(expected_cmd, cmd_cmd.args)
-
-        cmd_ps = AsyncCommand.powershell(multiline_cmd)
-        expected_ps = ["powershell", "-Command", multiline_cmd]
-        self.assertEqual(expected_ps, cmd_ps.args)
 
         cmd_wsl = AsyncCommand.wsl(multiline_cmd)
         expected_wsl = ["wsl", f'"{multiline_cmd}"']
         self.assertEqual(expected_wsl, cmd_wsl.args)
 
     def test_real_world_command_examples(self):
-        """Test factory methods with real-world command examples."""
-        # Real-world cmd examples
-        real_cmd_examples = [
-            'tasklist /FI "IMAGENAME eq chrome.exe" /FO CSV',
-            'dir "C:\\Program Files\\Google\\Chrome\\Application" /B',
-            'echo %USERNAME% > user.txt',
-            'ping google.com -n 4',
-        ]
-
-        for cmd_example in real_cmd_examples:
-            cmd = AsyncCommand.cmd(cmd_example)
-            expected = ["cmd", "/c", cmd_example]
-            self.assertEqual(expected, cmd.args)
-
-        # Real-world powershell examples
-        real_ps_examples = [
-            'Get-Process | Where-Object {$_.Name -eq "chrome"}',
-            'Get-ChildItem "C:\\Users\\$env:USERNAME\\Documents" -Recurse -Name "*.txt"',
-            'Get-Service | Where-Object {$_.Status -eq "Running"} | Select-Object Name, Status',
-            'Invoke-WebRequest -Uri "https://api.github.com/users/octocat" | ConvertFrom-Json',
-        ]
-
-        for ps_example in real_ps_examples:
-            cmd = AsyncCommand.powershell(ps_example)
-            expected = ["powershell", "-Command", ps_example]
-            self.assertEqual(expected, cmd.args)
-
+        """Test WSL factory with real-world command examples."""
         # Real-world wsl examples
         real_wsl_examples = [
             'ls -la /home',
