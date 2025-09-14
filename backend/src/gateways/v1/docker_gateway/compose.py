@@ -13,7 +13,7 @@ from .models import ComposeProjectInfo, ComposeServiceInfo, DockerCommandResult
 
 class DockerComposeGateway:
     """Gateway for Docker Compose project operations."""
-    logger: logging.Logger = get_logger("DockerComposeGateway")
+    logger: logging.Logger = get_logger(__name__)
 
     def __init__(self, compose_file: str, project_dir: Optional[str] = None):
         """

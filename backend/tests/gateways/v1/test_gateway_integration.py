@@ -35,10 +35,7 @@ class TestDockerGatewayIntegration(BaseTest):
 
         # Clean up compose project
         if self.compose_file and os.path.exists(self.compose_file):
-            try:
-                self.run_async(DockerComposeGateway.down(self.compose_file))
-            except Exception:
-                pass
+            self._cleanup_compose_project(self.compose_file)
 
     def test_01_docker_and_compose_workflow(self):
         """Test complete workflow using both Docker and Compose gateways."""
@@ -84,10 +81,7 @@ class TestDockerGatewayIntegration(BaseTest):
 
             finally:
                 # Clean up compose project
-                try:
-                    self.run_async(DockerComposeGateway.down(compose_file))
-                except Exception:
-                    pass
+                self._cleanup_compose_project(compose_file)
 
     def test_02_concurrent_docker_and_compose_operations(self):
         """Test concurrent operations between Docker and Compose gateways."""
@@ -144,10 +138,7 @@ class TestDockerGatewayIntegration(BaseTest):
                     pass
 
             for compose_file in compose_files:
-                try:
-                    self.run_async(DockerComposeGateway.down(compose_file))
-                except Exception:
-                    pass
+                self._cleanup_compose_project(compose_file)
 
     def test_03_data_consistency_between_gateways(self):
         """Test data consistency between Docker and Compose gateways."""
@@ -182,10 +173,7 @@ class TestDockerGatewayIntegration(BaseTest):
             self.assertGreaterEqual(len(test_containers), 1)
 
         finally:
-            try:
-                self.run_async(DockerComposeGateway.down(compose_file))
-            except Exception:
-                pass
+            self._cleanup_compose_project(compose_file)
 
     def test_04_error_handling_across_gateways(self):
         """Test error handling consistency across both gateways."""
@@ -262,10 +250,7 @@ class TestDockerGatewayIntegration(BaseTest):
             except Exception:
                 pass
 
-            try:
-                self.run_async(DockerComposeGateway.down(compose_file))
-            except Exception:
-                pass
+            self._cleanup_compose_project(compose_file)
 
             # Verify cleanup
             containers_after = self.run_async(DockerGateway.list())
@@ -278,7 +263,7 @@ class TestDockerGatewayIntegration(BaseTest):
         self.compose_file = os.path.join(self.temp_dir, "docker-compose.yml")
 
         compose_content = f"""
-version: '3.8'
+name: {self.test_project_name}
 services:
   test-service:
     image: alpine:latest
@@ -293,6 +278,23 @@ services:
             f.write(compose_content)
 
         return self.compose_file
+
+    def _cleanup_compose_project(self, compose_file: str):
+        """Clean up compose project and remove all associated containers."""
+        try:
+            # First, stop and remove compose services
+            self.run_async(DockerComposeGateway.down(compose_file))
+            
+            # Then, remove any remaining containers with the project name
+            containers = self.run_async(DockerGateway.list())
+            for container in containers:
+                if self.test_project_name in container.names:
+                    try:
+                        self.run_async(DockerGateway.delete(container.names, force=True))
+                    except Exception:
+                        pass  # Container might already be removed
+        except Exception:
+            pass  # Cleanup should not fail tests
 
     async def _run_docker_command(self, command: str) -> DockerCommandResult:
         """Helper method to run a raw Docker command."""

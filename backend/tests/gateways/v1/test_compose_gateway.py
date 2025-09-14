@@ -26,8 +26,8 @@ class TestDockerComposeGateway(BaseTest):
         super().tearDown()
         if self.compose_file and os.path.exists(self.compose_file):
             try:
-                # Clean up compose project
-                self.run_async(DockerComposeGateway.down(self.compose_file))
+                # Clean up compose project and containers
+                self._cleanup_compose_project(self.compose_file)
             except Exception:
                 pass  # Project might not exist
 
@@ -37,7 +37,7 @@ class TestDockerComposeGateway(BaseTest):
         self.compose_file = os.path.join(self.temp_dir, "docker-compose.yml")
 
         compose_content = f"""
-version: '3.8'
+name: {self.test_project_name}
 services:
   test-service:
     image: alpine:latest
@@ -52,6 +52,24 @@ services:
             f.write(compose_content)
 
         return self.compose_file
+
+    def _cleanup_compose_project(self, compose_file: str):
+        """Clean up compose project and remove all associated containers."""
+        try:
+            # First, stop and remove compose services
+            self.run_async(DockerComposeGateway.down(compose_file))
+            
+            # Then, remove any remaining containers with the project name
+            from backend.src.gateways.v1.docker_gateway.docker import DockerGateway
+            containers = self.run_async(DockerGateway.list())
+            for container in containers:
+                if self.test_project_name in container.names:
+                    try:
+                        self.run_async(DockerGateway.delete(container.names, force=True))
+                    except Exception:
+                        pass  # Container might already be removed
+        except Exception:
+            pass  # Cleanup should not fail tests
 
     def test_01_compose_gateway_classmethods(self):
         """Test DockerComposeGateway classmethods."""
@@ -107,10 +125,7 @@ services:
 
         finally:
             # Clean up
-            try:
-                self.run_async(DockerComposeGateway.down(compose_file))
-            except Exception:
-                pass
+            self._cleanup_compose_project(compose_file)
 
     def test_03_compose_gateway_instance_methods(self):
         """Test DockerComposeGateway instance methods."""
@@ -141,10 +156,7 @@ services:
 
         finally:
             # Clean up
-            try:
-                self.run_async(DockerComposeGateway.down(compose_file))
-            except Exception:
-                pass
+            self._cleanup_compose_project(compose_file)
 
     def test_04_compose_command_result_properties(self):
         """Test DockerCommandResult properties for compose operations."""
@@ -170,10 +182,7 @@ services:
             self.assertIn("detached", result.parsed_data)
 
         finally:
-            try:
-                self.run_async(DockerComposeGateway.down(compose_file))
-            except Exception:
-                pass
+            self._cleanup_compose_project(compose_file)
 
     def test_05_compose_project_info_parsing(self):
         """Test compose project information parsing."""
@@ -219,10 +228,7 @@ services:
                 self.assertIsInstance(service.networks, list)
 
         finally:
-            try:
-                self.run_async(DockerComposeGateway.down(compose_file))
-            except Exception:
-                pass
+            self._cleanup_compose_project(compose_file)
 
     def test_07_compose_error_handling(self):
         """Test error handling for invalid compose operations."""
@@ -269,10 +275,7 @@ services:
         finally:
             # Clean up all projects
             for compose_file in compose_files:
-                try:
-                    self.run_async(DockerComposeGateway.down(compose_file))
-                except Exception:
-                    pass
+                self._cleanup_compose_project(compose_file)
 
     def test_09_compose_with_custom_project_dir(self):
         """Test compose operations with custom project directory."""
@@ -294,10 +297,7 @@ services:
             self.assertEqual(result.parsed_data["project_dir"], project_dir)
 
         finally:
-            try:
-                self.run_async(DockerComposeGateway.down(compose_file))
-            except Exception:
-                pass
+            self._cleanup_compose_project(compose_file)
 
     def test_10_compose_pull_and_build_operations(self):
         """Test compose pull and build operations."""
@@ -318,10 +318,7 @@ services:
             self.assertEqual(result.operation, "build")
 
         finally:
-            try:
-                self.run_async(DockerComposeGateway.down(compose_file))
-            except Exception:
-                pass
+            self._cleanup_compose_project(compose_file)
 
     def _create_invalid_compose_file(self) -> str:
         """Create an invalid docker-compose.yml file for testing."""
@@ -329,7 +326,7 @@ services:
         compose_file = os.path.join(temp_dir, "invalid-docker-compose.yml")
 
         invalid_content = """
-version: '3.8'
+name: invalid-test-project
 services:
   invalid-service:
     image: nonexistent-image:latest

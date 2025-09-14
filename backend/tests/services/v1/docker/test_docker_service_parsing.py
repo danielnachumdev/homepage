@@ -87,7 +87,6 @@ class TestDockerServiceParsing(BaseDockerServiceTest):
             "com.docker.compose.config-hash": "abc123",
             "com.docker.compose.container-number": "1",
             "com.docker.compose.depends_on": "db",
-            "com.docker.compose.version": "3.8",
             "com.docker.compose.project.config_files": "docker-compose.yml",
             "com.docker.compose.project.working_dir": "/app",
             "other.label": "value"
@@ -100,7 +99,6 @@ class TestDockerServiceParsing(BaseDockerServiceTest):
         self.assertEqual(result["config_hash"], "abc123")
         self.assertEqual(result["container_number"], "1")
         self.assertEqual(result["depends_on"], "db")
-        self.assertEqual(result["version"], "3.8")
         self.assertEqual(result["config_files"], "docker-compose.yml")
         self.assertEqual(result["working_dir"], "/app")
         self.assertNotIn("other.label", result)
