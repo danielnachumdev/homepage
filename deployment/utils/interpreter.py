@@ -7,13 +7,13 @@ prioritizing virtual environments over system Python.
 
 import os
 import sys
-import subprocess
 from pathlib import Path
 from typing import Optional, List
 from .types import InterpreterInfo
+from backend.src.utils.command import AsyncCommand
 
 
-def find_python_interpreter(project_root: Optional[str] = None,
+async def find_python_interpreter(project_root: Optional[str] = None,
                             backend_dir: Optional[str] = None) -> str:
     """
     Find the best Python interpreter to use for deployment.
@@ -66,14 +66,14 @@ def find_python_interpreter(project_root: Optional[str] = None,
 
     # Test each candidate
     for interpreter_path in interpreter_candidates:
-        if _is_valid_python_interpreter(interpreter_path):
+        if await _is_valid_python_interpreter(interpreter_path):
             return str(interpreter_path)
 
     # If we get here, something is very wrong
     raise RuntimeError("No valid Python interpreter found")
 
 
-def _is_valid_python_interpreter(interpreter_path: Path) -> bool:
+async def _is_valid_python_interpreter(interpreter_path: Path) -> bool:
     """
     Check if a Python interpreter is valid and working.
 
@@ -89,22 +89,17 @@ def _is_valid_python_interpreter(interpreter_path: Path) -> bool:
             return False
 
         # Try to run the interpreter
-        result = subprocess.run(
-            [str(interpreter_path), '--version'],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=True
-        )
+        cmd = AsyncCommand([str(interpreter_path), '--version'])
+        result = await cmd.execute()
 
         # If we get here, the interpreter works
-        return True
+        return result.success
 
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError, OSError):
+    except Exception:
         return False
 
 
-def get_interpreter_info(interpreter_path: str) -> InterpreterInfo:
+async def get_interpreter_info(interpreter_path: str) -> InterpreterInfo:
     """
     Get information about a Python interpreter.
 
@@ -116,29 +111,17 @@ def get_interpreter_info(interpreter_path: str) -> InterpreterInfo:
     """
     try:
         # Get version
-        version_result = subprocess.run(
-            [interpreter_path, '--version'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        version_cmd = AsyncCommand([interpreter_path, '--version'])
+        version_result = await version_cmd.execute()
 
         # Get executable path
-        executable_result = subprocess.run(
-            [interpreter_path, '-c', 'import sys; print(sys.executable)'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        executable_cmd = AsyncCommand([interpreter_path, '-c', 'import sys; print(sys.executable)'])
+        executable_result = await executable_cmd.execute()
 
         # Check if it's in a virtual environment
-        venv_result = subprocess.run(
-            [interpreter_path, '-c',
-                'import sys; print(hasattr(sys, "real_prefix") or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix))'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        venv_cmd = AsyncCommand([interpreter_path, '-c',
+            'import sys; print(hasattr(sys, "real_prefix") or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix))'])
+        venv_result = await venv_cmd.execute()
 
         is_venv = venv_result.stdout.strip().lower() == 'true'
 
@@ -147,10 +130,10 @@ def get_interpreter_info(interpreter_path: str) -> InterpreterInfo:
             version=version_result.stdout.strip(),
             executable=executable_result.stdout.strip(),
             is_virtual_env=is_venv,
-            working=True
+            working=version_result.success and executable_result.success and venv_result.success
         )
 
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError, OSError) as e:
+    except Exception as e:
         return InterpreterInfo(
             path=interpreter_path,
             version="unknown",

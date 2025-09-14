@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 from deployment.steps.base_step import Step
-from deployment.utils.process_manager import ProcessManager
+from backend.src.utils.command import AsyncCommand
 
 
 class WindowsStartOnLoginStep(Step):
@@ -85,7 +85,7 @@ class WindowsStartOnLoginStep(Step):
             # Fallback to a relative path
             return Path("startup")
 
-    def _create_shortcut(self, target_path: str, shortcut_path: str, arguments: str = "",
+    async def _create_shortcut(self, target_path: str, shortcut_path: str, arguments: str = "",
                          working_directory: str = "", description: str = "") -> bool:
         """
         Create a Windows shortcut using PowerShell.
@@ -112,28 +112,16 @@ $Shortcut.Description = "{description}"
 $Shortcut.Save()
 """
 
-            # Execute PowerShell script using ProcessManager
-            result = ProcessManager.spawn(
-                command=['powershell', '-Command', ps_script],
-                detached=False
-            )
+            # Execute PowerShell script using AsyncCommand
+            cmd = AsyncCommand.powershell(ps_script)
+            result = await cmd.execute()
 
             if not result.success:
-                self.logger.error(
-                    "Failed to create shortcut: %s", result.error_message)
+                self.logger.error("Failed to create shortcut: %s", result.stderr)
                 return False
 
-            # Wait for the process to complete
-            if result.process:
-                stdout, stderr = result.process.communicate()
-                if stderr:
-                    self.logger.error("PowerShell error: %s", stderr)
-                    return False
             return True
 
-        except subprocess.CalledProcessError as e:
-            self.logger.error("Failed to create shortcut: %s", e.stderr)
-            return False
         except Exception as e:
             self.logger.error("Unexpected error creating shortcut: %s", e)
             return False
@@ -161,7 +149,7 @@ $Shortcut.Save()
             self.logger.error("Failed to remove shortcut: %s", e)
             return False
 
-    def install(self) -> bool:
+    async def install(self) -> bool:
         """
         Install the startup shortcuts.
 
@@ -173,59 +161,52 @@ $Shortcut.Save()
         """
         self.logger.info("Creating Windows startup shortcuts")
 
-        try:
-            # Check if we're on Windows
-            if os.name != 'nt':
-                self.logger.error("This step is only supported on Windows")
-                return False
-
-            # Check if startup script exists
-            if not self.startup_script.exists():
-                self.logger.error(
-                    "Startup script not found: %s", self.startup_script)
-                return False
-
-            # Ensure startup folder exists
-            if not self.startup_folder.exists():
-                self.logger.info("Creating startup folder: %s",
-                                 self.startup_folder)
-                self.startup_folder.mkdir(parents=True, exist_ok=True)
-
-            # Check if startup folder is writable
-            if not os.access(self.startup_folder, os.W_OK):
-                self.logger.error(
-                    "Startup folder is not writable: %s", self.startup_folder)
-                return False
-
-            # Create the shortcut
-            shortcut_path = self.startup_folder / self.shortcut_name
-
-            # Prepare arguments for the PowerShell script
-            arguments = f'-ProjectRoot "{self.project_root}" -FrontendDir "{self.frontend_dir}" -BackendDir "{self.backend_dir}"'
-
-            success = self._create_shortcut(
-                target_path="powershell.exe",
-                shortcut_path=str(shortcut_path),
-                arguments=f'-ExecutionPolicy Bypass -File "{self.startup_script}" {arguments}',
-                working_directory=str(self.project_root),
-                description="Auto-start Homepage Frontend and Backend Services"
-            )
-
-            if success:
-                self.logger.info(
-                    "Startup shortcut created successfully: %s", shortcut_path)
-                self._mark_installed()
-                return True
-            else:
-                self.logger.error("Failed to create startup shortcut")
-                return False
-
-        except Exception as e:
-            self.logger.error(
-                "Unexpected error during startup shortcut installation: %s", e)
+        # Check if we're on Windows
+        if os.name != 'nt':
+            self.logger.error("This step is only supported on Windows")
             return False
 
-    def uninstall(self) -> bool:
+        # Check if startup script exists
+        if not self.startup_script.exists():
+            self.logger.error(
+                "Startup script not found: %s", self.startup_script)
+            return False
+
+        # Ensure startup folder exists
+        if not self.startup_folder.exists():
+            self.logger.info("Creating startup folder: %s",
+                             self.startup_folder)
+            self.startup_folder.mkdir(parents=True, exist_ok=True)
+
+        # Check if startup folder is writable
+        if not os.access(self.startup_folder, os.W_OK):
+            self.logger.error(
+                "Startup folder is not writable: %s", self.startup_folder)
+            return False
+
+        # Create the shortcut
+        shortcut_path = self.startup_folder / self.shortcut_name
+
+        # Prepare arguments for the PowerShell script
+        arguments = f'-ProjectRoot "{self.project_root}" -FrontendDir "{self.frontend_dir}" -BackendDir "{self.backend_dir}"'
+
+        success = await self._create_shortcut(
+            target_path="powershell.exe",
+            shortcut_path=str(shortcut_path),
+            arguments=f'-ExecutionPolicy Bypass -File "{self.startup_script}" {arguments}',
+            working_directory=str(self.project_root),
+            description="Auto-start Homepage Frontend and Backend Services"
+        )
+
+        if success:
+            self.logger.info(
+                "Startup shortcut created successfully: %s", shortcut_path)
+            return True
+        else:
+            self.logger.error("Failed to create startup shortcut")
+            return False
+
+    async def uninstall(self) -> bool:
         """
         Uninstall the startup shortcuts.
 
@@ -236,30 +217,23 @@ $Shortcut.Save()
         """
         self.logger.info("Removing Windows startup shortcuts")
 
-        try:
-            # Check if we're on Windows
-            if os.name != 'nt':
-                self.logger.error("This step is only supported on Windows")
-                return False
-
-            # Remove the shortcut
-            shortcut_path = self.startup_folder / self.shortcut_name
-            success = self._remove_shortcut(str(shortcut_path))
-
-            if success:
-                self.logger.info("Startup shortcut removed successfully")
-                self._mark_uninstalled()
-                return True
-            else:
-                self.logger.error("Failed to remove startup shortcut")
-                return False
-
-        except Exception as e:
-            self.logger.error(
-                "Unexpected error during startup shortcut uninstallation: %s", e)
+        # Check if we're on Windows
+        if os.name != 'nt':
+            self.logger.error("This step is only supported on Windows")
             return False
 
-    def validate(self) -> bool:
+        # Remove the shortcut
+        shortcut_path = self.startup_folder / self.shortcut_name
+        success = self._remove_shortcut(str(shortcut_path))
+
+        if success:
+            self.logger.info("Startup shortcut removed successfully")
+            return True
+        else:
+            self.logger.error("Failed to remove startup shortcut")
+            return False
+
+    async def validate(self) -> bool:
         """
         Validate that startup shortcuts can be created.
 
@@ -268,68 +242,60 @@ $Shortcut.Save()
         """
         self.logger.info("Validating Windows startup environment")
 
+        # Check if we're on Windows
+        if os.name != 'nt':
+            self.logger.error("This step is only supported on Windows")
+            return False
+
+        # Check if startup script exists
+        if not self.startup_script.exists():
+            self.logger.error(
+                "Startup script not found: %s", self.startup_script)
+            return False
+
+        self.logger.info("Startup script found: %s", self.startup_script)
+
+        # Check if startup folder exists or can be created
+        if not self.startup_folder.exists():
+            self.logger.info(
+                "Startup folder does not exist, will be created: %s", self.startup_folder)
+        else:
+            self.logger.info("Startup folder found: %s",
+                             self.startup_folder)
+
+        # Check if startup folder is writable
+        if not os.access(self.startup_folder, os.W_OK):
+            self.logger.error(
+                "Startup folder is not writable: %s", self.startup_folder)
+            return False
+
+        # Check if PowerShell is available using AsyncCommand
         try:
-            # Check if we're on Windows
-            if os.name != 'nt':
-                self.logger.error("This step is only supported on Windows")
-                return False
+            cmd = AsyncCommand.powershell("Get-Host")
+            result = await cmd.execute()
 
-            # Check if startup script exists
-            if not self.startup_script.exists():
-                self.logger.error(
-                    "Startup script not found: %s", self.startup_script)
-                return False
-
-            self.logger.info("Startup script found: %s", self.startup_script)
-
-            # Check if startup folder exists or can be created
-            if not self.startup_folder.exists():
-                self.logger.info(
-                    "Startup folder does not exist, will be created: %s", self.startup_folder)
-            else:
-                self.logger.info("Startup folder found: %s",
-                                 self.startup_folder)
-
-            # Check if startup folder is writable
-            if not os.access(self.startup_folder, os.W_OK):
-                self.logger.error(
-                    "Startup folder is not writable: %s", self.startup_folder)
-                return False
-
-            # Check if PowerShell is available using ProcessManager
-            try:
-                result = ProcessManager.spawn(
-                    command=['powershell', '-Command', 'Get-Host'],
-                    detached=False
-                )
-
-                if not result.success or not result.process:
-                    self.logger.error("PowerShell is not available")
-                    return False
-
-                stdout, stderr = result.process.communicate()
-                self.logger.info("PowerShell is available")
-            except Exception:
+            if not result.success:
                 self.logger.error("PowerShell is not available")
                 return False
 
-            # Check if directories exist
-            if not self.frontend_dir.exists():
-                self.logger.error(
-                    "Frontend directory not found: %s", self.frontend_dir)
-                return False
-
-            if not self.backend_dir.exists():
-                self.logger.error(
-                    "Backend directory not found: %s", self.backend_dir)
-                return False
-
-            self.logger.info("Windows startup validation passed")
-            return True
-
-        except Exception as e:
-            self.logger.error("Windows startup validation failed: %s", e)
+            self.logger.info("PowerShell is available")
+        except Exception:
+            self.logger.error("PowerShell is not available")
             return False
+
+        # Check if directories exist
+        if not self.frontend_dir.exists():
+            self.logger.error(
+                "Frontend directory not found: %s", self.frontend_dir)
+            return False
+
+        if not self.backend_dir.exists():
+            self.logger.error(
+                "Backend directory not found: %s", self.backend_dir)
+            return False
+
+        self.logger.info("Windows startup validation passed")
+        return True
 
     def get_metadata(self) -> dict:
         """
@@ -355,15 +321,12 @@ $Shortcut.Save()
             shortcut_path = self.startup_folder / self.shortcut_name
             shortcut_exists = shortcut_path.exists()
 
-            # Check PowerShell availability using ProcessManager
+            # Check PowerShell availability using AsyncCommand
             powershell_available = False
             try:
-                result = ProcessManager.spawn(
-                    command=['powershell', '-Command', 'Get-Host'],
-                    detached=False
-                )
-                if result.success and result.process:
-                    stdout, stderr = result.process.communicate()
+                cmd = AsyncCommand.powershell("Get-Host")
+                result = cmd.execute()
+                if result.success:
                     powershell_available = True
             except Exception:
                 pass

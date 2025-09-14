@@ -8,9 +8,9 @@ to manage deployment steps and strategies.
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from .steps import *
-from .strategies import *
-from .utils import setup_logger
+from steps import *
+from strategies import *
+from utils import setup_logger
 
 
 class DeploymentCLI:

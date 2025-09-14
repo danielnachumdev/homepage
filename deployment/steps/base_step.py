@@ -5,11 +5,12 @@ A Step represents a single autonomous operation that can be installed or uninsta
 Each step should be self-contained and reversible.
 """
 
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, List, Type
+from pathlib import Path
 from deployment.utils.logger import setup_logger
-from deployment.utils.commands import Command
-from deployment.utils.command_executor_v2 import CommandExecutor
+from backend.src.utils.command import AsyncCommand, CommandExecutionResult
 
 
 class Step(ABC):
@@ -60,7 +61,6 @@ class Step(ABC):
         self.description = description or f"Step: {name}"
         self.logger = setup_logger(f"step.{name}")
         self._installed = False
-        self._command_executor = CommandExecutor(self.logger)
 
     @property
     def is_installed(self) -> bool:
@@ -68,116 +68,38 @@ class Step(ABC):
         return self._installed
 
     @abstractmethod
-    def get_install_commands(self) -> List[Command]:
+    async def install(self) -> bool:
         """
-        Get the list of commands to execute for installation.
-
-        Returns:
-            List[Command]: Commands to execute in order for installation
-        """
-        raise NotImplementedError(
-            "Subclasses must implement get_install_commands method")
-
-    @abstractmethod
-    def get_uninstall_commands(self) -> List[Command]:
-        """
-        Get the list of commands to execute for uninstallation.
-
-        Returns:
-            List[Command]: Commands to execute in order for uninstallation
-        """
-        raise NotImplementedError(
-            "Subclasses must implement get_uninstall_commands method")
-
-    @abstractmethod
-    def get_validate_commands(self) -> List[Command]:
-        """
-        Get the list of commands to execute for validation.
-
-        Returns:
-            List[Command]: Commands to execute in order for validation
-        """
-        raise NotImplementedError(
-            "Subclasses must implement get_validate_commands method")
-
-    def install(self) -> bool:
-        """
-        Install this step by executing install commands.
+        Install this step asynchronously.
 
         Returns:
             bool: True if installation was successful, False otherwise
         """
-        self.logger.info("Starting installation of step: %s", self.name)
+        raise NotImplementedError(
+            "Subclasses must implement install method")
 
-        commands = self.get_install_commands()
-        if not commands:
-            self.logger.warning(
-                "No install commands defined for step: %s", self.name)
-            self._mark_installed()
-            return True
-
-        result = self._command_executor.execute_commands(
-            commands, f"{self.name}_install")
-
-        if result.success:
-            self._mark_installed()
-            self.logger.info("Step '%s' installed successfully", self.name)
-        else:
-            self.logger.error("Step '%s' installation failed", self.name)
-
-        return result.success
-
-    def uninstall(self) -> bool:
+    @abstractmethod
+    async def uninstall(self) -> bool:
         """
-        Uninstall this step by executing uninstall commands.
+        Uninstall this step asynchronously.
 
         Returns:
             bool: True if uninstallation was successful, False otherwise
         """
-        self.logger.info("Starting uninstallation of step: %s", self.name)
+        raise NotImplementedError(
+            "Subclasses must implement uninstall method")
 
-        commands = self.get_uninstall_commands()
-        if not commands:
-            self.logger.warning(
-                "No uninstall commands defined for step: %s", self.name)
-            self._mark_uninstalled()
-            return True
-
-        result = self._command_executor.execute_commands(
-            commands, f"{self.name}_uninstall")
-
-        if result.success:
-            self._mark_uninstalled()
-            self.logger.info("Step '%s' uninstalled successfully", self.name)
-        else:
-            self.logger.error("Step '%s' uninstallation failed", self.name)
-
-        return result.success
-
-    def validate(self) -> bool:
+    @abstractmethod
+    async def validate(self) -> bool:
         """
-        Validate this step by executing validation commands.
+        Validate this step asynchronously.
 
         Returns:
             bool: True if validation passes, False otherwise
         """
-        self.logger.info("Starting validation of step: %s", self.name)
+        raise NotImplementedError(
+            "Subclasses must implement validate method")
 
-        commands = self.get_validate_commands()
-        if not commands:
-            self.logger.warning(
-                "No validation commands defined for step: %s", self.name)
-            return True
-
-        result = self._command_executor.execute_commands(
-            commands, f"{self.name}_validate")
-
-        if result.success:
-            self.logger.info("Step '%s' validation passed", self.name)
-        else:
-            self.logger.error("Step '%s' validation failed", self.name)
-
-        return result.success
 
     def get_metadata(self) -> Dict[str, Any]:
         """

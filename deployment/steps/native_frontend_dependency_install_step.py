@@ -8,9 +8,9 @@ for the frontend using npm.
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from deployment.steps.base_step import Step
-from deployment.utils.process_manager import ProcessManager
+from backend.src.utils.command import AsyncCommand
 
 
 class NativeFrontendDependencyInstallStep(Step):
@@ -50,7 +50,7 @@ class NativeFrontendDependencyInstallStep(Step):
         else:
             self.frontend_dir = Path(frontend_dir)
 
-    def install(self) -> bool:
+    async def install(self) -> bool:
         """
         Install dependencies by running 'npm install'.
 
@@ -60,71 +60,31 @@ class NativeFrontendDependencyInstallStep(Step):
         self.logger.info(
             "Starting frontend dependency installation for frontend at %s", self.frontend_dir)
 
-        try:
-            # Check if frontend directory exists
-            if not self.frontend_dir.exists() or not self.frontend_dir.is_dir():
-                self.logger.error(
-                    "Frontend directory not found: %s", self.frontend_dir)
-                return False
-
-            # Check if package.json exists
-            package_json = self.frontend_dir / "package.json"
-            if not package_json.exists():
-                self.logger.error(
-                    "package.json not found in frontend directory: %s", package_json)
-                return False
-
-            self.logger.info("Found package.json: %s", package_json)
-
-            # Install dependencies using ProcessManager
-            self.logger.info("Installing frontend dependencies using npm...")
-
-            result = ProcessManager.spawn(
-                command=['npm', 'install'],
-                detached=False,
-                cwd=self.frontend_dir,
-                log_dir=self.frontend_dir / 'logs',
-                log_prefix='npm_install'
-            )
-
-            if not result.success:
-                self.logger.error(
-                    "Failed to install frontend dependencies: %s", result.error_message)
-                return False
-
-            # Wait for the process to complete
-            if result.process:
-                stdout, stderr = result.process.communicate()
-
-                self.logger.info(
-                    "Frontend dependency installation completed successfully")
-                self.logger.debug("NPM output: %s", stdout)
-
-                if stderr:
-                    self.logger.warning("NPM warnings: %s", stderr)
-
-            self._mark_installed()
-            return True
-
-        except subprocess.CalledProcessError as e:
+        # Check if frontend directory exists
+        if not self.frontend_dir.exists() or not self.frontend_dir.is_dir():
             self.logger.error(
-                "Frontend dependency installation failed with return code %d", e.returncode)
-            self.logger.error("Error output: %s", e.stderr)
-            if e.stdout:
-                self.logger.error("Standard output: %s", e.stdout)
+                "Frontend directory not found: %s", self.frontend_dir)
             return False
 
-        except FileNotFoundError:
+        # Check if package.json exists
+        package_json = self.frontend_dir / "package.json"
+        if not package_json.exists():
             self.logger.error(
-                "NPM command not found. Please ensure Node.js and npm are installed")
+                "package.json not found in frontend directory: %s", package_json)
             return False
 
-        except Exception as e:
-            self.logger.error(
-                "Unexpected error during frontend dependency installation: %s", e)
-            return False
+        self.logger.info("Found package.json: %s", package_json)
 
-    def uninstall(self) -> bool:
+        # Create command to install dependencies
+        npm_install_cmd = AsyncCommand(
+            args=['npm', 'install'],
+            cwd=self.frontend_dir
+        )
+
+        result = await npm_install_cmd.execute()
+        return result.success
+
+    async def uninstall(self) -> bool:
         """
         Uninstall dependencies.
 
@@ -138,10 +98,9 @@ class NativeFrontendDependencyInstallStep(Step):
             "Frontend dependency uninstallation requested - this is a no-op operation")
         self.logger.info(
             "Dependencies will remain installed for potential future use")
-        self._mark_uninstalled()
-        return True
+        return True  # No-op, consider success
 
-    def validate(self) -> bool:
+    async def validate(self) -> bool:
         """
         Validate that frontend dependencies can be installed.
 
@@ -151,60 +110,45 @@ class NativeFrontendDependencyInstallStep(Step):
         self.logger.info(
             "Validating frontend dependency installation environment")
 
-        try:
-            # Check if frontend directory exists
-            if not self.frontend_dir.exists() or not self.frontend_dir.is_dir():
-                self.logger.error(
-                    "Frontend directory not found: %s", self.frontend_dir)
-                return False
-
-            self.logger.info("Frontend directory found: %s", self.frontend_dir)
-
-            # Check if package.json exists
-            package_json = self.frontend_dir / "package.json"
-            if not package_json.exists():
-                self.logger.error(
-                    "package.json not found in frontend directory: %s", package_json)
-                return False
-
-            self.logger.info("package.json found: %s", package_json)
-
-            # Check if npm is available using ProcessManager
-            try:
-                result = ProcessManager.spawn(
-                    command=['npm', '--version'],
-                    detached=False
-                )
-
-                if not result.success or not result.process:
-                    self.logger.error(
-                        "NPM is not available. Please ensure Node.js and npm are installed")
-                    return False
-
-                stdout, stderr = result.process.communicate()
-                self.logger.info("NPM is available: %s", stdout.strip())
-            except Exception:
-                self.logger.error(
-                    "NPM is not available. Please ensure Node.js and npm are installed")
-                return False
-
-            # Check if node_modules exists (optional but good to check)
-            node_modules = self.frontend_dir / "node_modules"
-            if node_modules.exists():
-                self.logger.info(
-                    "node_modules directory found: %s", node_modules)
-            else:
-                self.logger.warning(
-                    "node_modules directory not found: %s", node_modules)
-
-            self.logger.info(
-                "Frontend dependency installation validation passed")
-            return True
-
-        except Exception as e:
+        # Check if frontend directory exists
+        if not self.frontend_dir.exists() or not self.frontend_dir.is_dir():
             self.logger.error(
-                "Frontend dependency installation validation failed: %s", e)
+                "Frontend directory not found: %s", self.frontend_dir)
             return False
+
+        self.logger.info("Frontend directory found: %s", self.frontend_dir)
+
+        # Check if package.json exists
+        package_json = self.frontend_dir / "package.json"
+        if not package_json.exists():
+            self.logger.error(
+                "package.json not found in frontend directory: %s", package_json)
+            return False
+
+        self.logger.info("package.json found: %s", package_json)
+
+        # Check if npm is available
+        npm_version_cmd = AsyncCommand.cmd("npm --version")
+        result = await npm_version_cmd.execute()
+        if not result.success:
+            self.logger.error(
+                "NPM is not available. Please ensure Node.js and npm are installed")
+            return False
+
+        self.logger.info("NPM is available: %s", result.stdout.strip())
+
+        # Check if node_modules exists (optional but good to check)
+        node_modules = self.frontend_dir / "node_modules"
+        if node_modules.exists():
+            self.logger.info(
+                "node_modules directory found: %s", node_modules)
+        else:
+            self.logger.warning(
+                "node_modules directory not found: %s", node_modules)
+
+        self.logger.info(
+            "Frontend dependency installation validation passed")
+        return True
 
     def get_metadata(self) -> dict:
         """

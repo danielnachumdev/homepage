@@ -117,7 +117,7 @@ class Strategy(ABC):
                 f"Step '{step.name}' not found in strategy '{self.name}'")
             return False
 
-    def install(self) -> bool:
+    async def install(self) -> bool:
         """
         Install all steps in this strategy in order.
 
@@ -134,7 +134,7 @@ class Strategy(ABC):
 
         # Validate all steps first
         for step in steps:
-            if not step.validate():
+            if not await step.validate():
                 self.logger.error(
                     f"Validation failed for step '{step.name}' in strategy '{self.name}'")
                 return False
@@ -143,13 +143,13 @@ class Strategy(ABC):
         installed_steps = []
         for step in steps:
             self.logger.info(f"Installing step '{step.name}'")
-            if step.install():
+            if await step.install():
                 installed_steps.append(step)
                 self.logger.info(f"Successfully installed step '{step.name}'")
             else:
                 self.logger.error(f"Failed to install step '{step.name}'")
                 # Rollback installed steps
-                self._rollback_installation(installed_steps)
+                await self._rollback_installation(installed_steps)
                 return False
 
         self._installed = True
@@ -157,7 +157,7 @@ class Strategy(ABC):
             f"Successfully installed strategy '{self.name}' with {len(steps)} steps")
         return True
 
-    def uninstall(self) -> bool:
+    async def uninstall(self) -> bool:
         """
         Uninstall all steps in this strategy in reverse order.
 
@@ -176,7 +176,7 @@ class Strategy(ABC):
         uninstalled_steps = []
         for step in reversed(steps):
             self.logger.info(f"Uninstalling step '{step.name}'")
-            if step.uninstall():
+            if await step.uninstall():
                 uninstalled_steps.append(step)
                 self.logger.info(
                     f"Successfully uninstalled step '{step.name}'")
@@ -190,7 +190,7 @@ class Strategy(ABC):
             f"Uninstallation of strategy '{self.name}' completed. {len(uninstalled_steps)}/{len(steps)} steps uninstalled")
         return len(uninstalled_steps) == len(steps)
 
-    def _rollback_installation(self, installed_steps: List[Step]) -> None:
+    async def _rollback_installation(self, installed_steps: List[Step]) -> None:
         """
         Rollback installation by uninstalling steps in reverse order.
 
@@ -201,7 +201,7 @@ class Strategy(ABC):
             f"Rolling back installation of strategy '{self.name}'")
         for step in reversed(installed_steps):
             self.logger.info(f"Rolling back step '{step.name}'")
-            step.uninstall()
+            await step.uninstall()
 
     def get_metadata(self) -> Dict[str, Any]:
         """

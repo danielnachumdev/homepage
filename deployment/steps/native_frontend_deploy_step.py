@@ -8,9 +8,9 @@ and native system resources (not containerized).
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from deployment.steps.base_step import Step
-from deployment.utils.process_manager import ProcessManager
+from backend.src.utils.command import AsyncCommand
 
 
 class NativeFrontendDeployStep(Step):
@@ -53,11 +53,9 @@ class NativeFrontendDeployStep(Step):
 
         # Note: We don't store process references as they won't persist between invocations
 
-    def install(self) -> bool:
+    async def install(self) -> bool:
         """
         Install the frontend by starting the development server process.
-
-        Runs 'npm run dev' in the frontend directory.
 
         Returns:
             bool: True if installation was successful, False otherwise
@@ -65,136 +63,82 @@ class NativeFrontendDeployStep(Step):
         self.logger.info(
             "Starting frontend deployment in directory %s", self.frontend_dir)
 
-        try:
-            # Check if frontend directory exists
-            if not self.frontend_dir.exists() or not self.frontend_dir.is_dir():
-                self.logger.error(
-                    "Frontend directory not found: %s", self.frontend_dir)
-                return False
-
-            # Check if package.json exists
-            package_json = self.frontend_dir / "package.json"
-            if not package_json.exists():
-                self.logger.error(
-                    "Frontend package.json not found: %s", package_json)
-                return False
-
-            # Check if frontend is already running
-            from deployment.utils import is_frontend_running
-            frontend_status = is_frontend_running(
-                str(self.project_root), str(self.frontend_dir))
-            if frontend_status.found:
-                self.logger.warning(
-                    "Frontend is already running, skipping startup")
-                self.logger.info("Found %d frontend process(es)",
-                                 frontend_status.total_count)
-                for proc in frontend_status.processes:
-                    self.logger.info("  - PID %d: %s", proc.pid,
-                                     ' '.join(proc.cmdline))
-                self._mark_installed()
-                return True
-
-            # Start the frontend process
-            self.logger.info("Starting frontend process: npm run dev")
-
-            # Spawn process using ProcessManager
-            result = ProcessManager.spawn(
-                command=['npm', 'run', 'dev'],
-                detached=True,
-                cwd=self.frontend_dir,
-                log_dir=self.frontend_dir / 'logs',
-                log_prefix='frontend'
-            )
-
-            if not result.success:
-                self.logger.error(
-                    "Failed to start frontend process: %s", result.error_message)
-                return False
-
-            process = result.process
-
-            # Give the process a moment to start
-            time.sleep(2)
-
-            # Check if the process is still running
-            if process.poll() is not None:
-                # Process exited immediately, something went wrong
-                self.logger.error(
-                    "Frontend process exited immediately with code %d", process.returncode)
-                if result.stdout_log and result.stderr_log:
-                    self.logger.error(
-                        "Check log files for details: %s, %s", result.stdout_log, result.stderr_log)
-                return False
-
-            self.logger.info(
-                "Frontend process started successfully (PID: %d)", process.pid)
-            self._mark_installed()
-            return True
-
-        except FileNotFoundError:
+        # Check if frontend directory exists
+        if not self.frontend_dir.exists() or not self.frontend_dir.is_dir():
             self.logger.error(
-                "NPM command not found. Please ensure Node.js and npm are installed")
+                "Frontend directory not found: %s", self.frontend_dir)
             return False
 
-        except Exception as e:
+        # Check if package.json exists
+        package_json = self.frontend_dir / "package.json"
+        if not package_json.exists():
             self.logger.error(
-                "Unexpected error during frontend deployment: %s", e)
+                "Frontend package.json not found: %s", package_json)
             return False
 
-    def uninstall(self) -> bool:
+        # Check if frontend is already running
+        from deployment.utils import is_frontend_running
+        frontend_status = await is_frontend_running(
+            str(self.project_root), str(self.frontend_dir))
+        if frontend_status.found:
+            self.logger.warning(
+                "Frontend is already running, skipping startup")
+            self.logger.info("Found %d frontend process(es)",
+                             frontend_status.total_count)
+            for proc in frontend_status.processes:
+                self.logger.info("  - PID %d: %s", proc.pid,
+                                 ' '.join(proc.cmdline))
+            return True  # Already running, consider success
+
+        # Start the frontend process
+        self.logger.info("Starting frontend process: npm run dev")
+
+        # Create command to start the frontend process
+        frontend_cmd = AsyncCommand(
+            args=['npm', 'run', 'dev'],
+            cwd=self.frontend_dir
+        )
+
+        result = await frontend_cmd.execute()
+        return result.success
+
+    async def uninstall(self) -> bool:
         """
         Uninstall the frontend by stopping the development server process.
-
-        Finds and terminates running frontend processes.
 
         Returns:
             bool: True if uninstallation was successful, False otherwise
         """
         self.logger.info("Stopping frontend deployment")
 
-        try:
-            # Find running frontend processes
-            from deployment.utils import is_frontend_running, kill_process
-            frontend_status = is_frontend_running(
-                str(self.project_root), str(self.frontend_dir))
+        # Find running frontend processes
+        from deployment.utils import is_frontend_running
+        frontend_status = await is_frontend_running(
+            str(self.project_root), str(self.frontend_dir))
 
-            if not frontend_status.found:
-                self.logger.info("No frontend processes found to stop")
-                self._mark_uninstalled()
-                return True
+        if not frontend_status.found:
+            self.logger.info("No frontend processes found to stop")
+            return True  # No processes to stop, consider success
 
+        self.logger.info(
+            "Found %d frontend process(es) to stop", frontend_status.total_count)
+
+        success_count = 0
+        for proc in frontend_status.processes:
             self.logger.info(
-                "Found %d frontend process(es) to stop", frontend_status.total_count)
-
-            # Terminate all found processes
-            success_count = 0
-            for proc in frontend_status.processes:
-                self.logger.info(
-                    "Terminating frontend process (PID: %d)", proc.pid)
-                if kill_process(proc.pid, timeout=10):
-                    self.logger.info(
-                        "Frontend process %d terminated successfully", proc.pid)
-                    success_count += 1
-                else:
-                    self.logger.warning(
-                        "Failed to terminate frontend process %d", proc.pid)
-
-            if success_count == frontend_status.total_count:
-                self.logger.info("All frontend processes stopped successfully")
-                self._mark_uninstalled()
-                return True
+                "Terminating frontend process (PID: %d)", proc.pid)
+            # Use AsyncCommand to kill the process
+            kill_cmd = AsyncCommand.powershell(f"taskkill /PID {proc.pid} /F")
+            result = await kill_cmd.execute()
+            if result.success:
+                success_count += 1
+                self.logger.info("Frontend process %d terminated successfully", proc.pid)
             else:
-                self.logger.warning(
-                    "Some frontend processes could not be stopped")
-                self._mark_uninstalled()
-                return False
+                self.logger.warning("Failed to terminate frontend process %d", proc.pid)
 
-        except Exception as e:
-            self.logger.error(
-                "Unexpected error during frontend uninstallation: %s", e)
-            return False
+        return success_count == frontend_status.total_count
 
-    def validate(self) -> bool:
+    async def validate(self) -> bool:
         """
         Validate that the frontend can be deployed.
 
@@ -204,19 +148,12 @@ class NativeFrontendDeployStep(Step):
         self.logger.info("Validating frontend deployment environment")
 
         # Check if npm is available
-        try:
-            result = subprocess.run(
-                ['npm', '--version'],
-                capture_output=True,
-                shell=True,
-                text=True,
-                check=True
-            )
-            self.logger.info("NPM is available: %s", result.stdout.strip())
-        except (subprocess.CalledProcessError, FileNotFoundError) as e:
-            self.logger.error(
-                "NPM is not available. Please ensure Node.js and npm are installed")
+        npm_version_cmd = AsyncCommand.cmd("npm --version")
+        result = await npm_version_cmd.execute()
+        if not result.success:
+            self.logger.error("NPM is not available. Please ensure Node.js and npm are installed")
             return False
+        self.logger.info("NPM is available: %s", result.stdout.strip())
 
         # Check if frontend directory exists
         if not self.frontend_dir.exists() or not self.frontend_dir.is_dir():

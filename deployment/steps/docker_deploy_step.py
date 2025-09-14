@@ -7,9 +7,10 @@ This step handles deploying the application using Docker Compose.
 import os
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from deployment.steps.base_step import Step
-from deployment.utils.process_manager import ProcessManager
+from backend.src.utils.command import AsyncCommand
+from backend.src.gateways.v1.docker_gateway.compose import DockerComposeGateway
 
 
 class DockerDeployStep(Step):
@@ -49,11 +50,9 @@ class DockerDeployStep(Step):
         else:
             self.compose_file = Path(compose_file)
 
-    def install(self) -> bool:
+    async def install(self) -> bool:
         """
         Install the application using Docker Compose.
-
-        Runs 'docker compose up -d --build' to start the services.
 
         Returns:
             bool: True if installation was successful, False otherwise
@@ -78,67 +77,38 @@ class DockerDeployStep(Step):
         self.logger.info(
             "Starting Docker deployment for project at %s", self.project_root)
 
+        # Check if docker-compose.yml exists
+        if not self.compose_file.exists():
+            self.logger.error(
+                "Docker compose file not found: %s", self.compose_file)
+            return False
+
+        # Use DockerComposeGateway for the actual deployment
         try:
-            # Check if docker-compose.yml exists
-            if not self.compose_file.exists():
-                self.logger.error(
-                    "Docker compose file not found: %s", self.compose_file)
-                return False
-
-            # Run docker compose up -d --build using ProcessManager
-            self.logger.info(
-                "Running: docker compose -f %s up -d --build", self.compose_file)
-
-            result = ProcessManager.spawn(
-                command=['docker', 'compose', '-f',
-                         str(self.compose_file), 'up', '-d', '--build'],
-                detached=False,
-                cwd=self.project_root,
-                log_dir=self.project_root / 'logs',
-                log_prefix='docker_compose_up'
+            result = await DockerComposeGateway.up(
+                compose_file=str(self.compose_file),
+                project_dir=str(self.project_root),
+                detached=True,
+                build=True
             )
 
-            if not result.success:
-                self.logger.error(
-                    "Failed to start Docker services: %s", result.error_message)
+            if result.raw.success:
+                self.logger.info("Docker compose up completed successfully")
+                self.logger.debug("Docker compose output: %s", result.raw.stdout)
+                if result.raw.stderr:
+                    self.logger.warning("Docker compose warnings: %s", result.raw.stderr)
+                return True
+            else:
+                self.logger.error("Failed to start Docker services: %s", result.raw.stderr)
                 return False
 
-            # Wait for the process to complete
-            if result.process:
-                stdout, stderr = result.process.communicate()
-
-                self.logger.info("Docker compose up completed successfully")
-                self.logger.debug("Docker compose output: %s", stdout)
-
-                if stderr:
-                    self.logger.warning("Docker compose warnings: %s", stderr)
-
-            self._mark_installed()
-            return True
-
-        except subprocess.CalledProcessError as e:
-            self.logger.error(
-                "Docker compose up failed with return code %d", e.returncode)
-            self.logger.error("Error output: %s", e.stderr)
-            if e.stdout:
-                self.logger.error("Standard output: %s", e.stdout)
-            return False
-
-        except FileNotFoundError:
-            self.logger.error(
-                "Docker command not found. Please ensure Docker is installed and in PATH")
-            return False
-
         except Exception as e:
-            self.logger.error(
-                "Unexpected error during Docker deployment: %s", e)
+            self.logger.error("Unexpected error during Docker deployment: %s", e)
             return False
 
-    def uninstall(self) -> bool:
+    async def uninstall(self) -> bool:
         """
         Uninstall the application by stopping Docker Compose services.
-
-        Runs 'docker compose down' to stop and remove the services.
 
         Returns:
             bool: True if uninstallation was successful, False otherwise
@@ -146,65 +116,36 @@ class DockerDeployStep(Step):
         self.logger.info(
             "Stopping Docker deployment for project at %s", self.project_root)
 
-        try:
-            # Check if docker-compose.yml exists
-            if not self.compose_file.exists():
-                self.logger.warning(
-                    "Docker compose file not found: %s", self.compose_file)
-                # Consider this a success since there's nothing to uninstall
-                self._mark_uninstalled()
-                return True
-
-            # Run docker compose down using ProcessManager
-            self.logger.info(
-                "Running: docker compose -f %s down", self.compose_file)
-
-            result = ProcessManager.spawn(
-                command=['docker', 'compose', '-f',
-                         str(self.compose_file), 'down'],
-                detached=False,
-                cwd=self.project_root,
-                log_dir=self.project_root / 'logs',
-                log_prefix='docker_compose_down'
-            )
-
-            if not result.success:
-                self.logger.error(
-                    "Failed to stop Docker services: %s", result.error_message)
-                return False
-
-            # Wait for the process to complete
-            if result.process:
-                stdout, stderr = result.process.communicate()
-
-                self.logger.info("Docker compose down completed successfully")
-                self.logger.debug("Docker compose output: %s", stdout)
-
-                if stderr:
-                    self.logger.warning("Docker compose warnings: %s", stderr)
-
-            self._mark_uninstalled()
+        # Check if docker-compose.yml exists
+        if not self.compose_file.exists():
+            self.logger.warning(
+                "Docker compose file not found: %s", self.compose_file)
+            # Consider this a success since there's nothing to uninstall
             return True
 
-        except subprocess.CalledProcessError as e:
-            self.logger.error(
-                "Docker compose down failed with return code %d", e.returncode)
-            self.logger.error("Error output: %s", e.stderr)
-            if e.stdout:
-                self.logger.error("Standard output: %s", e.stdout)
-            return False
+        # Use DockerComposeGateway for the actual uninstallation
+        try:
+            result = await DockerComposeGateway.down(
+                compose_file=str(self.compose_file),
+                project_dir=str(self.project_root),
+                remove_volumes=False
+            )
 
-        except FileNotFoundError:
-            self.logger.error(
-                "Docker command not found. Please ensure Docker is installed and in PATH")
-            return False
+            if result.raw.success:
+                self.logger.info("Docker compose down completed successfully")
+                self.logger.debug("Docker compose output: %s", result.raw.stdout)
+                if result.raw.stderr:
+                    self.logger.warning("Docker compose warnings: %s", result.raw.stderr)
+                return True
+            else:
+                self.logger.error("Failed to stop Docker services: %s", result.raw.stderr)
+                return False
 
         except Exception as e:
-            self.logger.error(
-                "Unexpected error during Docker uninstallation: %s", e)
+            self.logger.error("Unexpected error during Docker uninstallation: %s", e)
             return False
 
-    def validate(self) -> bool:
+    async def validate(self) -> bool:
         """
         Validate that Docker and docker-compose.yml are available.
 
@@ -218,18 +159,12 @@ class DockerDeployStep(Step):
         self.logger.info("Validating Docker deployment environment")
 
         # Check if Docker is available
-        try:
-            result = subprocess.run(
-                ['docker', '--version'],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            self.logger.info("Docker found: %s", result.stdout.strip())
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            self.logger.error(
-                "Docker is not available or not working properly")
+        docker_version_cmd = AsyncCommand.cmd("docker --version")
+        result = await docker_version_cmd.execute()
+        if not result.success:
+            self.logger.error("Docker is not available or not working properly")
             return False
+        self.logger.info("Docker found: %s", result.stdout.strip())
 
         # Check if docker-compose.yml exists
         if not self.compose_file.exists():
@@ -249,20 +184,17 @@ class DockerDeployStep(Step):
             "Project root directory accessible: %s", self.project_root)
 
         # Try to validate the docker-compose.yml file
-        try:
-            result = subprocess.run(
-                ['docker', 'compose', '-f', str(self.compose_file), 'config'],
-                cwd=self.project_root,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            self.logger.info("Docker compose configuration is valid")
-        except subprocess.CalledProcessError as e:
+        config_cmd = AsyncCommand.cmd(
+            f"docker compose -f {self.compose_file} config",
+            cwd=self.project_root
+        )
+        result = await config_cmd.execute()
+        if not result.success:
             self.logger.error("Docker compose configuration is invalid")
-            self.logger.error("Error output: %s", e.stderr)
+            self.logger.error("Error output: %s", result.stderr)
             return False
 
+        self.logger.info("Docker compose configuration is valid")
         self.logger.info("Docker deployment validation passed")
         return True
 

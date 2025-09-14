@@ -2,11 +2,11 @@
 Process checking utilities for detecting running processes.
 """
 
-import subprocess
 import sys
 from pathlib import Path
 from typing import Optional, List
 from dataclasses import dataclass
+from backend.src.utils.command import AsyncCommand
 
 
 @dataclass
@@ -18,7 +18,7 @@ class ProcessSearchResult:
     total_count: int
 
 
-def is_frontend_running(project_root: str, frontend_dir: Optional[str] = None) -> ProcessSearchResult:
+async def is_frontend_running(project_root: str, frontend_dir: Optional[str] = None) -> ProcessSearchResult:
     """
     Check if the frontend development server is running.
 
@@ -34,23 +34,19 @@ def is_frontend_running(project_root: str, frontend_dir: Optional[str] = None) -
 
     # On Windows, npm run dev typically spawns a cmd.exe process
     if sys.platform == 'win32':
-        return _is_frontend_running_windows(project_root, frontend_dir)
+        return await _is_frontend_running_windows(project_root, frontend_dir)
     else:
-        return _is_frontend_running_unix(project_root, frontend_dir)
+        return await _is_frontend_running_unix(project_root, frontend_dir)
 
 
-def _is_frontend_running_windows(project_root: str, frontend_dir: str) -> ProcessSearchResult:
+async def _is_frontend_running_windows(project_root: str, frontend_dir: str) -> ProcessSearchResult:
     """Windows-specific frontend process detection."""
     try:
         # Get all cmd.exe processes
-        result = subprocess.run(
-            ['powershell', '-Command', 'Get-Process cmd | Select-Object Id'],
-            capture_output=True,
-            text=True,
-            shell=True
-        )
+        cmd = AsyncCommand.powershell("Get-Process cmd | Select-Object Id")
+        result = await cmd.execute()
 
-        if result.returncode != 0:
+        if not result.success:
             return ProcessSearchResult(found=False, processes=[], total_count=0)
 
         # Parse the output to get PIDs
@@ -71,15 +67,12 @@ def _is_frontend_running_windows(project_root: str, frontend_dir: str) -> Proces
         for pid in cmd_pids:
             try:
                 # Get command line for this process
-                cmd_result = subprocess.run(
-                    ['powershell', '-Command',
-                     f'Get-WmiObject Win32_Process | Where-Object {{ $_.ProcessId -eq {pid} }} | Select-Object -ExpandProperty CommandLine'],
-                    capture_output=True,
-                    text=True,
-                    shell=True
+                cmd = AsyncCommand.powershell(
+                    f'Get-WmiObject Win32_Process | Where-Object {{ $_.ProcessId -eq {pid} }} | Select-Object -ExpandProperty CommandLine'
                 )
+                cmd_result = await cmd.execute()
 
-                if cmd_result.returncode == 0 and cmd_result.stdout.strip():
+                if cmd_result.success and cmd_result.stdout.strip():
                     command_line = cmd_result.stdout.strip()
 
                     # Check if this is our dev server process
@@ -94,7 +87,7 @@ def _is_frontend_running_windows(project_root: str, frontend_dir: str) -> Proces
                             'status': 'running'
                         })
 
-            except (subprocess.CalledProcessError, ValueError):
+            except Exception:
                 continue
 
         return ProcessSearchResult(
@@ -107,17 +100,14 @@ def _is_frontend_running_windows(project_root: str, frontend_dir: str) -> Proces
         return ProcessSearchResult(found=False, processes=[], total_count=0)
 
 
-def _is_frontend_running_unix(project_root: str, frontend_dir: str) -> ProcessSearchResult:
+async def _is_frontend_running_unix(project_root: str, frontend_dir: str) -> ProcessSearchResult:
     """Unix/Linux/macOS-specific frontend process detection."""
     # Simple implementation for Unix systems
     try:
-        result = subprocess.run(
-            ['ps', 'aux'],
-            capture_output=True,
-            text=True
-        )
+        cmd = AsyncCommand.cmd("ps aux")
+        result = await cmd.execute()
 
-        if result.returncode != 0:
+        if not result.success:
             return ProcessSearchResult(found=False, processes=[], total_count=0)
 
         # Look for npm or node processes
@@ -150,7 +140,7 @@ def _is_frontend_running_unix(project_root: str, frontend_dir: str) -> ProcessSe
         return ProcessSearchResult(found=False, processes=[], total_count=0)
 
 
-def is_backend_running(project_root: str, backend_dir: Optional[str] = None) -> ProcessSearchResult:
+async def is_backend_running(project_root: str, backend_dir: Optional[str] = None) -> ProcessSearchResult:
     """
     Check if the backend server is running.
 
@@ -167,20 +157,13 @@ def is_backend_running(project_root: str, backend_dir: Optional[str] = None) -> 
     # Look for Python processes running __main__.py in the backend directory
     try:
         if sys.platform == 'win32':
-            result = subprocess.run(
-                ['powershell', '-Command', 'Get-Process python | Select-Object Id'],
-                capture_output=True,
-                text=True,
-                shell=True
-            )
+            cmd = AsyncCommand.powershell("Get-Process python | Select-Object Id")
         else:
-            result = subprocess.run(
-                ['ps', 'aux'],
-                capture_output=True,
-                text=True
-            )
+            cmd = AsyncCommand.cmd("ps aux")
+        
+        result = await cmd.execute()
 
-        if result.returncode != 0:
+        if not result.success:
             return ProcessSearchResult(found=False, processes=[], total_count=0)
 
         # Simple implementation - look for python processes
@@ -213,7 +196,7 @@ def is_backend_running(project_root: str, backend_dir: Optional[str] = None) -> 
         return ProcessSearchResult(found=False, processes=[], total_count=0)
 
 
-def kill_process(pid: int, timeout: int = 10) -> bool:
+async def kill_process(pid: int, timeout: int = 10) -> bool:
     """
     Kill a process by PID with graceful termination.
 
@@ -227,21 +210,13 @@ def kill_process(pid: int, timeout: int = 10) -> bool:
     try:
         if sys.platform == 'win32':
             # Use PowerShell to terminate the process
-            result = subprocess.run(
-                ['powershell', '-Command', f'Stop-Process -Id {pid}'],
-                capture_output=True,
-                text=True,
-                shell=True
-            )
+            cmd = AsyncCommand.powershell(f'Stop-Process -Id {pid}')
         else:
             # Use kill command on Unix systems
-            result = subprocess.run(
-                ['kill', str(pid)],
-                capture_output=True,
-                text=True
-            )
+            cmd = AsyncCommand.cmd(f'kill {pid}')
 
-        return result.returncode == 0
+        result = await cmd.execute()
+        return result.success
 
     except Exception:
         return False

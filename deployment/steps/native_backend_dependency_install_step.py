@@ -7,11 +7,11 @@ using the correct Python interpreter for the backend.
 
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from .base_step import Step
+from backend.src.utils.command import AsyncCommand
 from ..utils.interpreter import find_python_interpreter, get_interpreter_info
 from ..utils.requirements import find_requirements_file, validate_requirements_file
-from ..utils.process_manager import ProcessManager
 
 
 class NativeBackendDependencyInstallStep(Step):
@@ -51,7 +51,7 @@ class NativeBackendDependencyInstallStep(Step):
         else:
             self.backend_dir = Path(backend_dir)
 
-    def install(self) -> bool:
+    async def install(self) -> bool:
         """
         Install dependencies by running 'pip install -r requirements.txt'.
 
@@ -61,95 +61,54 @@ class NativeBackendDependencyInstallStep(Step):
         self.logger.info(
             "Starting dependency installation for backend at %s", self.backend_dir)
 
-        try:
-            # Find the correct Python interpreter
-            interpreter_path = find_python_interpreter(
-                self.project_root, self.backend_dir)
-            self.logger.info("Using Python interpreter: %s", interpreter_path)
+        # Find the correct Python interpreter
+        interpreter_path = await find_python_interpreter(
+            self.project_root, self.backend_dir)
+        self.logger.info("Using Python interpreter: %s", interpreter_path)
 
-            # Get interpreter info
-            interpreter_info = get_interpreter_info(interpreter_path)
-            if not interpreter_info.working:
-                self.logger.error(
-                    "Python interpreter is not working: %s", interpreter_path)
-                return False
-
-            self.logger.info("Python interpreter info: %s",
-                             interpreter_info.version)
-            if interpreter_info.is_virtual_env:
-                self.logger.info("Using virtual environment: %s",
-                                 interpreter_info.executable)
-
-            # Find requirements.txt file
-            requirements_file = find_requirements_file(self.backend_dir)
-            if requirements_file is None:
-                self.logger.error(
-                    "Requirements file not found in backend directory: %s", self.backend_dir)
-                return False
-
-            self.logger.info("Found requirements file: %s", requirements_file)
-
-            # Validate requirements file
-            validation_result = validate_requirements_file(requirements_file)
-            if not validation_result.valid:
-                self.logger.error(
-                    "Requirements file validation failed: %s", validation_result.error)
-                return False
-
-            requirements_info = validation_result.info
-            self.logger.info("Requirements file contains %d packages",
-                             requirements_info.package_count)
-
-            # Install dependencies using ProcessManager
-            self.logger.info("Installing dependencies using pip...")
-
-            result = ProcessManager.spawn(
-                command=[interpreter_path, '-m', 'pip',
-                         'install', '-r', str(requirements_file)],
-                detached=False,
-                cwd=self.backend_dir,
-                log_dir=self.backend_dir / 'logs',
-                log_prefix='pip_install'
-            )
-
-            if not result.success:
-                self.logger.error(
-                    "Failed to install backend dependencies: %s", result.error_message)
-                return False
-
-            # Wait for the process to complete
-            if result.process:
-                stdout, stderr = result.process.communicate()
-
-                self.logger.info(
-                    "Dependency installation completed successfully")
-                self.logger.debug("Pip output: %s", stdout)
-
-                if stderr:
-                    self.logger.warning("Pip warnings: %s", stderr)
-
-            self._mark_installed()
-            return True
-
-        except subprocess.CalledProcessError as e:
+        # Get interpreter info
+        interpreter_info = await get_interpreter_info(interpreter_path)
+        if not interpreter_info.working:
             self.logger.error(
-                "Dependency installation failed with return code %d", e.returncode)
-            self.logger.error("Error output: %s", e.stderr)
-            if e.stdout:
-                self.logger.error("Standard output: %s", e.stdout)
+                "Python interpreter is not working: %s", interpreter_path)
             return False
 
-        except FileNotFoundError:
+        self.logger.info("Python interpreter info: %s",
+                         interpreter_info.version)
+        if interpreter_info.is_virtual_env:
+            self.logger.info("Using virtual environment: %s",
+                             interpreter_info.executable)
+
+        # Find requirements.txt file
+        requirements_file = find_requirements_file(self.backend_dir)
+        if requirements_file is None:
             self.logger.error(
-                "Python interpreter not found: %s", interpreter_path)
+                "Requirements file not found in backend directory: %s", self.backend_dir)
             return False
 
-        except Exception as e:
+        self.logger.info("Found requirements file: %s", requirements_file)
+
+        # Validate requirements file
+        validation_result = validate_requirements_file(requirements_file)
+        if not validation_result.valid:
             self.logger.error(
-                "Unexpected error during dependency installation: %s", e)
+                "Requirements file validation failed: %s", validation_result.error)
             return False
 
-    def uninstall(self) -> bool:
+        requirements_info = validation_result.info
+        self.logger.info("Requirements file contains %d packages",
+                         requirements_info.package_count)
+
+        # Create command to install dependencies
+        pip_install_cmd = AsyncCommand(
+            args=[interpreter_path, '-m', 'pip', 'install', '-r', str(requirements_file)],
+            cwd=self.backend_dir
+        )
+
+        result = await pip_install_cmd.execute()
+        return result.success
+
+    async def uninstall(self) -> bool:
         """
         Uninstall dependencies.
 
@@ -163,10 +122,9 @@ class NativeBackendDependencyInstallStep(Step):
             "Dependency uninstallation requested - this is a no-op operation")
         self.logger.info(
             "Dependencies will remain installed for potential future use")
-        self._mark_uninstalled()
-        return True
+        return True  # No-op, consider success
 
-    def validate(self) -> bool:
+    async def validate(self) -> bool:
         """
         Validate that dependencies can be installed.
 
@@ -175,63 +133,53 @@ class NativeBackendDependencyInstallStep(Step):
         """
         self.logger.info("Validating dependency installation environment")
 
-        try:
-            # Find the correct Python interpreter
-            interpreter_path = find_python_interpreter(
-                self.project_root, self.backend_dir)
-            self.logger.info("Found Python interpreter: %s", interpreter_path)
+        # Find the correct Python interpreter
+        interpreter_path = await find_python_interpreter(
+            self.project_root, self.backend_dir)
+        self.logger.info("Found Python interpreter: %s", interpreter_path)
 
-            # Get interpreter info
-            interpreter_info = get_interpreter_info(interpreter_path)
-            if not interpreter_info.working:
-                self.logger.error(
-                    "Python interpreter is not working: %s", interpreter_path)
-                return False
-
-            self.logger.info("Python interpreter is working: %s",
-                             interpreter_info.version)
-
-            # Check if pip is available
-            try:
-                result = subprocess.run(
-                    [interpreter_path, '-m', 'pip', '--version'],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-                self.logger.info("Pip is available: %s", result.stdout.strip())
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                self.logger.error(
-                    "Pip is not available with this Python interpreter")
-                return False
-
-            # Find and validate requirements file
-            requirements_file = find_requirements_file(self.backend_dir)
-            if requirements_file is None:
-                self.logger.error(
-                    "Requirements file not found in backend directory: %s", self.backend_dir)
-                return False
-
-            self.logger.info("Found requirements file: %s", requirements_file)
-
-            # Validate requirements file
-            validation_result = validate_requirements_file(requirements_file)
-            if not validation_result.valid:
-                self.logger.error(
-                    "Requirements file validation failed: %s", validation_result.error)
-                return False
-
-            requirements_info = validation_result.info
-            self.logger.info(
-                "Requirements file is valid with %d packages", requirements_info.package_count)
-
-            self.logger.info("Dependency installation validation passed")
-            return True
-
-        except Exception as e:
+        # Get interpreter info
+        interpreter_info = await get_interpreter_info(interpreter_path)
+        if not interpreter_info.working:
             self.logger.error(
-                "Dependency installation validation failed: %s", e)
+                "Python interpreter is not working: %s", interpreter_path)
             return False
+
+        self.logger.info("Python interpreter is working: %s",
+                         interpreter_info.version)
+
+        # Check if pip is available
+        pip_version_cmd = AsyncCommand(
+            args=[interpreter_path, '-m', 'pip', '--version']
+        )
+        result = await pip_version_cmd.execute()
+        if not result.success:
+            self.logger.error("Pip is not available with this Python interpreter")
+            return False
+        self.logger.info("Pip is available: %s", result.stdout.strip())
+
+        # Find and validate requirements file
+        requirements_file = find_requirements_file(self.backend_dir)
+        if requirements_file is None:
+            self.logger.error(
+                "Requirements file not found in backend directory: %s", self.backend_dir)
+            return False
+
+        self.logger.info("Found requirements file: %s", requirements_file)
+
+        # Validate requirements file
+        validation_result = validate_requirements_file(requirements_file)
+        if not validation_result.valid:
+            self.logger.error(
+                "Requirements file validation failed: %s", validation_result.error)
+            return False
+
+        requirements_info = validation_result.info
+        self.logger.info(
+            "Requirements file is valid with %d packages", requirements_info.package_count)
+
+        self.logger.info("Dependency installation validation passed")
+        return True
 
     def get_metadata(self) -> dict:
         """

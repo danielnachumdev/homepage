@@ -8,9 +8,9 @@ and native system resources (not containerized).
 import sys
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from deployment.steps.base_step import Step
-from deployment.utils.process_manager import ProcessManager
+from backend.src.utils.command import AsyncCommand
 from deployment.utils.interpreter import find_python_interpreter, get_interpreter_info
 
 
@@ -54,11 +54,9 @@ class NativeBackendDeployStep(Step):
 
         # Note: We don't store process references as they won't persist between invocations
 
-    def install(self) -> bool:
+    async def install(self) -> bool:
         """
         Install the backend by starting the server process.
-
-        Runs 'python __main__.py' in the backend directory using the current interpreter.
 
         Returns:
             bool: True if installation was successful, False otherwise
@@ -66,155 +64,97 @@ class NativeBackendDeployStep(Step):
         self.logger.info(
             "Starting backend deployment in directory %s", self.backend_dir)
 
-        try:
-            # Check if backend directory exists
-            if not self.backend_dir.exists() or not self.backend_dir.is_dir():
-                self.logger.error(
-                    "Backend directory not found: %s", self.backend_dir)
-                return False
-
-            # Check if __main__.py exists
-            main_file = self.backend_dir / "__main__.py"
-            if not main_file.exists():
-                self.logger.error(
-                    "Backend __main__.py not found: %s", main_file)
-                return False
-
-            # Check if backend is already running
-            from deployment.utils import is_backend_running
-            backend_status = is_backend_running(
-                str(self.project_root), str(self.backend_dir))
-            if backend_status.found:
-                self.logger.warning(
-                    "Backend is already running, skipping startup")
-                self.logger.info("Found %d backend process(es)",
-                                 backend_status.total_count)
-                for proc in backend_status.processes:
-                    self.logger.info("  - PID %d: %s", proc.pid,
-                                     ' '.join(proc.cmdline))
-                self._mark_installed()
-                return True
-
-            # Find the correct Python interpreter
-            interpreter_path = find_python_interpreter(
-                self.project_root, self.backend_dir)
-            self.logger.info("Using Python interpreter: %s", interpreter_path)
-
-            # Get interpreter info
-            interpreter_info = get_interpreter_info(interpreter_path)
-            if not interpreter_info.working:
-                self.logger.error(
-                    "Python interpreter is not working: %s", interpreter_path)
-                return False
-
-            self.logger.info("Python interpreter info: %s",
-                             interpreter_info.version)
-            if interpreter_info.is_virtual_env:
-                self.logger.info("Using virtual environment: %s",
-                                 interpreter_info.executable)
-
-            # Start the backend process
-            self.logger.info("Starting backend process: %s %s",
-                             interpreter_path, main_file)
-
-            # Spawn process using ProcessManager
-            result = ProcessManager.spawn(
-                command=[interpreter_path, str(main_file)],
-                detached=True,
-                cwd=self.backend_dir,
-                log_dir=self.backend_dir / 'logs',
-                log_prefix='backend'
-            )
-
-            if not result.success:
-                self.logger.error(
-                    "Failed to start backend process: %s", result.error_message)
-                return False
-
-            process = result.process
-
-            # Give the process a moment to start
-            time.sleep(1)
-
-            # Check if the process is still running
-            if process.poll() is not None:
-                # Process exited immediately, something went wrong
-                self.logger.error(
-                    "Backend process exited immediately with code %d", process.returncode)
-                if result.stdout_log and result.stderr_log:
-                    self.logger.error(
-                        "Check log files for details: %s, %s", result.stdout_log, result.stderr_log)
-                return False
-
-            self.logger.info(
-                "Backend process started successfully (PID: %d)", process.pid)
-            self._mark_installed()
-            return True
-
-        except FileNotFoundError:
+        # Check if backend directory exists
+        if not self.backend_dir.exists() or not self.backend_dir.is_dir():
             self.logger.error(
-                "Python interpreter not found: %s", interpreter_path)
+                "Backend directory not found: %s", self.backend_dir)
             return False
 
-        except Exception as e:
+        # Check if __main__.py exists
+        main_file = self.backend_dir / "__main__.py"
+        if not main_file.exists():
             self.logger.error(
-                "Unexpected error during backend deployment: %s", e)
+                "Backend __main__.py not found: %s", main_file)
             return False
 
-    def uninstall(self) -> bool:
+        # Check if backend is already running
+        from deployment.utils import is_backend_running
+        backend_status = await is_backend_running(
+            str(self.project_root), str(self.backend_dir))
+        if backend_status.found:
+            self.logger.warning(
+                "Backend is already running, skipping startup")
+            self.logger.info("Found %d backend process(es)",
+                             backend_status.total_count)
+            for proc in backend_status.processes:
+                self.logger.info("  - PID %d: %s", proc.pid,
+                                 ' '.join(proc.cmdline))
+            return True  # Already running, consider success
+
+        # Find the correct Python interpreter
+        interpreter_path = await find_python_interpreter(
+            self.project_root, self.backend_dir)
+        self.logger.info("Using Python interpreter: %s", interpreter_path)
+
+        # Get interpreter info
+        interpreter_info = await get_interpreter_info(interpreter_path)
+        if not interpreter_info.working:
+            self.logger.error(
+                "Python interpreter is not working: %s", interpreter_path)
+            return False
+
+        self.logger.info("Python interpreter info: %s",
+                         interpreter_info.version)
+        if interpreter_info.is_virtual_env:
+            self.logger.info("Using virtual environment: %s",
+                             interpreter_info.executable)
+
+        # Create command to start the backend process
+        backend_cmd = AsyncCommand(
+            args=[interpreter_path, str(main_file)],
+            cwd=self.backend_dir
+        )
+
+        result = await backend_cmd.execute()
+        return result.success
+
+    async def uninstall(self) -> bool:
         """
         Uninstall the backend by stopping the server process.
-
-        Finds and terminates running backend processes.
 
         Returns:
             bool: True if uninstallation was successful, False otherwise
         """
         self.logger.info("Stopping backend deployment")
 
-        try:
-            # Find running backend processes
-            from deployment.utils import is_backend_running, kill_process
-            backend_status = is_backend_running(
-                str(self.project_root), str(self.backend_dir))
+        # Find running backend processes
+        from deployment.utils import is_backend_running
+        backend_status = await is_backend_running(
+            str(self.project_root), str(self.backend_dir))
 
-            if not backend_status.found:
-                self.logger.info("No backend processes found to stop")
-                self._mark_uninstalled()
-                return True
+        if not backend_status.found:
+            self.logger.info("No backend processes found to stop")
+            return True  # No processes to stop, consider success
 
+        self.logger.info(
+            "Found %d backend process(es) to stop", backend_status.total_count)
+
+        success_count = 0
+        for proc in backend_status.processes:
             self.logger.info(
-                "Found %d backend process(es) to stop", backend_status.total_count)
-
-            # Terminate all found processes
-            success_count = 0
-            for proc in backend_status.processes:
-                self.logger.info(
-                    "Terminating backend process (PID: %d)", proc.pid)
-                if kill_process(proc.pid, timeout=10):
-                    self.logger.info(
-                        "Backend process %d terminated successfully", proc.pid)
-                    success_count += 1
-                else:
-                    self.logger.warning(
-                        "Failed to terminate backend process %d", proc.pid)
-
-            if success_count == backend_status.total_count:
-                self.logger.info("All backend processes stopped successfully")
-                self._mark_uninstalled()
-                return True
+                "Terminating backend process (PID: %d)", proc.pid)
+            # Use AsyncCommand to kill the process
+            kill_cmd = AsyncCommand.powershell(f"taskkill /PID {proc.pid} /F")
+            result = await kill_cmd.execute()
+            if result.success:
+                success_count += 1
+                self.logger.info("Backend process %d terminated successfully", proc.pid)
             else:
-                self.logger.warning(
-                    "Some backend processes could not be stopped")
-                self._mark_uninstalled()
-                return False
+                self.logger.warning("Failed to terminate backend process %d", proc.pid)
 
-        except Exception as e:
-            self.logger.error(
-                "Unexpected error during backend uninstallation: %s", e)
-            return False
+        return success_count == backend_status.total_count
 
-    def validate(self) -> bool:
+    async def validate(self) -> bool:
         """
         Validate that the backend can be deployed.
 
@@ -225,12 +165,12 @@ class NativeBackendDeployStep(Step):
 
         # Find and validate the correct Python interpreter
         try:
-            interpreter_path = find_python_interpreter(
+            interpreter_path = await find_python_interpreter(
                 self.project_root, self.backend_dir)
             self.logger.info("Found Python interpreter: %s", interpreter_path)
 
             # Get interpreter info
-            interpreter_info = get_interpreter_info(interpreter_path)
+            interpreter_info = await get_interpreter_info(interpreter_path)
             if not interpreter_info.working:
                 self.logger.error(
                     "Python interpreter is not working: %s", interpreter_path)
@@ -271,21 +211,14 @@ class NativeBackendDeployStep(Step):
             self.logger.warning(
                 "Backend requirements.txt not found: %s", requirements_file)
 
-        # Try to import the backend module to check for basic syntax errors
-        try:
-            # Add backend directory to Python path temporarily
-            original_path = sys.path.copy()
-            sys.path.insert(0, str(self.backend_dir))
-
-            # Try to import the main module
-            import __main__ as backend_main
-            self.logger.info("Backend module imports successfully")
-
-            # Restore original path
-            sys.path = original_path
-
-        except Exception as e:
-            self.logger.error("Backend module has import errors: %s", e)
+        # Test Python syntax by running a syntax check
+        syntax_check_cmd = AsyncCommand(
+            args=[interpreter_path, "-m", "py_compile", str(main_file)],
+            cwd=self.backend_dir
+        )
+        result = await syntax_check_cmd.execute()
+        if not result.success:
+            self.logger.error("Backend module has syntax errors: %s", result.stderr)
             return False
 
         self.logger.info("Backend deployment validation passed")
@@ -301,7 +234,7 @@ class NativeBackendDeployStep(Step):
         metadata = super().get_metadata()
         try:
             # Get interpreter info
-            interpreter_path = find_python_interpreter(
+            interpreter_path = await find_python_interpreter(
                 self.project_root, self.backend_dir)
             interpreter_info = get_interpreter_info(interpreter_path)
 
