@@ -816,18 +816,37 @@ class AsyncCommand:
 
     @staticmethod
     def cmd(command: str, **kwargs) -> 'AsyncCommand':
-        command = f"cmd /c {command.strip()}"
-        return AsyncCommand.from_str(command, **kwargs)
+        """Create a Windows CMD command with proper argument handling."""
+        stripped_command = command.strip()
+        # For cmd, we pass the command directly to /c without additional quoting
+        # The command will be parsed by cmd.exe itself
+        args = ["cmd", "/c", stripped_command]
+        return AsyncCommand(args, **kwargs)
 
     @staticmethod
     def powershell(command: str, **kwargs) -> 'AsyncCommand':
-        command = f"powershell -Command {command.strip()}"
-        return AsyncCommand.from_str(command, **kwargs)
+        """Create a PowerShell command with proper argument handling."""
+        stripped_command = command.strip()
+        # For PowerShell, we pass the command directly to -Command without additional quoting
+        # PowerShell will handle the command parsing internally
+        args = ["powershell", "-Command", stripped_command]
+        return AsyncCommand(args, **kwargs)
 
     @staticmethod
     def wsl(command: str, **kwargs) -> 'AsyncCommand':
-        command = f"wsl {command.strip()}"
-        return AsyncCommand.from_str(command, **kwargs)
+        """Create a WSL command with proper argument handling."""
+        stripped_command = command.strip()
+        # For WSL, we need to properly quote the command if it contains spaces
+        if ' ' in stripped_command:
+            escaped_command = stripped_command.replace('"', '\\"')
+            args = ["wsl", f'"{escaped_command}"']
+        else:
+            args = ["wsl", stripped_command]
+        return AsyncCommand(args, **kwargs)
+
+    def __await__(self):
+        """Make AsyncCommand awaitable by delegating to execute()."""
+        return self.execute().__await__()
 
     def __repr__(self) -> str:
         """String representation of the command."""

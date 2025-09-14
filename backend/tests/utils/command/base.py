@@ -8,8 +8,8 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional, Any, Dict, Union
 from unittest.mock import patch, MagicMock
-from backend.src.utils.command import AsyncCommand, CommandType, CommandState, CommandExecutionResult
-from backend.tests.base import BaseTest
+from src.utils.command import AsyncCommand, CommandType, CommandState, CommandExecutionResult
+from tests.base import BaseTest
 
 
 class BaseCommandTest(BaseTest):

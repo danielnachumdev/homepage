@@ -355,7 +355,7 @@ class TestLevel4Integration(BaseCommandTest):
 
             def track_callback(name):
                 def callback(cmd, result=None):
-                    all_callbacks.append(f'{name}_{'_'.join(cmd.args)}')
+                    all_callbacks.append(f"{name}_{'_'.join(cmd.args)}")
 
                 return callback
 
