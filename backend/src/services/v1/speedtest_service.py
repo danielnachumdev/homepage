@@ -2,6 +2,8 @@ import asyncio
 import speedtest
 from datetime import datetime
 from typing import Optional, Dict, Any
+
+from .base_service import BaseService
 from ...schemas.v1.speedtest import (
     SpeedTestRequest, SpeedTestResult, SpeedTestResponse,
     SpeedTestConfigResponse
@@ -9,7 +11,7 @@ from ...schemas.v1.speedtest import (
 from ...utils.logger import get_logger
 
 
-class SpeedTestService:
+class SpeedTestService(BaseService):
     """Service for performing internet speed tests."""
 
     def __init__(self):
@@ -210,7 +212,8 @@ class SpeedTestService:
             )
 
         self.logger.debug("Last result found: ping=%.2f ms, download=%.2f Mbps, upload=%.2f Mbps",
-                          self._last_result.ping_ms, self._last_result.download_speed_mbps, self._last_result.upload_speed_mbps)
+                          self._last_result.ping_ms, self._last_result.download_speed_mbps,
+                          self._last_result.upload_speed_mbps)
 
         return SpeedTestResponse(
             success=True,

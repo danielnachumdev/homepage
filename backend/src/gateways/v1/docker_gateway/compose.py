@@ -226,6 +226,10 @@ class DockerComposeGateway:
             if line.strip():
                 try:
                     project_data = json.loads(line)
+                    # Handle case where project_data might be a list
+                    if isinstance(project_data, list):
+                        continue
+                    
                     project_info = ComposeProjectInfo(
                         name=project_data.get('Name', ''),
                         status=project_data.get('Status', ''),
@@ -320,14 +324,27 @@ class DockerComposeGateway:
             if line.strip():
                 try:
                     service_data = json.loads(line)
+                    # Ensure ports, networks, and depends_on are lists
+                    ports = service_data.get('Ports', [])
+                    if isinstance(ports, str):
+                        ports = [ports] if ports else []
+                    
+                    networks = service_data.get('Networks', [])
+                    if isinstance(networks, str):
+                        networks = [networks] if networks else []
+                    
+                    depends_on = service_data.get('DependsOn', [])
+                    if isinstance(depends_on, str):
+                        depends_on = [depends_on] if depends_on else []
+                    
                     service_info = ComposeServiceInfo(
                         name=service_data.get('Name', ''),
                         project=service_data.get('Project', ''),
                         status=service_data.get('State', ''),
                         image=service_data.get('Image', ''),
-                        ports=service_data.get('Ports', []),
-                        networks=service_data.get('Networks', []),
-                        depends_on=service_data.get('DependsOn', [])
+                        ports=ports,
+                        networks=networks,
+                        depends_on=depends_on
                     )
                     services.append(service_info)
                 except json.JSONDecodeError:

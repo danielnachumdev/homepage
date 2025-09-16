@@ -5,7 +5,8 @@ from urllib.parse import urlparse
 
 # Removed database imports - no longer needed since profiles are managed through settings API
 from jsonpath_ng import parse
-from ...utils.logger import get_logger
+
+from .base_service import BaseService
 # Removed get_db import - no longer needed since profiles are managed through settings API
 from ...schemas.v1.chrome import ChromeProfile, ChromeProfileInfo, ChromeOpenRequestResult
 from ...utils.command import AsyncCommand, CommandType
@@ -21,11 +22,10 @@ def extract_jsonpath_value(data: dict, jsonpath_expr: str) -> Optional[Any]:
         return None
 
 
-class ChromeService:
+class ChromeService(BaseService):
     """Service for discovering and parsing Chrome profiles from the OS."""
 
     def __init__(self):
-        self.logger = get_logger("ChromeService")
         self._opened_processes = []  # Track opened Chrome processes for cleanup
 
     # Removed discover method - profiles are now managed through settings API
