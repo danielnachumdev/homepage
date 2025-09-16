@@ -96,15 +96,6 @@ export class RequestManager {
         }
     }
 
-    // Health check
-    async isBackendAvailable(): Promise<boolean> {
-        try {
-            const response = await this.get<{ status: string }>('/api/health');
-            return response && response.status === 'ok';
-        } catch (error) {
-            return false;
-        }
-    }
 
     private delay(ms: number): Promise<void> {
         return new Promise(resolve => setTimeout(resolve, ms));

@@ -74,7 +74,7 @@ export class ExtensionGateway {
     // Get backend health status
     async getBackendHealth(): Promise<{ status: string; timestamp: string } | null> {
         try {
-            return await this.requestManager.get<{ status: string; timestamp: string }>('/api/health');
+            return await this.requestManager.get<{ status: string; timestamp: string }>('/health');
         } catch (error) {
             console.warn('Failed to get backend health:', error);
             return null;
@@ -83,6 +83,11 @@ export class ExtensionGateway {
 
     // Check if backend is available
     async isBackendAvailable(): Promise<boolean> {
-        return this.requestManager.isBackendAvailable();
+        try {
+            const response = await this.requestManager.get<{ status: string }>('/health');
+            return response && response.status === 'ok';
+        } catch (error) {
+            return false;
+        }
     }
 }

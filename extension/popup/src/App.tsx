@@ -1,4 +1,5 @@
 import './App.css'
+import { BackendStatus } from './components/BackendStatus'
 
 function App() {
   return (
@@ -9,6 +10,8 @@ function App() {
       </div>
 
       <div className="popup-content">
+        <BackendStatus checkInterval={5000} />
+
         <div className="placeholder">
           <p>This popup is now built with React + Vite + TypeScript</p>
           <p>Ready for future development!</p>
