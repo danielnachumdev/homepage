@@ -1,5 +1,5 @@
 {
-    "name": "chrome-htzone-sort-extension",
+    "name": "homepage-extension",
     "version": "1.0.0",
     "main": "index.js",
     "scripts": {
@@ -7,10 +7,14 @@
         "compile": "tsc",
         "build": "node build.js"
     },
-    "keywords": [],
+    "keywords": [
+        "chrome-extension",
+        "homepage",
+        "new-tab"
+    ],
     "author": "",
     "license": "ISC",
-    "description": "",
+    "description": "A complementary Chrome extension for your homepage fullstack webapp that adds additional functionality and features",
     "devDependencies": {
         "@types/archiver": "^6.0.3",
         "@types/chrome": "^0.0.326",

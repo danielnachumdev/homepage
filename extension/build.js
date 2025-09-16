@@ -5,12 +5,12 @@ const extract = require('extract-zip');
 const path = require('path');
 
 const config = {
-    packageName: 'htzone-sorting-extension',
+    packageName: 'homepage-extension',
     distDir: 'dist',
     releasesDir: 'releases',
     unpackedDir: 'unpacked',
     staticDirs: ['icons', 'popup'],
-    staticRootFiles: ['manifest.json', 'LICENSE', 'privacy-policy.md']
+    staticRootFiles: ['manifest.json']
 };
 
 async function main() {

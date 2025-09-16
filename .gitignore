@@ -1,3 +1,5 @@
+extension/unpacked/
+extension/releases/
 .idea/
 
 db_state.json
@@ -358,3 +360,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+/extension/unpacked/popup/popup.html
+/extension/unpacked/popup/popup.js
+/extension/unpacked/scripts/contents.js
+/extension/unpacked/background.js
+/extension/unpacked/manifest.json
+/extension/releases/htzone-sorting-extension-v1.2-20250916-1.zip
+/extension/releases/htzone-sorting-extension-v1.2-20250916-2.zip
+/extension/releases/htzone-sorting-extension-v1.2-20250916-3.zip

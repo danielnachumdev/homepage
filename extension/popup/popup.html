@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 300px;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        
+        .setting-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background-color: #ccc;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .toggle.active {
+            background-color: #4CAF50;
+        }
+        
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .toggle.active::after {
+            transform: translateX(26px);
+        }
+        
+        .description {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e0e0e0;">
+        <h3 style="margin: 0; color: #333; font-size: 16px;">Homepage Companion</h3>
+        <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">Extension Features</p>
+    </div>
+    
+    <div class="setting-item">
+        <div>
+            <div class="setting-label">New Tab Redirect</div>
+            <div class="description">Automatically redirect new tabs to your homepage (http://localhost:3000)</div>
+        </div>
+        <div class="toggle" id="redirectToggle"></div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>
