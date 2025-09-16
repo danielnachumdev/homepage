@@ -126,8 +126,8 @@ class DockerGateway:
                             labels=container_data.get('Labels', ''),
                             local_volumes=container_data.get('LocalVolumes', ''),
                             platform={
-                                'architecture': container_data.get('Platform', {}).get('architecture', ''),
-                                'os': container_data.get('Platform', {}).get('os', '')
+                                'architecture': container_data.get('Platform', {}).get('architecture', '') if container_data.get('Platform') else '',
+                                'os': container_data.get('Platform', {}).get('os', '') if container_data.get('Platform') else ''
                             }
                         )
                         containers.append(container_info)
@@ -152,6 +152,14 @@ class DockerGateway:
 
         try:
             container_data = json.loads(result.stdout)
+            
+            # Handle case where container_data might be a list
+            if isinstance(container_data, list):
+                if container_data:
+                    container_data = container_data[0]  # Take first element
+                else:
+                    self.logger.error("Empty container data list")
+                    return None
 
             # Extract ports
             ports = []

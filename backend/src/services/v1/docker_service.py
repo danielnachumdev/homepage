@@ -1,4 +1,6 @@
 from typing import List, Optional
+
+from .base_service import BaseService
 from ...utils.command import AsyncCommand, CommandType
 from ...schemas.v1.docker import (
     ContainerNameRequest, LogsRequest, RemoveContainerRequest, RedeployRequest,
@@ -10,11 +12,8 @@ from ...utils.logger import get_logger
 import asyncio
 
 
-class DockerService:
+class DockerService(BaseService):
     """Service for managing Docker containers using AsyncCommand."""
-
-    def __init__(self):
-        self.logger = get_logger("DockerService")
 
     async def get_container_info(self, container_name: str) -> ContainerInfoResponse:
         """Get detailed information about a specific Docker container."""

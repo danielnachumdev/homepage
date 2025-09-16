@@ -1,6 +1,7 @@
 from typing import Any, Optional
 from danielutils.abstractions.db import SelectQuery, UpdateQuery, WhereClause, Condition, Operator
 
+from .base_service import BaseService
 from ...db.dependencies import get_db
 from ...schemas.v1.settings import (
     SettingValue, SettingsResponse, SettingUpdateRequest, SettingUpdateResponse,
@@ -9,11 +10,10 @@ from ...schemas.v1.settings import (
 from ...utils.logger import get_logger
 
 
-class SettingsService:
+class SettingsService(BaseService):
     """Service for managing application settings."""
 
     def __init__(self):
-        self.logger = get_logger("SettingsService")
         self.db = get_db()
 
     async def get_all_settings(self) -> SettingsResponse:
@@ -118,13 +118,13 @@ class SettingsService:
             )
 
     async def create_or_update_setting(
-        self,
-        setting_id: str,
-        category: str,
-        setting_type: str,
-        value: Any,
-        description: Optional[str] = None,
-        is_user_editable: bool = True
+            self,
+            setting_id: str,
+            category: str,
+            setting_type: str,
+            value: Any,
+            description: Optional[str] = None,
+            is_user_editable: bool = True
     ) -> SettingUpdateResponse:
         """Create or update a setting."""
         self.logger.info("Starting create_or_update_setting for ID: %s, category: %s, type: %s",
@@ -310,11 +310,11 @@ class SettingsService:
         return result
 
     async def update_chrome_profile_setting(
-        self,
-        profile_id: str,
-        display_name: str,
-        icon: str,
-        enabled: bool
+            self,
+            profile_id: str,
+            display_name: str,
+            icon: str,
+            enabled: bool
     ) -> SettingUpdateResponse:
         """Update Chrome profile setting."""
         self.logger.info("Updating Chrome profile setting: %s, display_name=%s, enabled=%s",
