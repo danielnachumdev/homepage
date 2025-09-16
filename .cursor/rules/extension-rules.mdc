@@ -1,0 +1,384 @@
+---
+globs: extension/*.ts, extension/*.tsx, extension/*.jsx, extension/*.js, extension/*.css
+alwaysApply: false
+---
+# Extension Development Rules
+
+This document outlines the coding standards and architectural principles for the Homepage Companion Extension project.
+
+## Architecture Principles
+
+### 1. Open-Closed Principle
+- **Rule**: The extension must be designed to be open for extension but closed for modification
+- **Implementation**: Use interfaces and abstract classes to define contracts
+- **Example**: `Feature` interface allows adding new features without modifying existing code
+
+### 2. Gateway/Service Pattern
+- **Gateway**: Low-level operations that abstract 3rd-party API (backend) with domain-specific operations
+- **Service**: Complex business operations using multiple gateway calls
+- **End Code**: Uses services for complex operations
+- **Flow**: `End Code → Service → Gateway → RequestManager → Backend API`
+
+### 3. Separation of Concerns
+- **Core**: Reusable framework components (types, base classes, managers)
+- **Gateways**: Low-level API abstractions (get, post, put, delete operations)
+- **Services**: Complex business operations using gateway operations
+- **Features**: Individual feature implementations
+- **Components**: UI components with their own CSS files
+
+## Naming Conventions
+
+### 1. File and Directory Names
+- **PascalCase** for classes, interfaces, and components
+- **camelCase** for variables, functions, and methods
+- **kebab-case** for directories and files (except TypeScript files)
+- **No redundant suffixes** like "Feature" or "Manager" unless truly descriptive
+
+### 2. Interface Naming
+- **No "I" prefix** (e.g., `Feature` not `IFeature`)
+- **Descriptive names** that clearly indicate purpose
+- **Use `types.ts`** for type definitions, not `interfaces.ts`
+
+### 3. Class and Component Naming
+- **PascalCase** for all classes and components
+- **Descriptive names** that indicate functionality
+- **Consistent patterns** across similar components
+
+## Code Organization
+
+### 1. Directory Structure
+```
+extension/
+├── core/                       # Core framework components (reusable)
+│   ├── types.ts               # Type definitions and interfaces
+│   ├── Base.ts                # Base feature class
+│   ├── FeatureRegistry.ts     # Feature management
+│   ├── ConfigManager.ts       # Configuration management
+│   ├── RequestManager.ts      # Generic HTTP client
+│   └── ExtensionManager.ts    # Main orchestrator
+├── gateways/                   # Low-level API abstractions
+│   └── ExtensionGateway.ts    # Backend API operations
+├── services/                   # Complex business operations
+│   └── ExtensionService.ts    # Business logic using gateway operations
+├── features/                   # Individual feature implementations
+│   └── NewTabRedirect.ts
+├── popup/                      # React + Vite + TypeScript popup
+│   ├── src/
+│   │   ├── components/         # UI components with CSS files
+│   │   ├── hooks/             # Custom React hooks
+│   │   ├── lib/               # Popup-specific utilities
+│   │   └── App.tsx
+└── background.ts               # Background script
+```
+
+### 2. Component Organization
+- **Separate CSS files** for each component (e.g., `BackendStatus.css`)
+- **Local sub-components** for simple UI sections (10-30 lines)
+- **Separate files** for complex components (60+ lines) or reusable components
+- **Index files** for clean imports
+
+### 3. Import/Export Patterns
+- **Clean imports** using index files
+- **No ES6 imports** in service workers (use inline implementations)
+- **Proper module resolution** for different contexts
+
+## RequestManager Guidelines
+
+### 1. Generic HTTP Client
+- **Single responsibility**: Only handle HTTP requests
+- **No domain-specific logic**: Use gateways for business operations
+- **Consistent interface**: `get<T>`, `post<T>`, `put<T>`, `delete<T>`
+- **Error handling**: Proper timeout and retry logic
+
+### 2. Health Check Endpoints
+- **Use `/health`** endpoint (no `/api` prefix)
+- **Default base URL**: `http://localhost:8000`
+- **No `isBackendAvailable`** method in RequestManager (use gateways/services)
+
+### 3. Gateway Implementation
+- **Domain-specific operations** that abstract backend API
+- **Proper error handling** with console warnings
+- **Consistent return types** and null handling
+
+## React/TypeScript Guidelines
+
+### 1. Component Structure
+- **Functional components** with hooks
+- **Props interfaces** with required props first, optional after
+- **Event handlers** with proper TypeScript types
+- **Error boundaries** for critical components
+
+### 2. Styling
+- **Component-specific CSS** files (e.g., `ComponentName.css`)
+- **CSS Modules** for scoped styles
+- **Responsive design** considerations
+- **Consistent color scheme** and spacing
+
+### 3. Hooks
+- **Custom hooks** for reusable logic
+- **Proper cleanup** in useEffect
+- **Dependency arrays** correctly specified
+- **Type safety** with proper interfaces
+
+## Build and Development
+
+### 1. Build Process
+- **Single build command** (`npm run build`) handles both TypeScript and React
+- **Proper output directories** for different contexts
+- **Clean separation** between core and popup builds
+
+### 2. TypeScript Configuration
+- **Exclude popup directory** from main TypeScript compilation
+- **Proper module resolution** for different contexts
+- **Strict type checking** enabled
+
+### 3. File Exclusions
+- **Exclude popup/** from main tsconfig.json
+- **Separate build processes** for core and popup
+- **Proper asset copying** in build script
+
+## Error Handling
+
+### 1. Request Errors
+- **Graceful degradation** when backend is unavailable
+- **User-friendly error messages**
+- **Proper logging** for debugging
+- **Fallback configurations** for offline mode
+
+### 2. Component Errors
+- **Error boundaries** for React components
+- **Safe data access** with null checks
+- **Loading states** for async operations
+
+## Testing and Quality
+
+### 1. Code Quality
+- **Consistent formatting** (120 character line limit)
+- **Clear comments** for complex logic
+- **Proper error handling** throughout
+- **Type safety** with TypeScript
+
+### 2. Maintainability
+- **Single responsibility** for each class/component
+- **Clear interfaces** and contracts
+- **Easy to extend** following Open-Closed Principle
+- **Well-documented** code structure
+
+## Chrome Extension Specific
+
+### 1. Manifest V3
+- **Service workers** for background scripts
+- **Proper permissions** (storage, tabs)
+- **Content security policy** compliance
+
+### 2. Storage
+- **Chrome storage API** for configuration
+- **Sync storage** for cross-device settings
+- **Proper error handling** for storage operations
+
+### 3. Popup Development
+- **React + Vite + TypeScript** for popup
+- **Proper popup dimensions** (300x400px)
+- **Chrome extension context** considerations
+
+## Summary
+
+These rules ensure:
+- **Clean, maintainable code** with proper separation of concerns
+- **Extensible architecture** following Open-Closed Principle
+- **Consistent patterns** across all components
+- **Type safety** and error handling throughout
+- **Proper build process** for different contexts
+- **Chrome extension best practices** compliance
+
+Follow these rules to maintain code quality and ensure the extension remains maintainable and extensible as it grows.
+# Extension Development Rules
+
+This document outlines the coding standards and architectural principles for the Homepage Companion Extension project.
+
+## Architecture Principles
+
+### 1. Open-Closed Principle
+- **Rule**: The extension must be designed to be open for extension but closed for modification
+- **Implementation**: Use interfaces and abstract classes to define contracts
+- **Example**: `Feature` interface allows adding new features without modifying existing code
+
+### 2. Gateway/Service Pattern
+- **Gateway**: Low-level operations that abstract 3rd-party API (backend) with domain-specific operations
+- **Service**: Complex business operations using multiple gateway calls
+- **End Code**: Uses services for complex operations
+- **Flow**: `End Code → Service → Gateway → RequestManager → Backend API`
+
+### 3. Separation of Concerns
+- **Core**: Reusable framework components (types, base classes, managers)
+- **Gateways**: Low-level API abstractions (get, post, put, delete operations)
+- **Services**: Complex business operations using gateway operations
+- **Features**: Individual feature implementations
+- **Components**: UI components with their own CSS files
+
+## Naming Conventions
+
+### 1. File and Directory Names
+- **PascalCase** for classes, interfaces, and components
+- **camelCase** for variables, functions, and methods
+- **kebab-case** for directories and files (except TypeScript files)
+- **No redundant suffixes** like "Feature" or "Manager" unless truly descriptive
+
+### 2. Interface Naming
+- **No "I" prefix** (e.g., `Feature` not `IFeature`)
+- **Descriptive names** that clearly indicate purpose
+- **Use `types.ts`** for type definitions, not `interfaces.ts`
+
+### 3. Class and Component Naming
+- **PascalCase** for all classes and components
+- **Descriptive names** that indicate functionality
+- **Consistent patterns** across similar components
+
+## Code Organization
+
+### 1. Directory Structure
+```
+extension/
+├── core/                       # Core framework components (reusable)
+│   ├── types.ts               # Type definitions and interfaces
+│   ├── Base.ts                # Base feature class
+│   ├── FeatureRegistry.ts     # Feature management
+│   ├── ConfigManager.ts       # Configuration management
+│   ├── RequestManager.ts      # Generic HTTP client
+│   └── ExtensionManager.ts    # Main orchestrator
+├── gateways/                   # Low-level API abstractions
+│   └── ExtensionGateway.ts    # Backend API operations
+├── services/                   # Complex business operations
+│   └── ExtensionService.ts    # Business logic using gateway operations
+├── features/                   # Individual feature implementations
+│   └── NewTabRedirect.ts
+├── popup/                      # React + Vite + TypeScript popup
+│   ├── src/
+│   │   ├── components/         # UI components with CSS files
+│   │   ├── hooks/             # Custom React hooks
+│   │   ├── lib/               # Popup-specific utilities
+│   │   └── App.tsx
+└── background.ts               # Background script
+```
+
+### 2. Component Organization
+- **Separate CSS files** for each component (e.g., `BackendStatus.css`)
+- **Local sub-components** for simple UI sections (10-30 lines)
+- **Separate files** for complex components (60+ lines) or reusable components
+- **Index files** for clean imports
+
+### 3. Import/Export Patterns
+- **Clean imports** using index files
+- **No ES6 imports** in service workers (use inline implementations)
+- **Proper module resolution** for different contexts
+
+## RequestManager Guidelines
+
+### 1. Generic HTTP Client
+- **Single responsibility**: Only handle HTTP requests
+- **No domain-specific logic**: Use gateways for business operations
+- **Consistent interface**: `get<T>`, `post<T>`, `put<T>`, `delete<T>`
+- **Error handling**: Proper timeout and retry logic
+
+### 2. Health Check Endpoints
+- **Use `/health`** endpoint (no `/api` prefix)
+- **Default base URL**: `http://localhost:8000`
+- **No `isBackendAvailable`** method in RequestManager (use gateways/services)
+
+### 3. Gateway Implementation
+- **Domain-specific operations** that abstract backend API
+- **Proper error handling** with console warnings
+- **Consistent return types** and null handling
+
+## React/TypeScript Guidelines
+
+### 1. Component Structure
+- **Functional components** with hooks
+- **Props interfaces** with required props first, optional after
+- **Event handlers** with proper TypeScript types
+- **Error boundaries** for critical components
+
+### 2. Styling
+- **Component-specific CSS** files (e.g., `ComponentName.css`)
+- **CSS Modules** for scoped styles
+- **Responsive design** considerations
+- **Consistent color scheme** and spacing
+
+### 3. Hooks
+- **Custom hooks** for reusable logic
+- **Proper cleanup** in useEffect
+- **Dependency arrays** correctly specified
+- **Type safety** with proper interfaces
+
+## Build and Development
+
+### 1. Build Process
+- **Single build command** (`npm run build`) handles both TypeScript and React
+- **Proper output directories** for different contexts
+- **Clean separation** between core and popup builds
+
+### 2. TypeScript Configuration
+- **Exclude popup directory** from main TypeScript compilation
+- **Proper module resolution** for different contexts
+- **Strict type checking** enabled
+
+### 3. File Exclusions
+- **Exclude popup/** from main tsconfig.json
+- **Separate build processes** for core and popup
+- **Proper asset copying** in build script
+
+## Error Handling
+
+### 1. Request Errors
+- **Graceful degradation** when backend is unavailable
+- **User-friendly error messages**
+- **Proper logging** for debugging
+- **Fallback configurations** for offline mode
+
+### 2. Component Errors
+- **Error boundaries** for React components
+- **Safe data access** with null checks
+- **Loading states** for async operations
+
+## Testing and Quality
+
+### 1. Code Quality
+- **Consistent formatting** (120 character line limit)
+- **Clear comments** for complex logic
+- **Proper error handling** throughout
+- **Type safety** with TypeScript
+
+### 2. Maintainability
+- **Single responsibility** for each class/component
+- **Clear interfaces** and contracts
+- **Easy to extend** following Open-Closed Principle
+- **Well-documented** code structure
+
+## Chrome Extension Specific
+
+### 1. Manifest V3
+- **Service workers** for background scripts
+- **Proper permissions** (storage, tabs)
+- **Content security policy** compliance
+
+### 2. Storage
+- **Chrome storage API** for configuration
+- **Sync storage** for cross-device settings
+- **Proper error handling** for storage operations
+
+### 3. Popup Development
+- **React + Vite + TypeScript** for popup
+- **Proper popup dimensions** (300x400px)
+- **Chrome extension context** considerations
+
+## Summary
+
+These rules ensure:
+- **Clean, maintainable code** with proper separation of concerns
+- **Extensible architecture** following Open-Closed Principle
+- **Consistent patterns** across all components
+- **Type safety** and error handling throughout
+- **Proper build process** for different contexts
+- **Chrome extension best practices** compliance
+
+Follow these rules to maintain code quality and ensure the extension remains maintainable and extensible as it grows.
