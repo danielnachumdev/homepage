@@ -49,7 +49,7 @@ current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
 try:
-    from deployment.cli import main
+    from deployment.src.cli import main
 except ImportError as e:
     print(f"Error importing required modules: {e}")
     print("Please ensure you have installed the required dependencies:")

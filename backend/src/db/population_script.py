@@ -15,7 +15,7 @@ class DatabasePopulationScript:
     """Script to populate the database with default settings."""
 
     def __init__(self):
-        self.logger = get_logger("DatabasePopulationScript")
+        self.logger = get_logger(__name__)
         self.db = get_db()
 
     async def _is_database_populated(self) -> bool:

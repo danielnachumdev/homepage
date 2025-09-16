@@ -9,7 +9,7 @@ import subprocess
 import time
 from pathlib import Path
 from typing import Optional, List
-from deployment.steps.base_step import Step
+from .base_step import Step
 from backend.src.utils.command import AsyncCommand
 
 

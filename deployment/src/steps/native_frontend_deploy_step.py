@@ -9,7 +9,7 @@ import subprocess
 import time
 from pathlib import Path
 from typing import Optional, List
-from deployment.steps.base_step import Step
+from .base_step import Step
 from backend.src.utils.command import AsyncCommand
 
 
@@ -77,7 +77,7 @@ class NativeFrontendDeployStep(Step):
             return False
 
         # Check if frontend is already running
-        from deployment.utils import is_frontend_running
+        from ..utils.process_checker import is_frontend_running
         frontend_status = await is_frontend_running(
             str(self.project_root), str(self.frontend_dir))
         if frontend_status.found:
@@ -112,7 +112,7 @@ class NativeFrontendDeployStep(Step):
         self.logger.info("Stopping frontend deployment")
 
         # Find running frontend processes
-        from deployment.utils import is_frontend_running
+        from ..utils.process_checker import is_frontend_running
         frontend_status = await is_frontend_running(
             str(self.project_root), str(self.frontend_dir))
 
@@ -124,7 +124,7 @@ class NativeFrontendDeployStep(Step):
             "Found %d frontend process(es) to stop", frontend_status.total_count)
 
         # Use the careful process killing function
-        from deployment.utils import kill_processes_carefully
+        from ..utils.process_checker import kill_processes_carefully
         return await kill_processes_carefully(
             frontend_status.processes, 
             str(self.project_root), 
@@ -260,7 +260,7 @@ class NativeFrontendDeployStep(Step):
         Returns:
             bool: True if process is running, False otherwise
         """
-        from deployment.utils import is_frontend_running
+        from ..utils.process_checker import is_frontend_running
         frontend_status = await is_frontend_running(
             str(self.project_root), str(self.frontend_dir))
         return frontend_status.found
@@ -272,7 +272,7 @@ class NativeFrontendDeployStep(Step):
         Returns:
             Dict containing process information
         """
-        from deployment.utils import is_frontend_running
+        from ..utils.process_checker import is_frontend_running
         frontend_status = await is_frontend_running(
             str(self.project_root), str(self.frontend_dir))
 

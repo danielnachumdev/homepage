@@ -6,7 +6,7 @@ This step handles deploying the application using Docker Compose.
 
 from pathlib import Path
 from typing import Optional
-from deployment.steps.base_step import Step
+from deployment.src.steps.base_step import Step
 from backend.src.utils.command import AsyncCommand
 from backend.src.gateways.v1.docker_gateway.compose import DockerComposeGateway
 
@@ -40,7 +40,7 @@ class DockerDeployStep(Step):
         if project_root is None:
             self.project_root = Path.cwd()
         else:
-            self.project_root = Path(project_root)
+            self.project_root = Path(project_root).parent
 
         # Set compose file path
         if compose_file is None:

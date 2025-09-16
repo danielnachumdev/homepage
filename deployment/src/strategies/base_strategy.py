@@ -7,8 +7,8 @@ in sequence. Uninstall operations are performed in reverse order.
 
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any, Type
-from deployment.steps.base_step import Step
-from deployment.utils.logger import setup_logger
+from ..steps.base_step import Step
+from ..utils.logger import setup_logger
 
 
 class Strategy(ABC):

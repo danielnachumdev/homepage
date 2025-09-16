@@ -8,8 +8,15 @@ import sys
 from pathlib import Path
 from typing import Dict, Any
 
-from .steps import *
-from .strategies import *
+try:
+    import fire
+except ImportError as e:
+    print(f"Error importing required modules: {e}")
+    print("Please ensure you have installed the required dependencies:")
+    print("  pip install fire")
+    sys.exit(1)
+from .steps import Step
+from .strategies import Strategy
 from .utils import setup_logger
 
 
@@ -61,7 +68,6 @@ class DeploymentCLI:
         Returns:
             Dictionary mapping step names to step classes
         """
-        from deployment.steps.base_step import Step
 
         registry = {}
         for step_class in Step.__subclasses__():
@@ -77,7 +83,6 @@ class DeploymentCLI:
         Returns:
             Dictionary mapping strategy names to strategy classes
         """
-        from deployment.strategies.base_strategy import Strategy
 
         registry = {}
         for strategy_class in Strategy.__subclasses__():
@@ -525,14 +530,6 @@ def main():
     """
 
     try:
-        import fire
-    except ImportError as e:
-        print(f"Error importing required modules: {e}")
-        print("Please ensure you have installed the required dependencies:")
-        print("  pip install fire")
-        sys.exit(1)
-
-    try:
         # Use Fire with the class instead of an instance
         fire.Fire(DeploymentCLI())
 
@@ -548,5 +545,5 @@ if __name__ == "__main__":
     main()
 
 __all__ = [
-    "DeploymentCLI"
+    "main"
 ]

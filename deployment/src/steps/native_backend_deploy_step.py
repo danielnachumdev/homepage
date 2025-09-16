@@ -9,9 +9,9 @@ import sys
 import time
 from pathlib import Path
 from typing import Optional, List
-from deployment.steps.base_step import Step
+from .base_step import Step
 from backend.src.utils.command import AsyncCommand
-from deployment.utils.interpreter import find_python_interpreter, get_interpreter_info
+from ..utils.interpreter import find_python_interpreter, get_interpreter_info
 
 
 class NativeBackendDeployStep(Step):
@@ -78,7 +78,7 @@ class NativeBackendDeployStep(Step):
             return False
 
         # Check if backend is already running
-        from deployment.utils import is_backend_running
+        from ..utils.process_checker import is_backend_running
         backend_status = await is_backend_running(
             str(self.project_root), str(self.backend_dir))
         if backend_status.found:
@@ -128,7 +128,7 @@ class NativeBackendDeployStep(Step):
         self.logger.info("Stopping backend deployment")
 
         # Find running backend processes
-        from deployment.utils import is_backend_running
+        from ..utils.process_checker import is_backend_running
         backend_status = await is_backend_running(
             str(self.project_root), str(self.backend_dir))
 
@@ -140,7 +140,7 @@ class NativeBackendDeployStep(Step):
             "Found %d backend process(es) to stop", backend_status.total_count)
 
         # Use the careful process killing function
-        from deployment.utils import kill_processes_carefully
+        from ..utils.process_checker import kill_processes_carefully
         return await kill_processes_carefully(
             backend_status.processes, 
             str(self.project_root), 
@@ -270,7 +270,7 @@ class NativeBackendDeployStep(Step):
         Returns:
             bool: True if process is running, False otherwise
         """
-        from deployment.utils import is_backend_running
+        from ..utils.process_checker import is_backend_running
         backend_status = await is_backend_running(
             str(self.project_root), str(self.backend_dir))
         return backend_status.found
@@ -282,7 +282,7 @@ class NativeBackendDeployStep(Step):
         Returns:
             Dict containing process information
         """
-        from deployment.utils import is_backend_running
+        from ..utils.process_checker import is_backend_running
         backend_status = await is_backend_running(
             str(self.project_root), str(self.backend_dir))
 

@@ -6,9 +6,9 @@ This strategy deploys the entire homepage application using Docker Compose.
 
 from typing import List, Optional
 
-from deployment.steps import Step
-from deployment.strategies.base_strategy import Strategy
-from deployment.steps.docker_deploy_step import DockerDeployStep
+from deployment.src.steps import Step
+from deployment.src.strategies.base_strategy import Strategy
+from deployment.src.steps.docker_deploy_step import DockerDeployStep
 
 
 class DockerDeployStrategy(Strategy):

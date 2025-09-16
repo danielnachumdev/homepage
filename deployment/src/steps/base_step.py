@@ -5,12 +5,9 @@ A Step represents a single autonomous operation that can be installed or uninsta
 Each step should be self-contained and reversible.
 """
 
-import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, List, Type
-from pathlib import Path
-from deployment.utils.logger import setup_logger
-from backend.src.utils.command import AsyncCommand, CommandExecutionResult
+from ..utils.logger import setup_logger
 
 
 class Step(ABC):
@@ -99,7 +96,6 @@ class Step(ABC):
         """
         raise NotImplementedError(
             "Subclasses must implement validate method")
-
 
     async def get_metadata(self) -> Dict[str, Any]:
         """

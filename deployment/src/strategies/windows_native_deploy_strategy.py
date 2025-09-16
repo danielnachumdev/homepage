@@ -6,8 +6,8 @@ and creates startup shortcuts for automatic launch on login.
 """
 
 from typing import List, Optional
-from deployment.strategies.base_strategy import Strategy
-from deployment.steps import NativeBackendDependencyInstallStep, NativeBackendDeployStep, \
+from deployment.src.strategies.base_strategy import Strategy
+from deployment.src.steps import NativeBackendDependencyInstallStep, NativeBackendDeployStep, \
     NativeFrontendDependencyInstallStep, NativeFrontendDeployStep, WindowsStartOnLoginStep, Step
 
 
