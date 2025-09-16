@@ -209,11 +209,11 @@ async def kill_process(pid: int, timeout: int = 10) -> bool:
     """
     try:
         if sys.platform == 'win32':
-            # Use PowerShell to terminate the process
-            cmd = AsyncCommand.powershell(f'Stop-Process -Id {pid}')
+            # Use PowerShell to terminate the process gracefully first
+            cmd = AsyncCommand.powershell(f'Stop-Process -Id {pid} -Force')
         else:
             # Use kill command on Unix systems
-            cmd = AsyncCommand.cmd(f'kill {pid}')
+            cmd = AsyncCommand.cmd(f'kill -TERM {pid}')
 
         result = await cmd.execute()
         return result.success
@@ -222,9 +222,75 @@ async def kill_process(pid: int, timeout: int = 10) -> bool:
         return False
 
 
+async def kill_processes_carefully(processes: List[dict], project_root: str, 
+                                 backend_dir: str, frontend_dir: str, logger) -> bool:
+    """
+    Carefully kill processes, ensuring we only kill our specific processes.
+
+    Args:
+        processes: List of process dictionaries to kill
+        project_root: Project root directory for validation
+        backend_dir: Backend directory for validation
+        frontend_dir: Frontend directory for validation
+
+    Returns:
+        True if all processes were killed successfully, False otherwise
+    """
+    success_count = 0
+    total_count = len(processes)
+
+    for proc in processes:
+        try:
+            pid = proc['pid']
+            cmdline = proc.get('cmdline', '')
+            cwd = proc.get('cwd', '')
+
+            # Additional validation to ensure we're killing the right process
+            is_our_process = False
+
+            # Check if it's a backend process
+            if ('python' in cmdline.lower() and 
+                '__main__.py' in cmdline and 
+                backend_dir in cwd):
+                is_our_process = True
+                logger.info(f"Identified backend process: PID {pid}")
+
+            # Check if it's a frontend process
+            elif ('npm' in cmdline.lower() and 
+                  'run' in cmdline and 
+                  'dev' in cmdline and 
+                  frontend_dir in cwd):
+                is_our_process = True
+                logger.info(f"Identified frontend process: PID {pid}")
+
+            # Check if it's a cmd.exe process running our dev server
+            elif ('cmd.exe' in cmdline and 
+                  any(server in cmdline.lower() for server in ['vite', 'webpack', 'next', 'react-scripts', 'serve', 'dev']) and
+                  frontend_dir in cwd):
+                is_our_process = True
+                logger.info(f"Identified frontend cmd process: PID {pid}")
+
+            if is_our_process:
+                if await kill_process(pid):
+                    success_count += 1
+                    logger.info(f"Successfully killed process PID {pid}")
+                else:
+                    logger.warning(f"Failed to kill process PID {pid}")
+            else:
+                logger.warning(f"Skipping process PID {pid} - not identified as our process")
+                logger.warning(f"Command line: {cmdline}")
+                logger.warning(f"Working directory: {cwd}")
+
+        except Exception as e:
+            logger.error(f"Error killing process {proc}: {e}")
+
+    return success_count == total_count
+
+
 __all__ = [
     "is_frontend_running",
     "is_backend_running",
     "kill_process",
+    "kill_processes_carefully",
     "ProcessSearchResult"
 ]

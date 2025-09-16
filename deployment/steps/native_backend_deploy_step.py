@@ -139,20 +139,15 @@ class NativeBackendDeployStep(Step):
         self.logger.info(
             "Found %d backend process(es) to stop", backend_status.total_count)
 
-        success_count = 0
-        for proc in backend_status.processes:
-            self.logger.info(
-                "Terminating backend process (PID: %d)", proc.pid)
-            # Use AsyncCommand to kill the process
-            kill_cmd = AsyncCommand.powershell(f"taskkill /PID {proc.pid} /F")
-            result = await kill_cmd.execute()
-            if result.success:
-                success_count += 1
-                self.logger.info("Backend process %d terminated successfully", proc.pid)
-            else:
-                self.logger.warning("Failed to terminate backend process %d", proc.pid)
-
-        return success_count == backend_status.total_count
+        # Use the careful process killing function
+        from deployment.utils import kill_processes_carefully
+        return await kill_processes_carefully(
+            backend_status.processes, 
+            str(self.project_root), 
+            str(self.backend_dir),
+            str(self.project_root / "frontend"),  # frontend_dir for validation
+            self.logger
+        )
 
     async def validate(self) -> bool:
         """

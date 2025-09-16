@@ -5,6 +5,8 @@ This strategy deploys the entire homepage application using Docker Compose.
 """
 
 from typing import List, Optional
+
+from deployment.steps import Step
 from deployment.strategies.base_strategy import Strategy
 from deployment.steps.docker_deploy_step import DockerDeployStep
 
@@ -36,7 +38,7 @@ class DockerDeployStrategy(Strategy):
         self.project_root = project_root
         self.compose_file = compose_file
 
-    def get_steps(self) -> List[DockerDeployStep]:
+    def get_steps(self) -> List[Step]:
         """
         Get the ordered list of steps for this strategy.
 

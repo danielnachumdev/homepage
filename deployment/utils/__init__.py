@@ -21,5 +21,6 @@ __all__ = [
     "ProcessSearchResult",
     "is_frontend_running",
     "is_backend_running",
-    "kill_process"
+    "kill_process",
+    "kill_processes_carefully"
 ]
