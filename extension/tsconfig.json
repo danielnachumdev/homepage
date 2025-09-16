@@ -14,11 +14,14 @@
         ]
     },
     "include": [
-        "popup/**/*.ts",
         "background.ts",
         "core/**/*.ts",
         "features/**/*.ts",
         "gateways/**/*.ts",
         "services/**/*.ts"
+    ],
+    "exclude": [
+        "popup/**/*",
+        "node_modules"
     ]
 }

@@ -9,7 +9,6 @@ const config = {
     distDir: 'dist',
     releasesDir: 'releases',
     unpackedDir: 'unpacked',
-    staticDirs: ['icons', 'popup'],
     staticRootFiles: ['manifest.json']
 };
 
@@ -24,19 +23,28 @@ async function main() {
         console.log('[+] Compiling TypeScript...');
         execSync('npm run compile --silent', { stdio: 'inherit' });
 
-        // 3. Copy static assets
+        // 3. Build React popup
+        console.log('[+] Building React popup...');
+        execSync('cd popup && npm run build --silent', { stdio: 'inherit' });
+
+        // 4. Copy static assets
         console.log(`[+] Copying static assets to ${config.distDir}...`);
         for (const file of config.staticRootFiles) {
             if (fs.existsSync(file)) {
                 fs.copySync(file, path.join(config.distDir, file));
             }
         }
-        for (const dir of config.staticDirs) {
-            if (fs.existsSync(dir)) {
-                fs.copySync(dir, path.join(config.distDir, dir), {
-                    filter: (src) => !src.endsWith('.ts')
-                });
-            }
+
+        // Copy built popup from popup/dist to dist/popup
+        if (fs.existsSync('popup/dist')) {
+            fs.copySync('popup/dist', path.join(config.distDir, 'popup'));
+        }
+
+        // Copy icons
+        if (fs.existsSync('icons')) {
+            fs.copySync('icons', path.join(config.distDir, 'icons'), {
+                filter: (src) => !src.endsWith('.ts')
+            });
         }
 
         // 4. Create release package
