@@ -11,63 +11,89 @@ A complementary Chrome extension for your homepage fullstack webapp that adds ad
 
 ## Architecture
 
-The extension uses a simple, direct approach with inline feature definitions:
+The extension follows the Open-Closed Principle with a modular, extensible architecture:
 
 ```
 extension/
-├── popup/                      # Extension popup UI
+├── core/                       # Core framework components (reusable across project)
+│   ├── types.ts               # Type definitions and interfaces
+│   ├── Base.ts                # Base feature class
+│   ├── FeatureRegistry.ts     # Feature management
+│   ├── ConfigManager.ts       # Configuration management
+│   ├── RequestManager.ts      # Generic HTTP client
+│   └── ExtensionManager.ts    # Main orchestrator
+├── gateways/                   # Low-level API abstractions
+│   └── ExtensionGateway.ts    # Backend API operations (get, post, put, delete)
+├── services/                   # Complex business operations
+│   └── ExtensionService.ts    # Business logic using gateway operations
+├── features/                   # Individual feature implementations
+│   └── NewTabRedirect.ts
+├── popup/                      # Extension popup UI (functional only)
 │   ├── popup.html             # Popup interface
 │   └── popup.ts               # Popup functionality
-├── background.ts               # Background script with inline features
+├── background.ts               # Background script
 ├── manifest.json              # Extension manifest
 └── scripts/                   # Content scripts (if needed)
 ```
 
 ## Adding New Features
 
-To add a new feature:
+To add a new feature following the Open-Closed Principle:
 
-1. **Add the feature class** directly in `background.ts`:
+1. **Create a new feature file** in `features/YourFeature.ts`:
 ```typescript
-class YourFeature {
-    private config = {
-        enabled: true,
-        // Add your config properties
-    };
-    
-    async initialize(): Promise<void> {
-        // Load config from storage
-        const result = await chrome.storage.sync.get(['yourFeature']);
-        if (result.yourFeature) {
-            this.config = { ...this.config, ...result.yourFeature };
-        }
+import { BaseFeature } from '../core/Base';
+import { FeatureConfig } from '../core/types';
+
+export interface YourFeatureConfig extends FeatureConfig {
+    enabled: boolean;
+    customSetting: string;
+    // Add your specific config properties
+}
+
+export class YourFeature extends BaseFeature {
+    constructor(configManager: ConfigManager) {
+        const defaultConfig: YourFeatureConfig = {
+            enabled: true,
+            customSetting: 'default-value'
+        };
         
-        // Set up event listeners
+        super('yourFeature', '1.0.0', defaultConfig, configManager);
+    }
+    
+    protected async onInitialize(): Promise<void> {
+        // Initialize your feature logic
         this.setupEventListeners();
+    }
+    
+    protected async onDestroy(): Promise<void> {
+        // Clean up resources
     }
     
     private setupEventListeners(): void {
         // Add your event listeners here
     }
-    
-    async setEnabled(enabled: boolean): Promise<void> {
-        this.config.enabled = enabled;
-        await this.saveConfig();
-    }
-    
-    private async saveConfig(): Promise<void> {
-        await chrome.storage.sync.set({ yourFeature: this.config });
-    }
 }
-
-// Initialize the feature
-const yourFeature = new YourFeature();
-yourFeature.initialize();
 ```
 
-2. **Add UI controls** in `popup/popup.html` and `popup/popup.ts` as needed.
+2. **Register the feature** in `core/ExtensionManager.ts`:
+```typescript
+// In the registerFeatures() method
+const yourFeature = new YourFeature(this.configManager);
+this.featureRegistry.register(yourFeature);
+```
 
-3. **Update storage keys** to avoid conflicts between features.
+3. **Configuration is handled automatically** - no need to manage storage or backend sync manually.
+
+## Key Benefits
+
+- **Open-Closed Principle**: Easy to add new features without modifying existing code
+- **Gateway/Service Pattern**: Clean separation between low-level API operations and complex business logic
+- **Backend Integration**: Automatic configuration sync with your homepage backend
+- **Fallback Support**: Default configurations when backend is unavailable
+- **Centralized Management**: All features managed through the registry
+- **Type Safety**: Full TypeScript support with proper interfaces
+- **Highly Decoupled**: Gateway abstracts 3rd-party API, Service creates business operations
 
 ## Development
 

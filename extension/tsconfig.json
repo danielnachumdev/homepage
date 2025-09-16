@@ -15,6 +15,10 @@
     },
     "include": [
         "popup/**/*.ts",
-        "background.ts"
+        "background.ts",
+        "core/**/*.ts",
+        "features/**/*.ts",
+        "gateways/**/*.ts",
+        "services/**/*.ts"
     ]
 }
