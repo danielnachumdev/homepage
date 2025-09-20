@@ -6,8 +6,6 @@ export interface LinkData {
     url: string;
     description?: string;
     icon?: string;
-    category?: string;
-    tags?: string[];
 }
 
 /**
@@ -63,9 +61,7 @@ export function isLinkData(obj: any): obj is LinkData {
         typeof obj.title === 'string' &&
         typeof obj.url === 'string' &&
         (obj.description === undefined || typeof obj.description === 'string') &&
-        (obj.icon === undefined || typeof obj.icon === 'string') &&
-        (obj.category === undefined || typeof obj.category === 'string') &&
-        (obj.tags === undefined || Array.isArray(obj.tags))
+        (obj.icon === undefined || typeof obj.icon === 'string')
     );
 }
 

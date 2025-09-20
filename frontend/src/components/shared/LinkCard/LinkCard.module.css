@@ -5,9 +5,12 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-    height: 100%;
+    height: 80px;
     overflow: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
 }
 
 .linkCard::before {
@@ -31,32 +34,34 @@
 }
 
 .linkCardContent {
-    padding: 1.25rem;
+    padding: 0.75rem;
     height: 100%;
     display: flex;
     flex-direction: column;
     position: relative;
     z-index: 1;
+    flex: 1;
 }
 
 .linkHeader {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
+    align-items: center;
     flex: 1;
 }
 
 .linkInfo {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .linkTitleRow {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
 }
 
 .linkIcon {
@@ -86,18 +91,15 @@
 
 .linkDescription {
     color: rgba(255, 255, 255, 0.85);
-    margin: 0 0 8px 0;
-    line-height: 1.5;
-    word-break: break-word;
+    margin: 0;
+    line-height: 1.4;
+    font-size: 0.875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
-.linkCategory {
-    color: rgba(255, 255, 255, 0.7);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 0;
-}
 
 .linkActions {
     display: flex;
@@ -106,25 +108,6 @@
     flex-shrink: 0;
 }
 
-.openButton {
-    background: rgba(255, 255, 255, 0.15) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    color: white !important;
-    font-weight: 500;
-    text-transform: none;
-    border-radius: 8px;
-    padding: 6px 16px;
-    min-width: 80px;
-    backdrop-filter: blur(10px) !important;
-    transition: all 0.3s ease !important;
-}
-
-.openButton:hover {
-    background: rgba(255, 255, 255, 0.25) !important;
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
-}
 
 .menuButton {
     color: rgba(255, 255, 255, 0.8);
@@ -151,12 +134,13 @@
 /* Responsive design */
 @media (max-width: 768px) {
     .linkCardContent {
-        padding: 1rem;
+        padding: 0.625rem;
     }
 
     .linkHeader {
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
+        align-items: flex-start;
     }
 
     .linkActions {
@@ -171,10 +155,10 @@
 
 @media (max-width: 480px) {
     .linkCardContent {
-        padding: 0.875rem;
+        padding: 0.5rem;
     }
 
     .linkHeader {
-        gap: 1rem;
+        gap: 6px;
     }
 }

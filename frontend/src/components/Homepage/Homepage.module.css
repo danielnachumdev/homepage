@@ -23,7 +23,7 @@
 }
 
 .sectionDescription {
-    color: #666;
+    color: white;
     text-align: center;
     margin-bottom: 2rem;
     font-size: 1.1rem;
@@ -109,91 +109,18 @@
 
 /* Links Grid */
 .linksGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
 }
 
-/* Link Card */
-.linkCard {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    transition: all 0.3s ease;
-    overflow: hidden;
+.linksRow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    align-items: start;
 }
 
-.linkCard:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.25);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-}
-
-.linkCardContent {
-    flex-grow: 1;
-    padding: 1.25rem;
-}
-
-.linkHeader {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
-
-.linkInfo {
-    flex-grow: 1;
-}
-
-.linkTitle {
-    margin-bottom: 0.75rem;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.linkDescription {
-    margin-bottom: 1rem;
-    color: rgba(255, 255, 255, 0.85);
-    line-height: 1.5;
-}
-
-.linkTags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1.25rem;
-}
-
-.linkMenuButton {
-    margin-left: 0.5rem;
-    color: rgba(255, 255, 255, 0.8);
-    transition: all 0.2s ease;
-}
-
-.linkMenuButton:hover {
-    color: white;
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.linkButton {
-    width: 100%;
-    background: rgba(255, 255, 255, 0.15) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    color: white !important;
-    backdrop-filter: blur(10px) !important;
-    transition: all 0.3s ease !important;
-}
-
-.linkButton:hover {
-    background: rgba(255, 255, 255, 0.25) !important;
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
-}
 
 /* Profile Menu */
 .profileMenuItem {
@@ -217,22 +144,10 @@
     z-index: -1;
 }
 
-.linkCard::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
-    border-radius: 12px;
-    pointer-events: none;
-    z-index: -1;
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .linksGrid {
+    .linksRow {
         grid-template-columns: 1fr;
     }
 

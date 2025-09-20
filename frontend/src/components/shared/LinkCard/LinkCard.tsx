@@ -5,16 +5,15 @@ import {
     Typography,
     IconButton,
     Box,
-    Button,
     Menu,
     MenuItem,
     ListItemIcon,
     ListItemText,
+    Tooltip,
 } from '@mui/material';
 import {
     MoreVert,
     Link as LinkIcon,
-    OpenInNew,
 } from '@mui/icons-material';
 import type { ChromeProfile } from '../../../hooks/useChromeProfiles';
 import type { LinkItem } from '../../../types/linkCard';
@@ -30,7 +29,6 @@ export function LinkCard({
     url,
     description,
     icon,
-    category,
     chromeProfiles = [],
     onOpenInProfile,
 }: LinkCardProps) {
@@ -38,6 +36,7 @@ export function LinkCard({
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        event.stopPropagation(); // Prevent card click when clicking menu button
         setAnchorEl(event.currentTarget);
         setIsMenuOpen(true);
     };
@@ -67,92 +66,81 @@ export function LinkCard({
         window.open(url, '_blank');
     };
 
+    const isDescriptionTruncated = description && description.length > 50;
+    const tooltipTitle = isDescriptionTruncated ? description : '';
+
     return (
-        <Card className={styles.linkCard}>
-            <CardContent className={styles.linkCardContent}>
-                <Box className={styles.linkHeader}>
-                    <Box className={styles.linkInfo}>
-                        <Box className={styles.linkTitleRow}>
-                            {icon && (
-                                <Box className={styles.linkIcon}>
-                                    <img src={icon} alt={`${title} icon`} className={styles.iconImage} />
-                                </Box>
+        <Tooltip title={tooltipTitle} arrow placement="top">
+            <Card className={styles.linkCard} onClick={handleDirectOpen}>
+                <CardContent className={styles.linkCardContent}>
+                    <Box className={styles.linkHeader}>
+                        <Box className={styles.linkInfo}>
+                            <Box className={styles.linkTitleRow}>
+                                {icon && (
+                                    <Box className={styles.linkIcon}>
+                                        <img src={icon} alt={`${title} icon`} className={styles.iconImage} />
+                                    </Box>
+                                )}
+                                <Typography variant="h6" component="h3" className={styles.linkTitle}>
+                                    {title}
+                                </Typography>
+                            </Box>
+
+                            {description && (
+                                <Typography variant="body2" className={styles.linkDescription}>
+                                    {description.length > 50 ? `${description.substring(0, 50)}...` : description}
+                                </Typography>
                             )}
-                            <Typography variant="h6" component="h3" className={styles.linkTitle}>
-                                {title}
-                            </Typography>
                         </Box>
 
-                        {description && (
-                            <Typography variant="body2" className={styles.linkDescription}>
-                                {description}
-                            </Typography>
-                        )}
-
-                        {category && (
-                            <Typography variant="caption" className={styles.linkCategory}>
-                                {category}
-                            </Typography>
-                        )}
+                        <Box className={styles.linkActions}>
+                            {chromeProfiles.length > 0 && (
+                                <IconButton
+                                    size="small"
+                                    onClick={handleMenuOpen}
+                                    className={styles.menuButton}
+                                >
+                                    <MoreVert />
+                                </IconButton>
+                            )}
+                        </Box>
                     </Box>
 
-                    <Box className={styles.linkActions}>
-                        <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<OpenInNew />}
-                            onClick={handleDirectOpen}
-                            className={styles.openButton}
-                        >
-                            Open
-                        </Button>
-
-                        {chromeProfiles.length > 0 && (
-                            <IconButton
-                                size="small"
-                                onClick={handleMenuOpen}
-                                className={styles.menuButton}
-                            >
-                                <MoreVert />
-                            </IconButton>
-                        )}
-                    </Box>
-                </Box>
-
-                <Menu
-                    anchorEl={anchorEl}
-                    open={isMenuOpen}
-                    onClose={handleMenuClose}
-                    className={styles.profileMenu}
-                >
-                    <MenuItem onClick={handleOpenInNewTab}>
-                        <ListItemIcon>
-                            <LinkIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Open in new tab" />
-                    </MenuItem>
-
-                    {chromeProfiles.map((profile) => (
-                        <MenuItem
-                            key={profile.id}
-                            onClick={() => handleOpenInProfile(profile)}
-                        >
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={isMenuOpen}
+                        onClose={handleMenuClose}
+                        className={styles.profileMenu}
+                    >
+                        <MenuItem onClick={handleOpenInNewTab}>
                             <ListItemIcon>
-                                {profile.icon ? (
-                                    <img
-                                        src={profile.icon}
-                                        alt={`${profile.name} icon`}
-                                        className={styles.profileIcon}
-                                    />
-                                ) : (
-                                    <LinkIcon />
-                                )}
+                                <LinkIcon />
                             </ListItemIcon>
-                            <ListItemText primary={`Open in ${profile.name}`} />
+                            <ListItemText primary="Open in new tab" />
                         </MenuItem>
-                    ))}
-                </Menu>
-            </CardContent>
-        </Card>
+
+                        {chromeProfiles.map((profile) => (
+                            <MenuItem
+                                key={profile.id}
+                                onClick={() => handleOpenInProfile(profile)}
+                            >
+                                <ListItemIcon>
+                                    {profile.icon ? (
+                                        <img
+                                            src={profile.icon}
+                                            alt={`${profile.name} icon`}
+                                            className={styles.profileIcon}
+                                        />
+                                    ) : (
+                                        <LinkIcon />
+                                    )}
+                                </ListItemIcon>
+                                <ListItemText primary={`Open in ${profile.name}`} />
+                            </MenuItem>
+                        ))}
+                    </Menu>
+                </CardContent>
+            </Card>
+        </Tooltip>
     );
 }

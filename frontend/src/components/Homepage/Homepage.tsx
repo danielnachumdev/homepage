@@ -4,41 +4,16 @@ import { LinkCard } from '../shared';
 import { useChromeProfiles } from '../../hooks';
 import type { SearchEngineStrategy } from '../Search/SearchEngineStrategy';
 import type { ChromeProfile } from '../../hooks/useChromeProfiles';
-import type { LinkData } from '../../types/linkCard';
 import { createLinkItem } from '../../types/linkCard';
+import { commonLinksData } from '../shared/LinkCard/commonLinksData';
 import styles from './Homepage.module.css';
 
 interface HomepageProps {
   // Add props as needed for the new design
 }
 
-// Common links data (without IDs - they will be auto-generated)
-const commonLinksData: LinkData[] = [
-  {
-    title: 'YouTube Subscriptions',
-    url: 'https://www.youtube.com/feed/subscriptions',
-    description: 'View your YouTube subscriptions and latest videos',
-    icon: 'https://www.youtube.com/favicon.ico',
-    category: 'Entertainment',
-  },
-  {
-    title: 'YouTube Studio',
-    url: 'https://studio.youtube.com/channel/UCauGG97chgNr-BwoQpKTytg',
-    description: 'Manage your YouTube channel and content',
-    icon: 'https://www.youtube.com/favicon.ico',
-    category: 'Content Creation',
-  },
-  {
-    title: 'GitHub Repositories',
-    url: 'https://github.com/danielnachumdev?tab=repositories',
-    description: 'View your GitHub repositories and projects',
-    icon: 'https://github.com/favicon.ico',
-    category: 'Development',
-  },
-];
-
-// Generate LinkItems with auto-generated IDs
-const commonLinks = commonLinksData.map(createLinkItem);
+// Generate LinkItems with auto-generated IDs for each row
+const commonLinksRows = commonLinksData.map(row => row.map(createLinkItem));
 
 export function Homepage({ }: HomepageProps) {
   const { profiles: chromeProfiles, openUrlInProfile } = useChromeProfiles();
@@ -89,13 +64,17 @@ export function Homepage({ }: HomepageProps) {
       </Typography>
 
       <Box className={styles.linksGrid}>
-        {commonLinks.map((link) => (
-          <Box key={link.id} className={styles.linkItem}>
-            <LinkCard
-              {...link}
-              chromeProfiles={chromeProfiles}
-              onOpenInProfile={handleOpenInProfile}
-            />
+        {commonLinksRows.map((row, rowIndex) => (
+          <Box key={rowIndex} className={styles.linksRow}>
+            {row.map((link) => (
+              <Box key={link.id} className={styles.linkItem}>
+                <LinkCard
+                  {...link}
+                  chromeProfiles={chromeProfiles}
+                  onOpenInProfile={handleOpenInProfile}
+                />
+              </Box>
+            ))}
           </Box>
         ))}
       </Box>
