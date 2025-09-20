@@ -1,175 +1,47 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Container,
-  Card,
-  CardContent,
-  Typography,
-  IconButton,
-  Collapse,
-  Button,
-  TextField,
-  InputAdornment,
-  Chip,
-} from '@mui/material';
-import {
-  ExpandMore,
-  ExpandLess,
-  MoreVert,
-  Search,
-  Link as LinkIcon,
-  Tag,
-} from '@mui/icons-material';
-import type { Section, LinkItem } from '../../types/homepage';
-import { useChromeProfiles } from '../../hooks';
-import type { ChromeProfile } from '../../hooks/useChromeProfiles';
-import { ProfileMenu } from '../shared';
+import { Box, Container, Typography } from '@mui/material';
 import { SearchComponent } from '../Search';
+import { LinkCard } from '../shared';
+import { useChromeProfiles } from '../../hooks';
 import type { SearchEngineStrategy } from '../Search/SearchEngineStrategy';
+import type { ChromeProfile } from '../../hooks/useChromeProfiles';
+import type { LinkData } from '../../types/linkCard';
+import { createLinkItem } from '../../types/linkCard';
 import styles from './Homepage.module.css';
 
 interface HomepageProps {
-  data?: {
-    sections: Section[];
-  };
+  // Add props as needed for the new design
 }
 
-// Demo sections data for demonstration
-const demoSections: Section[] = [
+// Common links data (without IDs - they will be auto-generated)
+const commonLinksData: LinkData[] = [
   {
-    id: 'work',
-    title: 'Work & Productivity',
-    description: 'Essential tools for daily work',
-    links: [
-      {
-        id: 'gmail',
-        title: 'Gmail',
-        url: 'https://mail.google.com',
-        description: 'Email and communication',
-        category: 'communication',
-        tags: ['email', 'google'],
-      },
-      {
-        id: 'calendar',
-        title: 'Google Calendar',
-        url: 'https://calendar.google.com',
-        description: 'Schedule management',
-        category: 'productivity',
-        tags: ['calendar', 'google'],
-      },
-      {
-        id: 'drive',
-        title: 'Google Drive',
-        url: 'https://drive.google.com',
-        description: 'File storage and sharing',
-        category: 'storage',
-        tags: ['files', 'google'],
-      },
-    ],
-    isCollapsible: true,
-    isCollapsed: false,
+    title: 'YouTube Subscriptions',
+    url: 'https://www.youtube.com/feed/subscriptions',
+    description: 'View your YouTube subscriptions and latest videos',
+    icon: 'https://www.youtube.com/favicon.ico',
+    category: 'Entertainment',
   },
   {
-    id: 'development',
-    title: 'Development Tools',
-    description: 'Coding and development resources',
-    links: [
-      {
-        id: 'github',
-        title: 'GitHub',
-        url: 'https://github.com',
-        description: 'Code repository and collaboration',
-        category: 'coding',
-        tags: ['git', 'code'],
-      },
-      {
-        id: 'stackoverflow',
-        title: 'Stack Overflow',
-        url: 'https://stackoverflow.com',
-        description: 'Programming Q&A',
-        category: 'coding',
-        tags: ['help', 'programming'],
-      },
-    ],
-    isCollapsible: true,
-    isCollapsed: false,
+    title: 'YouTube Studio',
+    url: 'https://studio.youtube.com/channel/UCauGG97chgNr-BwoQpKTytg',
+    description: 'Manage your YouTube channel and content',
+    icon: 'https://www.youtube.com/favicon.ico',
+    category: 'Content Creation',
   },
   {
-    id: 'entertainment',
-    title: 'Entertainment',
-    description: 'Fun and relaxation',
-    links: [
-      {
-        id: 'youtube',
-        title: 'YouTube',
-        url: 'https://youtube.com',
-        description: 'Video streaming',
-        category: 'videos',
-        tags: ['videos', 'streaming'],
-      },
-      {
-        id: 'spotify',
-        title: 'Spotify',
-        url: 'https://open.spotify.com',
-        description: 'Music streaming',
-        category: 'music',
-        tags: ['music', 'streaming'],
-      },
-    ],
-    isCollapsible: true,
-    isCollapsed: false,
+    title: 'GitHub Repositories',
+    url: 'https://github.com/danielnachumdev?tab=repositories',
+    description: 'View your GitHub repositories and projects',
+    icon: 'https://github.com/favicon.ico',
+    category: 'Development',
   },
 ];
 
-export function Homepage({ data }: HomepageProps) {
-  const [sections, setSections] = useState<Section[]>(data?.sections || demoSections);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedLink, setSelectedLink] = useState<LinkItem | null>(null);
+// Generate LinkItems with auto-generated IDs
+const commonLinks = commonLinksData.map(createLinkItem);
 
-  // Use the useChromeProfiles hook
+export function Homepage({ }: HomepageProps) {
   const { profiles: chromeProfiles, openUrlInProfile } = useChromeProfiles();
-
-
-  const handleSectionToggle = (sectionId: string) => {
-    setSections(prev =>
-      prev.map(section =>
-        section.id === sectionId
-          ? { ...section, isCollapsed: !section.isCollapsed }
-          : section
-      )
-    );
-  };
-
-  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>, link: LinkItem) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedLink(link);
-  };
-
-  const handleProfileMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedLink(null);
-  };
-
-  const handleProfileSelect = async (profile: ChromeProfile) => {
-    if (selectedLink) {
-      try {
-        const response = await openUrlInProfile({
-          url: selectedLink.url,
-          profile_id: profile.id,
-        });
-
-        if (response.success) {
-          console.log(`Successfully opened ${selectedLink.url} in profile: ${profile.name}`);
-        } else {
-          console.error('Failed to open URL in profile:', response.message);
-        }
-      } catch (err) {
-        console.error('Error opening URL in profile:', err);
-      }
-    }
-    handleProfileMenuClose();
-  };
 
   const handleSearch = (query: string, engine: SearchEngineStrategy) => {
     const searchUrl = engine.buildSearchUrl(query);
@@ -181,80 +53,25 @@ export function Homepage({ data }: HomepageProps) {
     window.open(searchUrl, '_blank');
   };
 
-  const filteredSections = sections.map(section => ({
-    ...section,
-    links: section.links.filter(link =>
-      link.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      link.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      link.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    ),
-  })).filter(section => section.links.length > 0);
+  const handleOpenInProfile = async (url: string, profile: ChromeProfile) => {
+    try {
+      const response = await openUrlInProfile({
+        url,
+        profile_id: profile.id,
+      });
 
-  const SectionHeader = ({ section }: { section: Section }) => (
-    <Box className={styles.sectionHeader}>
-      <Typography variant="h5" component="h2" className={styles.sectionTitle}>
-        {section.title}
-      </Typography>
-      {section.isCollapsible && (
-        <IconButton
-          onClick={() => handleSectionToggle(section.id)}
-          size="small"
-        >
-          {section.isCollapsed ? <ExpandMore /> : <ExpandLess />}
-        </IconButton>
-      )}
-    </Box>
-  );
+      if (response.success) {
+        console.log(`Successfully opened ${url} in profile: ${profile.name}`);
+      } else {
+        console.error('Failed to open URL in profile:', response.message);
+      }
+    } catch (err) {
+      console.error('Error opening URL in profile:', err);
+    }
+  };
 
-  const LinkCard = ({ link }: { link: LinkItem }) => (
-    <Card className={styles.linkCard}>
-      <CardContent className={styles.linkCardContent}>
-        <Box className={styles.linkHeader}>
-          <Box className={styles.linkInfo}>
-            <Typography variant="h6" component="h3" className={styles.linkTitle}>
-              {link.title}
-            </Typography>
-            {link.description && (
-              <Typography variant="body2" className={styles.linkDescription}>
-                {link.description}
-              </Typography>
-            )}
-            <Box className={styles.linkTags}>
-              {link.tags?.map(tag => (
-                <Chip
-                  key={tag}
-                  label={tag}
-                  size="small"
-                  variant="outlined"
-                  icon={<Tag />}
-                />
-              ))}
-            </Box>
-          </Box>
-          <IconButton
-            size="small"
-            onClick={(e) => handleProfileMenuOpen(e, link)}
-            className={styles.linkMenuButton}
-            disabled={chromeProfiles.length === 0}
-          >
-            <MoreVert />
-          </IconButton>
-        </Box>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<LinkIcon />}
-          onClick={() => window.open(link.url, '_blank')}
-          className={styles.linkButton}
-        >
-          Open Link
-        </Button>
-      </CardContent>
-    </Card>
-  );
-
-  const InternetSearchBar = (
-    <Box className={styles.internetSearchSection}>
+  const SearchSection = (
+    <Box className={styles.searchSection}>
       <SearchComponent
         onSearch={handleSearch}
         onSearchNewTab={handleSearchNewTab}
@@ -262,43 +79,33 @@ export function Homepage({ data }: HomepageProps) {
     </Box>
   );
 
+  const CommonLinksSection = (
+    <Box className={styles.commonLinksSection}>
+      <Typography variant="h4" component="h2" className={styles.sectionTitle}>
+        Quick Access
+      </Typography>
+      <Typography variant="body1" className={styles.sectionDescription}>
+        Your most frequently used links
+      </Typography>
 
-
+      <Box className={styles.linksGrid}>
+        {commonLinks.map((link) => (
+          <Box key={link.id} className={styles.linkItem}>
+            <LinkCard
+              {...link}
+              chromeProfiles={chromeProfiles}
+              onOpenInProfile={handleOpenInProfile}
+            />
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
 
   return (
     <Container maxWidth="xl" className={styles.container}>
-      {InternetSearchBar}
-
-      {/*<Box className={styles.mainContent}>*/}
-      {/*  <Box className={styles.sectionsContainer}>*/}
-      {/*    {filteredSections.map(section => (*/}
-      {/*      <Box key={section.id}>*/}
-      {/*        <Card className={styles.sectionCard}>*/}
-      {/*          <SectionHeader section={section} />*/}
-
-      {/*          <Collapse in={!section.isCollapsed}>*/}
-      {/*            <Box className={styles.linksGrid}>*/}
-      {/*              {section.links.map(link => (*/}
-      {/*                <Box key={link.id}>*/}
-      {/*                  <LinkCard link={link} />*/}
-      {/*                </Box>*/}
-      {/*              ))}*/}
-      {/*            </Box>*/}
-      {/*          </Collapse>*/}
-      {/*        </Card>*/}
-      {/*      </Box>*/}
-      {/*    ))}*/}
-      {/*  </Box>*/}
-      {/*</Box>*/}
-
-      {/*<ProfileMenu*/}
-      {/*  anchorEl={anchorEl}*/}
-      {/*  open={Boolean(anchorEl)}*/}
-      {/*  onClose={handleProfileMenuClose}*/}
-      {/*  profiles={chromeProfiles}*/}
-      {/*  onProfileSelect={handleProfileSelect}*/}
-      {/*  title="Open with profile:"*/}
-      {/*/>*/}
+      {SearchSection}
+      {CommonLinksSection}
     </Container>
   );
 }

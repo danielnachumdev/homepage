@@ -1,3 +1,3 @@
-export { ProfileMenu } from './ProfileMenu';
 export { LinkCard } from './LinkCard';
 export type { LinkCardProps } from './LinkCard';
+

@@ -3,17 +3,43 @@
     padding: 2rem 0;
 }
 
-/* Internet Search Section */
-.internetSearchSection {
-    margin-bottom: 2rem;
+/* Search Section */
+.searchSection {
+    margin-bottom: 3rem;
     display: flex;
     justify-content: center;
 }
 
-/* Links Search Section */
-.searchSection {
+/* Common Links Section */
+.commonLinksSection {
     margin-bottom: 2rem;
 }
+
+.sectionTitle {
+    color: #1976d2;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.sectionDescription {
+    color: #666;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+.linksGrid {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.linkItem {
+    width: 100%;
+}
+
 
 .searchField {
     max-width: 600px;
