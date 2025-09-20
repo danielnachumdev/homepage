@@ -17,11 +17,17 @@ import {
 } from '@mui/icons-material';
 import type { ChromeProfile } from '../../../hooks/useChromeProfiles';
 import type { LinkItem } from '../../../types/linkCard';
-import styles from './LinkCard.module.css';
+import { useLinkCardSize } from '../../../hooks/useLinkCardSize';
+import smallStyles from './LinkCard.small.module.css';
+import mediumStyles from './LinkCard.medium.module.css';
+import largeStyles from './LinkCard.large.module.css';
+
+export type LinkCardSize = 'small' | 'medium' | 'large';
 
 export interface LinkCardProps extends LinkItem {
     chromeProfiles?: ChromeProfile[];
     onOpenInProfile?: (url: string, profile: ChromeProfile) => Promise<void>;
+    size?: LinkCardSize; // Optional override for manual control
 }
 
 export function LinkCard({
@@ -31,9 +37,17 @@ export function LinkCard({
     icon,
     chromeProfiles = [],
     onOpenInProfile,
+    size,
 }: LinkCardProps) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [iconError, setIconError] = useState(false);
+
+    // Get responsive size internally
+    const responsiveSize = useLinkCardSize();
+
+    // Use provided size or fall back to responsive size
+    const cardSize = size || responsiveSize;
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         event.stopPropagation(); // Prevent card click when clicking menu button
@@ -69,6 +83,18 @@ export function LinkCard({
     const isDescriptionTruncated = description && description.length > 50;
     const tooltipTitle = isDescriptionTruncated ? description : '';
 
+    // Get the correct styles based on card size
+    const getStyles = () => {
+        switch (cardSize) {
+            case 'small': return smallStyles;
+            case 'medium': return mediumStyles;
+            case 'large': return largeStyles;
+            default: return mediumStyles;
+        }
+    };
+
+    const styles = getStyles();
+
     return (
         <Tooltip title={tooltipTitle} arrow placement="top">
             <Card className={styles.linkCard} onClick={handleDirectOpen}>
@@ -76,11 +102,20 @@ export function LinkCard({
                     <Box className={styles.linkHeader}>
                         <Box className={styles.linkInfo}>
                             <Box className={styles.linkTitleRow}>
-                                {icon && (
-                                    <Box className={styles.linkIcon}>
-                                        <img src={icon} alt={`${title} icon`} className={styles.iconImage} />
-                                    </Box>
-                                )}
+                                <Box className={styles.linkIcon}>
+                                    {icon && !iconError ? (
+                                        <img
+                                            src={icon}
+                                            alt={`${title} icon`}
+                                            className={styles.iconImage}
+                                            onError={() => setIconError(true)}
+                                        />
+                                    ) : (
+                                        <Box className={styles.iconPlaceholder}>
+                                            <LinkIcon />
+                                        </Box>
+                                    )}
+                                </Box>
                                 <Typography variant="h6" component="h3" className={styles.linkTitle}>
                                     {title}
                                 </Typography>

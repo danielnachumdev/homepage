@@ -1,0 +1,232 @@
+/* HookDebuggerPanel Styles */
+.debugPanel {
+    position: fixed;
+    z-index: 9999;
+    max-width: 500px;
+    min-width: 400px;
+}
+
+.debugPanelPaper {
+    padding: 16px;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.debugHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.debugTitleContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.debugTitle {
+    font-weight: bold;
+    color: #1976d2;
+    font-size: 1.25rem;
+}
+
+.debugHookCount {
+    font-weight: bold;
+}
+
+.debugActions {
+    display: flex;
+    gap: 4px;
+}
+
+.debugContent {
+    max-height: 60vh;
+    overflow: auto;
+    padding-right: 8px;
+}
+
+.debugHooksList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.debugAccordion {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.debugAccordion:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.debugAccordionExpanded {
+    margin: 0;
+}
+
+.debugAccordionSummary {
+    background-color: rgba(25, 118, 210, 0.05);
+    border-radius: 4px;
+}
+
+.debugAccordionSummary:hover {
+    background-color: rgba(25, 118, 210, 0.08);
+}
+
+.debugAccordionSummaryExpanded {
+    background-color: rgba(25, 118, 210, 0.1);
+}
+
+.debugSummaryContent {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.debugHookName {
+    font-weight: bold;
+    color: #1976d2;
+    font-size: 0.9rem;
+}
+
+.debugTypeChip {
+    font-size: 0.7rem;
+    font-weight: bold;
+    height: 20px;
+}
+
+.debugStatePreview {
+    margin-left: auto;
+    color: #666;
+    font-size: 0.8rem;
+    font-family: monospace;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.debugAccordionDetails {
+    background-color: rgba(0, 0, 0, 0.02);
+    padding: 16px;
+}
+
+.debugDescription {
+    margin-bottom: 16px;
+    color: #666;
+    font-style: italic;
+    font-size: 0.85rem;
+    background-color: rgba(25, 118, 210, 0.05);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.debugSectionTitle {
+    margin-bottom: 12px;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+.debugStateContainer {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    padding: 16px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.8rem;
+    max-height: 250px;
+    overflow: auto;
+}
+
+.debugStateContainer pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.debugMetadataContainer {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    padding: 16px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.8rem;
+    margin-top: 16px;
+}
+
+.debugMetadataContainer pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.debugRefreshButton {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Position variants */
+.debugPanelTopRight {
+    top: 16px;
+    right: 16px;
+}
+
+.debugPanelTopLeft {
+    top: 16px;
+    left: 16px;
+}
+
+.debugPanelBottomRight {
+    bottom: 16px;
+    right: 16px;
+    max-height: calc(100vh - 32px);
+}
+
+.debugPanelBottomLeft {
+    bottom: 16px;
+    left: 16px;
+}
+
+/* Toggle button styles */
+.debugToggleButton {
+    position: fixed !important;
+    bottom: 16px !important;
+    right: 16px !important;
+    z-index: 9999 !important;
+    background-color: #1976d2 !important;
+    color: white !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+
+.debugToggleButton:hover {
+    background-color: #1565c0 !important;
+    box-shadow: 0 6px 16px rgba(25, 118, 210, 0.4) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .debugPanel {
+        max-width: calc(100vw - 32px);
+        right: 16px;
+        left: 16px;
+        min-width: unset;
+    }
+
+    .debugStateContainer {
+        max-height: 200px;
+    }
+
+    .debugContent {
+        max-height: 60vh;
+    }
+}

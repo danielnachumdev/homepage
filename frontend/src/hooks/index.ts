@@ -1,7 +1,11 @@
 export { useBackendStatus } from './useBackendStatus';
 export { useChromeProfiles } from './useChromeProfiles';
 export { useFocus } from './useFocus';
+export { useLinkCardSize } from './useLinkCardSize';
+export { useScreenSize } from './useScreenSize';
 export { useSearchEngine } from './useSearchEngine';
 export { useSettings } from './useSettings';
 export { useSpeedTest } from './useSpeedTest';
 export type { SpeedTestPartialResult, SpeedTestState, UseSpeedTestOptions, UseSpeedTestReturn } from './useSpeedTest';
+export { useHookDebugger, withDebugging, createDebugInfo } from './useHookDebugger';
+export type { HookDebugInfo, UseHookDebuggerReturn } from './useHookDebugger';

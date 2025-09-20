@@ -1,0 +1,35 @@
+/* Large LinkCardGrid Styles - Desktop */
+.linkCardGrid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100vw;
+    gap: 1rem;
+}
+
+.linksRow {
+    display: grid;
+    align-items: start;
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+    gap: 1rem;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.linkItem {
+    width: 100%;
+}
+
+/* Responsive adjustments for large */
+@media (min-width: 1600px) {
+    .linksRow {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (max-width: 1200px) {
+    .linksRow {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

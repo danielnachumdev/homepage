@@ -1,6 +1,6 @@
 import { Box, Container, Typography } from '@mui/material';
 import { SearchComponent } from '../Search';
-import { LinkCard } from '../shared';
+import { LinkCardGrid, AppHookDebugger } from '../shared';
 import { useChromeProfiles } from '../../hooks';
 import type { SearchEngineStrategy } from '../Search/SearchEngineStrategy';
 import type { ChromeProfile } from '../../hooks/useChromeProfiles';
@@ -63,28 +63,29 @@ export function Homepage({ }: HomepageProps) {
         Your most frequently used links
       </Typography>
 
-      <Box className={styles.linksGrid}>
-        {commonLinksRows.map((row, rowIndex) => (
-          <Box key={rowIndex} className={styles.linksRow}>
-            {row.map((link) => (
-              <Box key={link.id} className={styles.linkItem}>
-                <LinkCard
-                  {...link}
-                  chromeProfiles={chromeProfiles}
-                  onOpenInProfile={handleOpenInProfile}
-                />
-              </Box>
-            ))}
-          </Box>
-        ))}
-      </Box>
+      <LinkCardGrid
+        links={commonLinksRows}
+        chromeProfiles={chromeProfiles}
+        onOpenInProfile={handleOpenInProfile}
+      />
     </Box>
   );
 
   return (
-    <Container maxWidth="xl" className={styles.container}>
-      {SearchSection}
-      {CommonLinksSection}
-    </Container>
+    <Box className={styles.homepageContainer}>
+      <Container maxWidth="xl" className={styles.searchContainer}>
+        {SearchSection}
+      </Container>
+      <Box className={styles.linksContainer}>
+        {CommonLinksSection}
+      </Box>
+
+      <AppHookDebugger
+        defaultVisible={false}
+        defaultExpanded={false}
+        title="App Hook Debugger"
+        position="bottom-right"
+      />
+    </Box>
   );
 }

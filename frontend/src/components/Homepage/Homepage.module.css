@@ -1,6 +1,16 @@
 /* Homepage Container */
-.container {
+.homepageContainer {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.searchContainer {
     padding: 2rem 0;
+}
+
+.linksContainer {
+    width: 100%;
+    padding: 0 2rem 2rem 2rem;
 }
 
 /* Search Section */
@@ -107,19 +117,6 @@
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Links Grid */
-.linksGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.linksRow {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-    align-items: start;
-}
 
 
 /* Profile Menu */
@@ -147,8 +144,8 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .linksRow {
-        grid-template-columns: 1fr;
+    .linksContainer {
+        padding: 0 1rem 2rem 1rem;
     }
 
     .sectionCard {
@@ -159,8 +156,14 @@
         padding: 1rem;
     }
 
-    .container {
+    .searchContainer {
         padding: 1rem 0;
+    }
+}
+
+@media (max-width: 400px) {
+    .linksContainer {
+        padding: 0 0.5rem 2rem 0.5rem;
     }
 }
 
@@ -175,5 +178,9 @@
 
     .linksGrid {
         gap: 1rem;
+    }
+
+    .linksContainer {
+        padding: 0 0.5rem 2rem 0.5rem;
     }
 }
