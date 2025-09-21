@@ -43,6 +43,8 @@ export interface Handler {
     formatter?: Formatter;
     emit(record: LogRecord): void;
     handle(record: LogRecord): void;
+    addFilter(filter: Filter): void;
+    removeFilter(filter: Filter): void;
     flush?(): void;
     close?(): void;
 }
@@ -90,6 +92,7 @@ export interface Logger {
     addFilter(filter: Filter): void;
     removeFilter(filter: Filter): void;
     isEnabledFor(level: LogLevel): boolean;
+    callHandlers(record: LogRecord): void;
 }
 
 /**

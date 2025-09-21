@@ -1,10 +1,14 @@
 import { Box, Typography } from '@mui/material';
 import { LinkCard } from '../LinkCard/LinkCard';
 import type { LinksSectionProps } from '../../../types/link';
+import { useComponentLogger } from '../../../hooks/useLogger';
 import styles from './LinksSection.module.css';
 
 export function LinksSection({ links, onLinkClick, onChromeProfileClick }: LinksSectionProps) {
+    const logger = useComponentLogger('LinksSection');
+
     const handleLinkClick = (link: any) => {
+        logger.info('Opening link', { title: link.title, url: link.url });
         window.open(link.url, '_blank');
         onLinkClick(link);
     };
@@ -12,7 +16,11 @@ export function LinksSection({ links, onLinkClick, onChromeProfileClick }: Links
     const handleChromeProfileClick = (link: any, profile: string) => {
         // For now, just open the link in a new tab
         // In the future, this could open with a specific Chrome profile
-        console.log(`Opening ${link.title} with Chrome profile: ${profile}`);
+        logger.info('Opening link with Chrome profile', {
+            title: link.title,
+            url: link.url,
+            profile
+        });
         window.open(link.url, '_blank');
         if (onChromeProfileClick) {
             onChromeProfileClick(link, profile);

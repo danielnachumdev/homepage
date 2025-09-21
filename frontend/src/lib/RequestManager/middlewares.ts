@@ -4,6 +4,7 @@ import type {
     ErrorMiddleware,
     RequestConfig
 } from './types';
+import { getLogger } from '../logger';
 
 // Request Middlewares
 
@@ -42,7 +43,10 @@ export const requestIdMiddleware: RequestMiddleware = (config: RequestConfig) =>
  * Logs all outgoing requests
  */
 export const loggingMiddleware: RequestMiddleware = (config: RequestConfig) => {
-    console.log(`🚀 [${config.method}] ${config.url}`, {
+    const logger = getLogger('RequestManager');
+    logger.debug('Making request', {
+        method: config.method,
+        url: config.url,
         headers: config.headers,
         body: config.body
     });
@@ -72,7 +76,10 @@ export const csrfMiddleware: RequestMiddleware = (config: RequestConfig) => {
  * Logs all incoming responses
  */
 export const responseLoggingMiddleware: ResponseMiddleware = (response: Response, config: RequestConfig) => {
-    console.log(`✅ [${config.method}] ${config.url}`, {
+    const logger = getLogger('RequestManager');
+    logger.debug('Request completed', {
+        method: config.method,
+        url: config.url,
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries())

@@ -2,39 +2,41 @@ import { useState, useEffect, useCallback } from 'react';
 import { settingsService } from '../services/settings.service';
 import type { AppSettings, UseSettingsReturn, SettingsResponse } from '../types/settings';
 import { DEFAULT_SETTINGS, parseSettingsFromResponse } from '../types/settings';
+import { useComponentLogger } from './useLogger';
 
 export function useSettings(): UseSettingsReturn {
-    console.log(`[PERF] useSettings: Hook initialized at ${new Date().toISOString()}`);
+    const logger = useComponentLogger('useSettings');
+    logger.debug('Hook initialized');
 
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const loadSettings = useCallback(async () => {
-        console.log(`[PERF] useSettings: loadSettings called at ${new Date().toISOString()}`);
+        logger.debug('Loading settings');
         try {
             setLoading(true);
             setError(null);
 
             // Load all settings in a single request
-            console.log(`[PERF] useSettings: Calling settingsService.getAllSettings at ${new Date().toISOString()}`);
+            logger.debug('Calling settingsService.getAllSettings');
             const response: SettingsResponse = await settingsService.getAllSettings();
 
             if (response.success) {
-                console.log(`[PERF] useSettings: Settings loaded successfully at ${new Date().toISOString()}`);
+                logger.info('Settings loaded successfully');
                 // Parse the generic settings response into our structured format
                 const parsedSettings = parseSettingsFromResponse(response.settings);
                 setSettings(parsedSettings);
             } else {
-                console.log(`[PERF] useSettings: Settings load failed: ${response.message} at ${new Date().toISOString()}`);
+                logger.error('Settings load failed', { message: response.message });
                 throw new Error(response.message || 'Failed to load settings');
             }
         } catch (err) {
-            console.error(`[PERF] useSettings: Failed to load settings at ${new Date().toISOString()}:`, err);
+            logger.error('Failed to load settings', { error: err });
             setError(err instanceof Error ? err.message : 'Failed to load settings');
             // Keep default settings on error
         } finally {
-            console.log(`[PERF] useSettings: loadSettings completed at ${new Date().toISOString()}`);
+            logger.debug('Settings loading completed');
             setLoading(false);
         }
     }, []); // Empty dependency array - this function doesn't depend on any props or state
@@ -44,6 +46,7 @@ export function useSettings(): UseSettingsReturn {
         key: keyof AppSettings[K],
         value: any
     ) => {
+        logger.debug('Updating setting', { category, key, value });
         try {
             setError(null);
 
@@ -86,7 +89,7 @@ export function useSettings(): UseSettingsReturn {
                 }));
             }
         } catch (err) {
-            console.error('Failed to update setting:', err);
+            logger.error('Failed to update setting', { error: err, key, value });
             setError(err instanceof Error ? err.message : 'Failed to update setting');
             throw err;
         }
@@ -98,11 +101,11 @@ export function useSettings(): UseSettingsReturn {
 
     // Load settings on mount
     useEffect(() => {
-        console.log(`[PERF] useSettings: useEffect triggered at ${new Date().toISOString()}`);
+        logger.debug('useEffect triggered - loading settings');
         loadSettings();
     }, [loadSettings]);
 
-    console.log(`[PERF] useSettings: Returning hook state at ${new Date().toISOString()} - loading: ${loading}, error: ${error ? 'Yes' : 'No'}`);
+    logger.debug('Returning hook state', { loading, hasError: !!error });
 
     return {
         settings,

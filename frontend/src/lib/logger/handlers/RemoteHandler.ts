@@ -1,6 +1,7 @@
 import type { LogRecord, Handler, Formatter } from '../types';
 import { LogLevel } from '../types';
 import { BaseHandler } from './BaseHandler';
+import { JSONFormatter } from '../formatters/JSONFormatter';
 
 /**
  * Remote handler for sending logs to a server
@@ -19,7 +20,7 @@ export class RemoteHandler extends BaseHandler {
         batchTimeout: number = 5000,
         formatter?: Formatter
     ) {
-        super(level, formatter);
+        super(level, formatter || new JSONFormatter());
         this.endpoint = endpoint;
         this.batchSize = batchSize;
         this.batchTimeout = batchTimeout;

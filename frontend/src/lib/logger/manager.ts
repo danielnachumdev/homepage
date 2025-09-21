@@ -27,11 +27,11 @@ export class LoggerManagerImpl implements LoggerManager {
             return this.loggers.get(name)!;
         }
 
-        // Create new logger
+        // Create new logger without handlers - it will propagate to root
         const logger = new LoggerImpl({
             name,
             level: this.defaultLevel,
-            handlers: [...this.defaultHandlers],
+            handlers: [], // No handlers - propagate to root
             propagate: true,
         });
 
@@ -63,12 +63,8 @@ export class LoggerManagerImpl implements LoggerManager {
         this.defaultHandlers.push(handler);
         this.rootLogger.addHandler(handler);
 
-        // Add to all existing loggers
-        for (const logger of this.loggers.values()) {
-            if (logger !== this.rootLogger) {
-                logger.addHandler(handler);
-            }
-        }
+        // Don't add handlers to child loggers - they should propagate to root
+        // This follows Python's logging pattern where only root logger has handlers
     }
 
     removeHandler(handler: Handler): void {
@@ -79,12 +75,8 @@ export class LoggerManagerImpl implements LoggerManager {
 
         this.rootLogger.removeHandler(handler);
 
-        // Remove from all existing loggers
-        for (const logger of this.loggers.values()) {
-            if (logger !== this.rootLogger) {
-                logger.removeHandler(handler);
-            }
-        }
+        // Don't remove from child loggers - they don't have handlers
+        // This follows Python's logging pattern where only root logger has handlers
     }
 
     shutdown(): void {

@@ -46,8 +46,6 @@ interface UseChromeProfilesReturn {
 export function useChromeProfiles(): UseChromeProfilesReturn {
     const logger = useComponentLogger('useChromeProfiles');
 
-    logger.debug('Hook initialized');
-
     const { settings, loading: settingsLoading, error: settingsError, refresh } = useSettings();
     const [activeProfile, setActiveProfile] = useState<ChromeProfile | null>(null);
     const [profilesLoading, setProfilesLoading] = useState(false);
@@ -64,7 +62,7 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
             is_active: false, // This will be determined by backend data
             enabled: profileSetting.enabled,
         }));
-    }, [settings.chromeProfiles.profiles, logger]);
+    }, [settings.chromeProfiles.profiles]); // Remove logger from dependencies
 
     const loadChromeProfiles = useCallback(async () => {
         logger.debug('loadChromeProfiles called');
@@ -101,7 +99,7 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
             logger.debug('loadChromeProfiles completed');
             setProfilesLoading(false);
         }
-    }, [settings.chromeProfiles.profiles, logger]);
+    }, [settings.chromeProfiles.profiles]);
 
     // Separate function for refreshing profiles that includes settings refresh
     const refreshProfiles = useCallback(async () => {
@@ -116,26 +114,39 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
             await loadChromeProfiles();
         } catch (err) {
             setProfilesError('Failed to refresh profiles');
-            console.error('Error refreshing profiles:', err);
+            logger.error('Error refreshing profiles', { error: err });
         } finally {
             setProfilesLoading(false);
         }
-    }, [refresh, loadChromeProfiles]);
+    }, [refresh]); // Remove loadChromeProfiles from dependencies to avoid circular dependency
 
     const openUrlInProfile = useCallback(async (request: OpenUrlRequest): Promise<OpenUrlResponse> => {
+        logger.debug('Opening URL in profile', { url: request.url, profileId: request.profile_id });
         try {
             const response = await api.post('/api/v1/chrome/open-url', request);
+            logger.info('URL opened successfully in profile', {
+                url: request.url,
+                profileId: request.profile_id,
+                success: response.data.success
+            });
             return response.data;
         } catch (error) {
-            console.error('Failed to open URL in profile:', error);
+            logger.error('Failed to open URL in profile', { error, url: request.url, profileId: request.profile_id });
             throw error;
         }
     }, []);
 
     const switchProfile = useCallback(async (profile: ChromeProfile) => {
         if (profile.id === activeProfile?.id) {
+            logger.debug('Profile already active, skipping switch', { profileId: profile.id, profileName: profile.name });
             return;
         }
+
+        logger.debug('Switching to profile', {
+            fromProfile: activeProfile?.name || 'none',
+            toProfile: profile.name,
+            profileId: profile.id
+        });
 
         try {
             // Get current URL and open it in the new profile
@@ -146,37 +157,29 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
             });
 
             if (response.success) {
-                console.log(`Switched to profile: ${profile.name}`);
+                logger.info('Profile switched successfully', { profileName: profile.name });
                 setActiveProfile(profile);
                 // Note: Profile state is managed by the unified settings
                 // The active state will be updated when settings are refreshed
             } else {
-                console.error('Failed to switch profile:', response.message);
+                logger.error('Failed to switch profile', { message: response.message });
                 setProfilesError(`Failed to switch profile: ${response.message}`);
             }
         } catch (err) {
-            console.error('Error switching profile:', err);
+            logger.error('Error switching profile', { error: err });
             setProfilesError('Failed to communicate with backend');
         }
     }, [activeProfile?.id, openUrlInProfile]);
 
-    // Load Chrome profiles on hook initialization
-    useEffect(() => {
-        console.log(`[PERF] useChromeProfiles: useEffect triggered at ${new Date().toISOString()}`);
-        loadChromeProfiles();
-    }, [loadChromeProfiles]);
+    // No need to call loadChromeProfiles - profiles are computed in useMemo
 
-    // Update active profile when profiles change
+    // Set active profile when profiles are first loaded
     useEffect(() => {
-        console.log(`[PERF] useChromeProfiles: Active profile useEffect triggered at ${new Date().toISOString()}`);
         if (profiles.length > 0 && !activeProfile) {
             const active = profiles.find(p => p.is_active) || profiles[0];
-            console.log(`[PERF] useChromeProfiles: Setting active profile to ${active.name} at ${new Date().toISOString()}`);
             setActiveProfile(active);
         }
     }, [profiles, activeProfile]);
-
-    console.log(`[PERF] useChromeProfiles: Returning hook state at ${new Date().toISOString()} - profiles: ${profiles.length}, loading: ${profilesLoading}, error: ${profilesError ? 'Yes' : 'No'}`);
 
     return {
         // Chrome profiles specific data

@@ -1,6 +1,6 @@
 import { Box, Container } from '@mui/material';
 import { SearchComponent } from '../Search';
-import { AppHookDebugger } from '../shared';
+// import { AppHookDebugger } from '../shared';
 import { LinksSection } from '../Links';
 import { links } from '../../data/links';
 import { useComponentLogger } from '../../hooks/useLogger';
@@ -63,8 +63,6 @@ export function Homepage({ }: HomepageProps) {
     </Box>
   );
 
-  logger.debug('SearchSection created');
-
   const LinksSectionComponent = (
     <Box className={styles.linksSection}>
       <LinksSection
@@ -75,10 +73,6 @@ export function Homepage({ }: HomepageProps) {
     </Box>
   );
 
-  logger.debug('LinksSectionComponent created');
-
-  logger.debug('Rendering component');
-
   return (
     <Box className={styles.homepageContainer}>
       <Container maxWidth="xl" className={styles.searchContainer}>
@@ -87,12 +81,13 @@ export function Homepage({ }: HomepageProps) {
 
       {LinksSectionComponent}
 
-      <AppHookDebugger
+      {/* Temporarily disabled to improve performance */}
+      {/* <AppHookDebugger
         defaultVisible={false}
         defaultExpanded={false}
         title="App Hook Debugger"
         position="bottom-right"
-      />
+      /> */}
     </Box>
   );
 }

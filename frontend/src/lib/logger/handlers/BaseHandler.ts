@@ -1,4 +1,4 @@
-import type { LogRecord, Handler, Formatter } from '../types';
+import type { LogRecord, Handler, Formatter, Filter } from '../types';
 import { LogLevel } from '../types';
 
 /**
@@ -7,6 +7,7 @@ import { LogLevel } from '../types';
 export abstract class BaseHandler implements Handler {
     level: LogLevel;
     formatter?: Formatter;
+    private filters: Filter[] = [];
 
     constructor(level: LogLevel = LogLevel.NOTSET, formatter?: Formatter) {
         this.level = level;
@@ -21,6 +22,17 @@ export abstract class BaseHandler implements Handler {
         }
     }
 
+    addFilter(filter: Filter): void {
+        this.filters.push(filter);
+    }
+
+    removeFilter(filter: Filter): void {
+        const index = this.filters.indexOf(filter);
+        if (index > -1) {
+            this.filters.splice(index, 1);
+        }
+    }
+
     flush?(): void;
     close?(): void;
 
@@ -32,6 +44,18 @@ export abstract class BaseHandler implements Handler {
     }
 
     shouldEmit(record: LogRecord): boolean {
-        return record.level >= this.level;
+        // Check level first
+        if (record.level < this.level) {
+            return false;
+        }
+
+        // Apply all filters
+        for (const filter of this.filters) {
+            if (!filter.filter(record)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

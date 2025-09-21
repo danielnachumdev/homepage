@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { settingsService } from '../../services';
 import { useChromeProfiles } from '../../hooks';
+import { useComponentLogger } from '../../hooks/useLogger';
 import { ProfileCard } from './ProfileCard';
 import styles from './ChromeProfilesSettings.module.css';
 
@@ -16,6 +17,7 @@ interface ChromeProfileSettingsProps {
 }
 
 export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ onSettingChange, onProfilesRefresh }) => {
+    const logger = useComponentLogger('ChromeProfilesSettings');
     const { profiles, loading, error, refreshProfiles } = useChromeProfiles();
     const [profileSettings, setProfileSettings] = useState<{
         [key: string]: {
@@ -70,7 +72,7 @@ export const ChromeProfilesSettings: React.FC<ChromeProfileSettingsProps> = ({ o
                 onProfilesRefresh();
             }
         } catch (error) {
-            console.error('Failed to update profile setting:', error);
+            logger.error('Failed to update profile setting', { error, profileId, updates });
         }
     };
 

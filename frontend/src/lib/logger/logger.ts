@@ -126,24 +126,46 @@ export class LoggerImpl implements Logger {
             }
 
             const lines = stack.split('\n');
-            // Skip the first few lines (Error, getCallerInfo, createLogRecord, log)
-            const callerLine = lines[4];
-            if (!callerLine) {
-                return {};
-            }
 
-            // Parse stack trace line (format varies by browser)
-            const match = callerLine.match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/) ||
-                callerLine.match(/at\s+(.+?):(\d+):(\d+)/);
+            // Look for the first line that's not from the logger itself
+            // Skip: Error, getCallerInfo, createLogRecord, log, debug/info/warning/error/critical
+            for (let i = 5; i < lines.length; i++) {
+                const line = lines[i];
+                if (!line) continue;
 
-            if (match) {
-                const [, functionName, file, line] = match;
-                const module = file ? file.split('/').pop()?.split('?')[0] : undefined;
-                return {
-                    module,
-                    function: functionName,
-                    line: parseInt(line, 10),
-                };
+                // Skip lines that are from the logger itself
+                if (line.includes('LoggerImpl.') ||
+                    line.includes('logger.ts') ||
+                    line.includes('useLogger') ||
+                    line.includes('callHandlers')) {
+                    continue;
+                }
+
+                // Parse stack trace line (format varies by browser)
+                const match = line.match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/) ||
+                    line.match(/at\s+(.+?):(\d+):(\d+)/) ||
+                    line.match(/at\s+(.+?)\s+\((.+?)\)/) ||
+                    line.match(/at\s+(.+?)/);
+
+                if (match) {
+                    const [, functionName, file, lineNum] = match;
+                    let module = file;
+
+                    if (file) {
+                        // Extract just the filename from the full path
+                        const pathParts = file.split('/');
+                        module = pathParts[pathParts.length - 1];
+
+                        // Remove query parameters and hash
+                        module = module.split('?')[0].split('#')[0];
+                    }
+
+                    return {
+                        module,
+                        function: functionName?.trim(),
+                        line: lineNum ? parseInt(lineNum, 10) : undefined,
+                    };
+                }
             }
         } catch (error) {
             // Ignore errors in stack trace parsing
@@ -168,19 +190,22 @@ export class LoggerImpl implements Logger {
         return true;
     }
 
-    private callHandlers(record: LogRecord): void {
-        // Call handlers for this logger
-        for (const handler of this.handlers) {
-            try {
-                handler.handle(record);
-            } catch (error) {
-                console.error('Error in log handler:', error);
+    callHandlers(record: LogRecord): void {
+        // Call handlers for this logger (only if we have handlers)
+        if (this.handlers.length > 0) {
+            for (const handler of this.handlers) {
+                try {
+                    handler.handle(record);
+                } catch (error) {
+                    console.error('Error in log handler:', error);
+                }
             }
         }
 
         // Propagate to parent if enabled
         if (this.propagate && this.parent) {
-            this.parent.log(record.level, record.message, ...record.args);
+            // Pass the original record to parent to preserve the logger name
+            this.parent.callHandlers(record);
         }
     }
 }

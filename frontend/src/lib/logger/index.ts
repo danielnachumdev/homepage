@@ -16,8 +16,9 @@ export * from './filters';
 
 // Default logger instance
 import { LoggerManagerImpl } from './manager';
-import { BrowserConsoleHandler } from './handlers';
-import { BrowserColoredFormatter } from './formatters';
+import { BrowserConsoleHandler, RemoteHandler } from './handlers';
+import { BrowserColoredFormatter, JSONFormatter } from './formatters';
+import { NameFilter } from './filters';
 import { LogLevel } from './types';
 
 // Create default logger manager
@@ -27,8 +28,24 @@ const loggerManager = new LoggerManagerImpl();
 loggerManager.setLevel(LogLevel.DEBUG);
 
 // Configure logging: debug level to console with colors
-const consoleHandler = new BrowserConsoleHandler(LogLevel.DEBUG, new BrowserColoredFormatter());
+const consoleHandler = new BrowserConsoleHandler(LogLevel.ERROR, new BrowserColoredFormatter());
 loggerManager.addHandler(consoleHandler);
+// Add filter to exclude useBackendStatus logs
+const excludeBackendStatusFilter = new NameFilter(/^(?!.*useBackendStatus).*$/);
+consoleHandler.addFilter(excludeBackendStatusFilter);
+
+// Configure remote logging: send logs to backend
+const remoteHandler = new RemoteHandler(
+    'http://localhost:8000/api/v1/logs',
+    LogLevel.DEBUG, // Only send INFO and above to backend
+    5, // Batch size
+    3000, // 3 second timeout
+    new JSONFormatter()
+);
+
+// This prevents the noisy periodic status checks from cluttering the log files
+remoteHandler.addFilter(excludeBackendStatusFilter);
+loggerManager.addHandler(remoteHandler);
 
 // Export the default logger manager and a convenience function
 export const logger = loggerManager.getLogger('app');

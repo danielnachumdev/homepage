@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import type { ChromeProfile } from '../../hooks/useChromeProfiles';
 import { settingsService } from '../../services';
+import { useComponentLogger } from '../../hooks/useLogger';
 import styles from './ProfileCard.module.css';
 
 interface ProfileCardProps {
@@ -24,6 +25,7 @@ interface ProfileCardProps {
 }
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onProfileUpdate }) => {
+    const logger = useComponentLogger('ProfileCard');
     const [displayName, setDisplayName] = useState(profile.name);
     const [icon, setIcon] = useState(profile.icon || '👤');
     const [enabled, setEnabled] = useState(profile.is_visible !== false); // Use profile visibility, default to true if not specified
@@ -46,6 +48,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onProfileUpda
     );
 
     const saveToBackend = async (updates: { displayName: string; icon: string; enabled: boolean }) => {
+        logger.debug('Saving profile settings', { profileId: profile.id, updates });
         try {
             setIsSaving(true);
             const response = await settingsService.updateChromeProfileSetting(
@@ -56,16 +59,18 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onProfileUpda
             );
 
             if (response.success) {
+                logger.info('Profile settings saved successfully', { profileId: profile.id });
                 setSaveStatus('success');
                 setSaveMessage('Settings saved successfully');
             } else {
+                logger.warning('Profile settings save failed', { profileId: profile.id, message: response.message });
                 setSaveStatus('error');
                 setSaveMessage(response.message || 'Failed to save settings');
             }
         } catch (error) {
             setSaveStatus('error');
             setSaveMessage('Error saving settings');
-            console.error('Error saving profile settings:', error);
+            logger.error('Error saving profile settings', { error, profileId, settings });
         } finally {
             setIsSaving(false);
         }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../lib/api';
 import { useComponentLogger } from './useLogger';
 
@@ -11,58 +11,86 @@ interface BackendStatus {
 export const useBackendStatus = (checkInterval: number = 5000) => {
     const logger = useComponentLogger('useBackendStatus');
 
-    logger.debug('Hook initialized', { checkInterval });
-
     const [status, setStatus] = useState<BackendStatus>({
         isConnected: false,
         lastChecked: null,
         error: null
     });
 
-    useEffect(() => {
-        const checkBackendStatus = async () => {
-            logger.debug('Checking backend status');
-            try {
-                // Use the new API instance to check backend health
-                await api.get('/health');
-                logger.info('Backend is connected');
+    // Memoize the check function to prevent recreation on every render
+    const checkBackendStatus = useCallback(async () => {
+        logger.debug('Performing backend health check', { interval: checkInterval });
+        try {
+            // Use the new API instance to check backend health
+            await api.get('/health');
+            logger.info('Backend health check successful - service is available');
 
-                setStatus({
+            setStatus(prevStatus => {
+                // Only update if status actually changed
+                if (prevStatus.isConnected && !prevStatus.error) {
+                    return prevStatus; // No change needed
+                }
+                logger.info('Backend status changed: connected', {
+                    wasConnected: prevStatus.isConnected,
+                    hadError: !!prevStatus.error
+                });
+                return {
                     isConnected: true,
                     lastChecked: new Date(),
                     error: null
+                };
+            });
+        } catch (error: any) {
+            logger.error('Backend health check failed - service unavailable', {
+                error: error.message,
+                statusCode: error.response?.status,
+                url: error.config?.url
+            });
+            setStatus(prevStatus => {
+                // Only update if status actually changed
+                const newError = error.message || 'Unknown error';
+                if (!prevStatus.isConnected && prevStatus.error === newError) {
+                    return prevStatus; // No change needed
+                }
+                logger.warning('Backend status changed: disconnected', {
+                    wasConnected: prevStatus.isConnected,
+                    newError: newError
                 });
-            } catch (error: any) {
-                logger.error('Backend connection failed', {
-                    error: error.message,
-                    stack: error.stack
-                });
-                setStatus({
+                return {
                     isConnected: false,
                     lastChecked: new Date(),
-                    error: error.message || 'Unknown error'
-                });
-            }
-        };
+                    error: newError
+                };
+            });
+        }
+    }, [logger, checkInterval]);
 
+    useEffect(() => {
         // Check immediately on mount
-        logger.debug('Starting initial check');
+        logger.debug('Initializing backend status monitoring', { checkInterval });
         checkBackendStatus();
 
         // Set up interval for periodic checks
-        logger.debug('Setting up interval check', { checkInterval });
+        logger.debug('Setting up periodic health checks', {
+            interval: checkInterval,
+            intervalMs: checkInterval
+        });
         const intervalId = setInterval(checkBackendStatus, checkInterval);
 
         // Cleanup interval on unmount
         return () => {
-            logger.debug('Cleaning up interval');
+            logger.debug('Cleaning up backend status monitoring', { intervalId });
             clearInterval(intervalId);
         };
-    }, [checkInterval, logger]);
+    }, [checkInterval, checkBackendStatus, logger]);
 
-    logger.debug('Returning status', {
-        isConnected: status.isConnected,
-        hasError: !!status.error
-    });
-    return status;
+    // Memoize the return value to prevent unnecessary re-renders
+    return useMemo(() => {
+        logger.debug('Providing backend status to consumers', {
+            isConnected: status.isConnected,
+            hasError: !!status.error,
+            lastChecked: status.lastChecked?.toISOString()
+        });
+        return status;
+    }, [status, logger]);
 };
