@@ -80,6 +80,20 @@
     font-weight: 500;
 }
 
+.menuHeader {
+    padding: 8px 16px 4px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menuHeaderText {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    margin: 0;
+    text-align: center;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .cardContent {

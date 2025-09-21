@@ -114,6 +114,11 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick }: LinkCardPr
                         horizontal: 'left',
                     }}
                 >
+                    <Box className={styles.menuHeader}>
+                        <Typography variant="caption" className={styles.menuHeaderText}>
+                            Choose browser profile to open link
+                        </Typography>
+                    </Box>
                     {link.chromeProfiles.map((profile) => (
                         <MenuItem
                             key={profile}
