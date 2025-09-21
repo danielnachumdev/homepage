@@ -115,19 +115,19 @@ export function AppHookDebugger({
     // Update hook states when they change
     useEffect(() => {
         hookDebugger.updateHookState('chrome-profiles', { profiles: chromeProfiles, openUrlInProfile });
-    }, [chromeProfiles, openUrlInProfile, hookDebugger]);
+    }, [chromeProfiles, openUrlInProfile]);
 
     useEffect(() => {
         hookDebugger.updateHookState('screen-size', screenSize);
-    }, [screenSize, hookDebugger]);
+    }, [screenSize]);
 
     useEffect(() => {
         hookDebugger.updateHookState('settings', settings);
-    }, [settings, hookDebugger]);
+    }, [settings.settings, settings.loading, settings.error]);
 
     useEffect(() => {
         hookDebugger.updateHookState('backend-status', backendStatus);
-    }, [backendStatus, hookDebugger]);
+    }, [backendStatus]);
 
     return (
         <HookDebuggerPanel
