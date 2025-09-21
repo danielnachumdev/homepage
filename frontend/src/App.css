@@ -14,6 +14,18 @@ body {
   background-attachment: fixed;
   color: white;
   min-height: 100vh;
+  overflow-x: hidden;
+  /* Hide scrollbar but keep scrolling functionality */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* Internet Explorer 10+ */
+}
+
+/* Hide scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
 }
 
 *,
@@ -403,24 +415,22 @@ img {
   }
 }
 
-/* Scrollbar Styling */
+/* Scrollbar Styling - Hidden but functional */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 0px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 5px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: transparent;
 }
 
 /* Focus Styles for Accessibility */
