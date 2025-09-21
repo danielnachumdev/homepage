@@ -16,25 +16,19 @@ export * from './filters';
 
 // Default logger instance
 import { LoggerManagerImpl } from './manager';
-import { ConsoleHandler, LocalStorageHandler } from './handlers';
-import { StandardFormatter, ColoredFormatter, JSONFormatter } from './formatters';
+import { BrowserConsoleHandler } from './handlers';
+import { BrowserColoredFormatter } from './formatters';
 import { LogLevel } from './types';
 
 // Create default logger manager
 const loggerManager = new LoggerManagerImpl();
 
-// Add default console handler for development
-if (import.meta.env.DEV) {
-    const consoleHandler = new ConsoleHandler(LogLevel.DEBUG, new ColoredFormatter());
-    loggerManager.addHandler(consoleHandler);
-} else {
-    const consoleHandler = new ConsoleHandler(LogLevel.INFO, new StandardFormatter());
-    loggerManager.addHandler(consoleHandler);
-}
+// Set the default level to DEBUG so all messages are processed
+loggerManager.setLevel(LogLevel.DEBUG);
 
-// Add local storage handler for persistent logging
-const localStorageHandler = new LocalStorageHandler('app_logs', LogLevel.INFO, 1000, new JSONFormatter());
-loggerManager.addHandler(localStorageHandler);
+// Configure logging: debug level to console with colors
+const consoleHandler = new BrowserConsoleHandler(LogLevel.DEBUG, new BrowserColoredFormatter());
+loggerManager.addHandler(consoleHandler);
 
 // Export the default logger manager and a convenience function
 export const logger = loggerManager.getLogger('app');

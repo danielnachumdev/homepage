@@ -3,6 +3,7 @@ export { BaseHandler } from './BaseHandler';
 
 // Concrete handlers
 export { ConsoleHandler } from './ConsoleHandler';
+export { BrowserConsoleHandler } from './BrowserConsoleHandler';
 export { FileHandler } from './FileHandler';
 export { LocalStorageHandler } from './LocalStorageHandler';
 export { RemoteHandler } from './RemoteHandler';

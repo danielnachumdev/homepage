@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
+import { useComponentLogger } from './useLogger';
 
 interface BackendStatus {
     isConnected: boolean;
@@ -8,7 +9,9 @@ interface BackendStatus {
 }
 
 export const useBackendStatus = (checkInterval: number = 5000) => {
-    console.log(`[PERF] useBackendStatus: Hook initialized with interval ${checkInterval}ms at ${new Date().toISOString()}`);
+    const logger = useComponentLogger('useBackendStatus');
+
+    logger.debug('Hook initialized', { checkInterval });
 
     const [status, setStatus] = useState<BackendStatus>({
         isConnected: false,
@@ -18,11 +21,11 @@ export const useBackendStatus = (checkInterval: number = 5000) => {
 
     useEffect(() => {
         const checkBackendStatus = async () => {
-            console.log(`[PERF] useBackendStatus: Checking backend status at ${new Date().toISOString()}`);
+            logger.debug('Checking backend status');
             try {
                 // Use the new API instance to check backend health
                 await api.get('/health');
-                console.log(`[PERF] useBackendStatus: Backend is connected at ${new Date().toISOString()}`);
+                logger.info('Backend is connected');
 
                 setStatus({
                     isConnected: true,
@@ -30,7 +33,10 @@ export const useBackendStatus = (checkInterval: number = 5000) => {
                     error: null
                 });
             } catch (error: any) {
-                console.log(`[PERF] useBackendStatus: Backend connection failed at ${new Date().toISOString()}:`, error.message);
+                logger.error('Backend connection failed', {
+                    error: error.message,
+                    stack: error.stack
+                });
                 setStatus({
                     isConnected: false,
                     lastChecked: new Date(),
@@ -40,20 +46,23 @@ export const useBackendStatus = (checkInterval: number = 5000) => {
         };
 
         // Check immediately on mount
-        console.log(`[PERF] useBackendStatus: Starting initial check at ${new Date().toISOString()}`);
+        logger.debug('Starting initial check');
         checkBackendStatus();
 
         // Set up interval for periodic checks
-        console.log(`[PERF] useBackendStatus: Setting up interval check every ${checkInterval}ms at ${new Date().toISOString()}`);
+        logger.debug('Setting up interval check', { checkInterval });
         const intervalId = setInterval(checkBackendStatus, checkInterval);
 
         // Cleanup interval on unmount
         return () => {
-            console.log(`[PERF] useBackendStatus: Cleaning up interval at ${new Date().toISOString()}`);
+            logger.debug('Cleaning up interval');
             clearInterval(intervalId);
         };
-    }, [checkInterval]);
+    }, [checkInterval, logger]);
 
-    console.log(`[PERF] useBackendStatus: Returning status - connected: ${status.isConnected}, error: ${status.error ? 'Yes' : 'No'} at ${new Date().toISOString()}`);
+    logger.debug('Returning status', {
+        isConnected: status.isConnected,
+        hasError: !!status.error
+    });
     return status;
 };

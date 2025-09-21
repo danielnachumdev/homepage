@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSettings } from './useSettings';
 import { api } from '../lib/api';
+import { useComponentLogger } from './useLogger';
 
 export interface ChromeProfile {
     id: string;
@@ -43,7 +44,9 @@ interface UseChromeProfilesReturn {
 }
 
 export function useChromeProfiles(): UseChromeProfilesReturn {
-    console.log(`[PERF] useChromeProfiles: Hook initialized at ${new Date().toISOString()}`);
+    const logger = useComponentLogger('useChromeProfiles');
+
+    logger.debug('Hook initialized');
 
     const { settings, loading: settingsLoading, error: settingsError, refresh } = useSettings();
     const [activeProfile, setActiveProfile] = useState<ChromeProfile | null>(null);
@@ -51,7 +54,9 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
     const [profilesError, setProfilesError] = useState<string | null>(null);
     // Convert settings data to ChromeProfile format - memoized for performance
     const profiles: ChromeProfile[] = useMemo(() => {
-        console.log(`[PERF] useChromeProfiles: Converting profiles at ${new Date().toISOString()}`);
+        logger.debug('Converting profiles', {
+            count: settings.chromeProfiles.profiles.length
+        });
         return settings.chromeProfiles.profiles.map(profileSetting => ({
             id: profileSetting.profileId,
             name: profileSetting.displayName,
@@ -59,16 +64,18 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
             is_active: false, // This will be determined by backend data
             enabled: profileSetting.enabled,
         }));
-    }, [settings.chromeProfiles.profiles]);
+    }, [settings.chromeProfiles.profiles, logger]);
 
     const loadChromeProfiles = useCallback(async () => {
-        console.log(`[PERF] useChromeProfiles: loadChromeProfiles called at ${new Date().toISOString()}`);
+        logger.debug('loadChromeProfiles called');
         try {
             setProfilesLoading(true);
             setProfilesError(null);
 
             // Get profiles directly from settings - no API call needed
-            console.log(`[PERF] useChromeProfiles: Processing ${settings.chromeProfiles.profiles.length} profiles at ${new Date().toISOString()}`);
+            logger.debug('Processing profiles', {
+                count: settings.chromeProfiles.profiles.length
+            });
             const currentProfiles = settings.chromeProfiles.profiles.map(profileSetting => ({
                 id: profileSetting.profileId,
                 name: profileSetting.displayName,
@@ -79,17 +86,22 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
 
             // Set the first profile as default active (since we don't track active status in settings)
             if (currentProfiles.length > 0) {
-                console.log(`[PERF] useChromeProfiles: Setting active profile to ${currentProfiles[0].name} at ${new Date().toISOString()}`);
+                logger.info('Setting active profile', {
+                    profileName: currentProfiles[0].name
+                });
                 setActiveProfile(currentProfiles[0]);
             }
         } catch (err) {
-            console.error(`[PERF] useChromeProfiles: Failed to load Chrome profiles at ${new Date().toISOString()}:`, err);
+            logger.error('Failed to load Chrome profiles', {
+                error: err instanceof Error ? err.message : 'Unknown error',
+                stack: err instanceof Error ? err.stack : undefined
+            });
             setProfilesError('Failed to load Chrome profiles from settings');
         } finally {
-            console.log(`[PERF] useChromeProfiles: loadChromeProfiles completed at ${new Date().toISOString()}`);
+            logger.debug('loadChromeProfiles completed');
             setProfilesLoading(false);
         }
-    }, [settings.chromeProfiles.profiles]);
+    }, [settings.chromeProfiles.profiles, logger]);
 
     // Separate function for refreshing profiles that includes settings refresh
     const refreshProfiles = useCallback(async () => {

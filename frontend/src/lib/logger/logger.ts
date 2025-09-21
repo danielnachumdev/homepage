@@ -153,6 +153,11 @@ export class LoggerImpl implements Logger {
     }
 
     private shouldLog(record: LogRecord): boolean {
+        // Check if the record level is enabled for this logger
+        if (!this.isEnabledFor(record.level)) {
+            return false;
+        }
+
         // Check filters
         for (const filter of this.filters) {
             if (!filter.filter(record)) {

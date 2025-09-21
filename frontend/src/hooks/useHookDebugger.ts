@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useComponentLogger } from './useLogger';
 
 export interface HookDebugInfo {
     id: string;
@@ -35,24 +36,31 @@ export interface UseHookDebuggerReturn {
  * Provides utilities to register, update, and manage hooks for debugging.
  */
 export function useHookDebugger(): UseHookDebuggerReturn {
-    console.log(`[PERF] useHookDebugger: Hook initialized at ${new Date().toISOString()}`);
+    const logger = useComponentLogger('useHookDebugger');
+    logger.debug('Hook initialized');
 
     const [hooks, setHooks] = useState<HookDebugInfo[]>([]);
     const [isVisible, setIsVisible] = useState(false);
 
+    // Use ref to track current hooks for stable getHooks function
+    const hooksRef = useRef<HookDebugInfo[]>([]);
+
+    // Update ref whenever hooks change
+    hooksRef.current = hooks;
+
     // Use ref to store stable references to functions
     const addHookRef = useRef((hookInfo: HookDebugInfo) => {
-        console.log(`[PERF] useHookDebugger: addHook called for ${hookInfo.id} at ${new Date().toISOString()}`);
+        logger.debug('addHook called', { hookId: hookInfo.id });
         setHooks(prev => {
             const existingIndex = prev.findIndex(hook => hook.id === hookInfo.id);
             if (existingIndex >= 0) {
-                console.log(`[PERF] useHookDebugger: Updating existing hook ${hookInfo.id} at ${new Date().toISOString()}`);
+                logger.debug('Updating existing hook', { hookId: hookInfo.id });
                 // Update existing hook
                 const updated = [...prev];
                 updated[existingIndex] = { ...updated[existingIndex], ...hookInfo };
                 return updated;
             } else {
-                console.log(`[PERF] useHookDebugger: Adding new hook ${hookInfo.id} at ${new Date().toISOString()}`);
+                logger.debug('Adding new hook', { hookId: hookInfo.id });
                 // Add new hook
                 return [...prev, hookInfo];
             }
@@ -60,11 +68,12 @@ export function useHookDebugger(): UseHookDebuggerReturn {
     });
 
     const removeHookRef = useRef((hookId: string) => {
+        logger.debug('removeHook called', { hookId });
         setHooks(prev => prev.filter(hook => hook.id !== hookId));
     });
 
     const updateHookStateRef = useRef((hookId: string, state: any) => {
-        console.log(`[PERF] useHookDebugger: updateHookState called for ${hookId} at ${new Date().toISOString()}`);
+        logger.debug('updateHookState called', { hookId });
         setHooks(prev =>
             prev.map(hook =>
                 hook.id === hookId
@@ -75,10 +84,12 @@ export function useHookDebugger(): UseHookDebuggerReturn {
     });
 
     const clearHooksRef = useRef(() => {
+        logger.debug('clearHooks called');
         setHooks([]);
     });
 
     const toggleVisibilityRef = useRef(() => {
+        logger.debug('toggleVisibility called');
         setIsVisible(prev => !prev);
     });
 
@@ -94,7 +105,7 @@ export function useHookDebugger(): UseHookDebuggerReturn {
         updateHookStateRef.current(hookId, state);
     }, []);
 
-    const getHooks = useCallback(() => hooks, [hooks]);
+    const getHooks = useCallback(() => hooksRef.current, []);
 
     const clearHooks = useCallback(() => {
         clearHooksRef.current();
