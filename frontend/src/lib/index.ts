@@ -5,3 +5,6 @@ export * from './RequestManager/middlewares';
 
 // API Instance
 export { api } from './api';
+
+// Logger
+export * from './logger';

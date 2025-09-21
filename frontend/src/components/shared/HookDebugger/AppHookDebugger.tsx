@@ -27,18 +27,29 @@ export function AppHookDebugger({
     position = 'bottom-right',
     title = 'App Hook Debugger',
 }: AppHookDebuggerProps) {
+    console.log(`[PERF] AppHookDebugger: Component render started at ${new Date().toISOString()}`);
+
     const hookDebugger = useHookDebugger();
     const hooksRegistered = useRef(false);
 
     // Get all the hooks
+    console.log(`[PERF] AppHookDebugger: Calling useScreenSize at ${new Date().toISOString()}`);
     const screenSize = useScreenSize();
+
+    console.log(`[PERF] AppHookDebugger: Calling useSettings at ${new Date().toISOString()}`);
     const settings = useSettings();
+
+    console.log(`[PERF] AppHookDebugger: Calling useBackendStatus at ${new Date().toISOString()}`);
     const backendStatus = useBackendStatus();
+
+    console.log(`[PERF] AppHookDebugger: Calling useChromeProfiles at ${new Date().toISOString()}`);
     const { profiles: chromeProfiles, openUrlInProfile } = useChromeProfiles();
 
     // Register hooks for debugging - only run once on mount
     useEffect(() => {
+        console.log(`[PERF] AppHookDebugger: Registration useEffect triggered at ${new Date().toISOString()}`);
         if (hooksRegistered.current) {
+            console.log(`[PERF] AppHookDebugger: Hooks already registered, skipping at ${new Date().toISOString()}`);
             return; // Already registered, don't run again
         }
 
@@ -105,27 +116,33 @@ export function AppHookDebugger({
         ];
 
         // Register all hooks
+        console.log(`[PERF] AppHookDebugger: Registering ${hooksToRegister.length} hooks at ${new Date().toISOString()}`);
         hooksToRegister.forEach(hookInfo => {
             hookDebugger.addHook(hookInfo);
         });
 
         hooksRegistered.current = true;
+        console.log(`[PERF] AppHookDebugger: Hook registration completed at ${new Date().toISOString()}`);
     }, []); // Empty dependency array - only run once on mount
 
     // Update hook states when they change
     useEffect(() => {
+        console.log(`[PERF] AppHookDebugger: Chrome profiles useEffect triggered at ${new Date().toISOString()}`);
         hookDebugger.updateHookState('chrome-profiles', { profiles: chromeProfiles, openUrlInProfile });
     }, [chromeProfiles, openUrlInProfile]);
 
     useEffect(() => {
+        console.log(`[PERF] AppHookDebugger: Screen size useEffect triggered at ${new Date().toISOString()}`);
         hookDebugger.updateHookState('screen-size', screenSize);
     }, [screenSize]);
 
     useEffect(() => {
+        console.log(`[PERF] AppHookDebugger: Settings useEffect triggered at ${new Date().toISOString()}`);
         hookDebugger.updateHookState('settings', settings);
     }, [settings.settings, settings.loading, settings.error]);
 
     useEffect(() => {
+        console.log(`[PERF] AppHookDebugger: Backend status useEffect triggered at ${new Date().toISOString()}`);
         hookDebugger.updateHookState('backend-status', backendStatus);
     }, [backendStatus]);
 

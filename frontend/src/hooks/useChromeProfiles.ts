@@ -43,12 +43,15 @@ interface UseChromeProfilesReturn {
 }
 
 export function useChromeProfiles(): UseChromeProfilesReturn {
+    console.log(`[PERF] useChromeProfiles: Hook initialized at ${new Date().toISOString()}`);
+
     const { settings, loading: settingsLoading, error: settingsError, refresh } = useSettings();
     const [activeProfile, setActiveProfile] = useState<ChromeProfile | null>(null);
     const [profilesLoading, setProfilesLoading] = useState(false);
     const [profilesError, setProfilesError] = useState<string | null>(null);
     // Convert settings data to ChromeProfile format - memoized for performance
     const profiles: ChromeProfile[] = useMemo(() => {
+        console.log(`[PERF] useChromeProfiles: Converting profiles at ${new Date().toISOString()}`);
         return settings.chromeProfiles.profiles.map(profileSetting => ({
             id: profileSetting.profileId,
             name: profileSetting.displayName,
@@ -59,11 +62,13 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
     }, [settings.chromeProfiles.profiles]);
 
     const loadChromeProfiles = useCallback(async () => {
+        console.log(`[PERF] useChromeProfiles: loadChromeProfiles called at ${new Date().toISOString()}`);
         try {
             setProfilesLoading(true);
             setProfilesError(null);
 
             // Get profiles directly from settings - no API call needed
+            console.log(`[PERF] useChromeProfiles: Processing ${settings.chromeProfiles.profiles.length} profiles at ${new Date().toISOString()}`);
             const currentProfiles = settings.chromeProfiles.profiles.map(profileSetting => ({
                 id: profileSetting.profileId,
                 name: profileSetting.displayName,
@@ -74,12 +79,14 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
 
             // Set the first profile as default active (since we don't track active status in settings)
             if (currentProfiles.length > 0) {
+                console.log(`[PERF] useChromeProfiles: Setting active profile to ${currentProfiles[0].name} at ${new Date().toISOString()}`);
                 setActiveProfile(currentProfiles[0]);
             }
         } catch (err) {
+            console.error(`[PERF] useChromeProfiles: Failed to load Chrome profiles at ${new Date().toISOString()}:`, err);
             setProfilesError('Failed to load Chrome profiles from settings');
-            console.error('Error loading Chrome profiles:', err);
         } finally {
+            console.log(`[PERF] useChromeProfiles: loadChromeProfiles completed at ${new Date().toISOString()}`);
             setProfilesLoading(false);
         }
     }, [settings.chromeProfiles.profiles]);
@@ -143,16 +150,21 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
 
     // Load Chrome profiles on hook initialization
     useEffect(() => {
+        console.log(`[PERF] useChromeProfiles: useEffect triggered at ${new Date().toISOString()}`);
         loadChromeProfiles();
     }, [loadChromeProfiles]);
 
     // Update active profile when profiles change
     useEffect(() => {
+        console.log(`[PERF] useChromeProfiles: Active profile useEffect triggered at ${new Date().toISOString()}`);
         if (profiles.length > 0 && !activeProfile) {
             const active = profiles.find(p => p.is_active) || profiles[0];
+            console.log(`[PERF] useChromeProfiles: Setting active profile to ${active.name} at ${new Date().toISOString()}`);
             setActiveProfile(active);
         }
     }, [profiles, activeProfile]);
+
+    console.log(`[PERF] useChromeProfiles: Returning hook state at ${new Date().toISOString()} - profiles: ${profiles.length}, loading: ${profilesLoading}, error: ${profilesError ? 'Yes' : 'No'}`);
 
     return {
         // Chrome profiles specific data
