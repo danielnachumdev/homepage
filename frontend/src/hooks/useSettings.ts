@@ -30,7 +30,7 @@ export function useSettings(): UseSettingsReturn {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, []); // Empty dependency array - this function doesn't depend on any props or state
 
     const updateSetting = useCallback(async <K extends keyof AppSettings>(
         category: K,

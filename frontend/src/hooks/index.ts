@@ -1,7 +1,6 @@
 export { useBackendStatus } from './useBackendStatus';
 export { useChromeProfiles } from './useChromeProfiles';
 export { useFocus } from './useFocus';
-export { useLinkCardSize } from './useLinkCardSize';
 export { useScreenSize } from './useScreenSize';
 export { useSearchEngine } from './useSearchEngine';
 export { useSettings } from './useSettings';

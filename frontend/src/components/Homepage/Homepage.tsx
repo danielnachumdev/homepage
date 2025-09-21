@@ -1,7 +1,10 @@
 import { Box, Container } from '@mui/material';
 import { SearchComponent } from '../Search';
 import { AppHookDebugger } from '../shared';
+import { LinksSection } from '../Links';
+import { links } from '../../data/links';
 import type { SearchEngineStrategy } from '../Search/SearchEngineStrategy';
+import type { LinkData } from '../../types/link';
 import styles from './Homepage.module.css';
 
 interface HomepageProps {
@@ -19,11 +22,29 @@ export function Homepage({ }: HomepageProps) {
     window.open(searchUrl, '_blank');
   };
 
+  const handleLinkClick = (link: LinkData) => {
+    console.log('Link clicked:', link.title);
+  };
+
+  const handleChromeProfileClick = (link: LinkData, profile: string) => {
+    console.log(`Chrome profile clicked: ${link.title} - ${profile}`);
+  };
+
   const SearchSection = (
     <Box className={styles.searchSection}>
       <SearchComponent
         onSearch={handleSearch}
         onSearchNewTab={handleSearchNewTab}
+      />
+    </Box>
+  );
+
+  const LinksSectionComponent = (
+    <Box className={styles.linksSection}>
+      <LinksSection
+        links={links}
+        onLinkClick={handleLinkClick}
+        onChromeProfileClick={handleChromeProfileClick}
       />
     </Box>
   );
@@ -34,6 +55,8 @@ export function Homepage({ }: HomepageProps) {
       <Container maxWidth="xl" className={styles.searchContainer}>
         {SearchSection}
       </Container>
+
+      {LinksSectionComponent}
 
       <AppHookDebugger
         defaultVisible={false}

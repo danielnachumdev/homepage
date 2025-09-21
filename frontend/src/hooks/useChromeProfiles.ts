@@ -48,16 +48,15 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
     const [profilesLoading, setProfilesLoading] = useState(false);
     const [profilesError, setProfilesError] = useState<string | null>(null);
     // Convert settings data to ChromeProfile format - memoized for performance
-    const profiles: ChromeProfile[] = useMemo(() =>
-        settings.chromeProfiles.profiles.map(profileSetting => ({
+    const profiles: ChromeProfile[] = useMemo(() => {
+        return settings.chromeProfiles.profiles.map(profileSetting => ({
             id: profileSetting.profileId,
             name: profileSetting.displayName,
             icon: profileSetting.icon,
             is_active: false, // This will be determined by backend data
             enabled: profileSetting.enabled,
-        })),
-        [settings.chromeProfiles.profiles]
-    );
+        }));
+    }, [settings.chromeProfiles.profiles]);
 
     const loadChromeProfiles = useCallback(async () => {
         try {

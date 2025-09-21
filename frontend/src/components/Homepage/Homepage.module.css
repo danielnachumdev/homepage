@@ -20,6 +20,11 @@
     justify-content: center;
 }
 
+/* Links Section */
+.linksSection {
+    margin-bottom: 3rem;
+}
+
 /* Common Links Section */
 .commonLinksSection {
     margin-bottom: 2rem;

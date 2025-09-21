@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export interface HookDebugInfo {
     id: string;
@@ -20,6 +20,8 @@ export interface UseHookDebuggerReturn {
     updateHookState: (hookId: string, state: any) => void;
     /** Get all registered hooks */
     getHooks: () => HookDebugInfo[];
+    /** All registered hooks (direct state access) */
+    hooks: HookDebugInfo[];
     /** Clear all hooks */
     clearHooks: () => void;
     /** Toggle debug panel visibility */
@@ -36,7 +38,8 @@ export function useHookDebugger(): UseHookDebuggerReturn {
     const [hooks, setHooks] = useState<HookDebugInfo[]>([]);
     const [isVisible, setIsVisible] = useState(false);
 
-    const addHook = useCallback((hookInfo: HookDebugInfo) => {
+    // Use ref to store stable references to functions
+    const addHookRef = useRef((hookInfo: HookDebugInfo) => {
         setHooks(prev => {
             const existingIndex = prev.findIndex(hook => hook.id === hookInfo.id);
             if (existingIndex >= 0) {
@@ -49,13 +52,13 @@ export function useHookDebugger(): UseHookDebuggerReturn {
                 return [...prev, hookInfo];
             }
         });
-    }, []);
+    });
 
-    const removeHook = useCallback((hookId: string) => {
+    const removeHookRef = useRef((hookId: string) => {
         setHooks(prev => prev.filter(hook => hook.id !== hookId));
-    }, []);
+    });
 
-    const updateHookState = useCallback((hookId: string, state: any) => {
+    const updateHookStateRef = useRef((hookId: string, state: any) => {
         setHooks(prev =>
             prev.map(hook =>
                 hook.id === hookId
@@ -63,16 +66,36 @@ export function useHookDebugger(): UseHookDebuggerReturn {
                     : hook
             )
         );
+    });
+
+    const clearHooksRef = useRef(() => {
+        setHooks([]);
+    });
+
+    const toggleVisibilityRef = useRef(() => {
+        setIsVisible(prev => !prev);
+    });
+
+    const addHook = useCallback((hookInfo: HookDebugInfo) => {
+        addHookRef.current(hookInfo);
+    }, []);
+
+    const removeHook = useCallback((hookId: string) => {
+        removeHookRef.current(hookId);
+    }, []);
+
+    const updateHookState = useCallback((hookId: string, state: any) => {
+        updateHookStateRef.current(hookId, state);
     }, []);
 
     const getHooks = useCallback(() => hooks, [hooks]);
 
     const clearHooks = useCallback(() => {
-        setHooks([]);
+        clearHooksRef.current();
     }, []);
 
     const toggleVisibility = useCallback(() => {
-        setIsVisible(prev => !prev);
+        toggleVisibilityRef.current();
     }, []);
 
     return {
@@ -80,6 +103,7 @@ export function useHookDebugger(): UseHookDebuggerReturn {
         removeHook,
         updateHookState,
         getHooks,
+        hooks,
         clearHooks,
         toggleVisibility,
         isVisible,
