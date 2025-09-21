@@ -1,10 +1,9 @@
 export interface LinkData {
-    id: string;
     title: string;
-    icon: string; // URL or icon name
-    description: string;
+    icon: string | string[]; // URL, icon name, or array of fallback URLs
+    description?: string; // Optional description
     url: string;
-    chromeProfileEnabled?: boolean;
+    chromeProfileEnabled?: boolean; // Defaults to false
     chromeProfiles?: string[]; // Available Chrome profiles for this link
 }
 

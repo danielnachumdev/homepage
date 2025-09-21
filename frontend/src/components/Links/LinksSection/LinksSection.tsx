@@ -29,8 +29,8 @@ export function LinksSection({ links, onLinkClick, onChromeProfileClick }: Links
 
     const LinksGrid = (
         <Box className={styles.linksGrid}>
-            {links.map((link) => (
-                <Box key={link.id} className={styles.gridItem}>
+            {links.map((link, index) => (
+                <Box key={index} className={styles.gridItem}>
                     <LinkCard
                         link={link}
                         onLinkClick={handleLinkClick}

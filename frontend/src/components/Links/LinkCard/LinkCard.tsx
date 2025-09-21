@@ -11,7 +11,8 @@ import {
     Avatar
 } from '@mui/material';
 import {
-    MoreVert as MoreVertIcon
+    MoreVert as MoreVertIcon,
+    Link as LinkIcon
 } from '@mui/icons-material';
 import type { LinkCardProps } from '../../../types/link';
 import styles from './LinkCard.module.css';
@@ -19,6 +20,17 @@ import styles from './LinkCard.module.css';
 export function LinkCard({ link, onLinkClick, onChromeProfileClick }: LinkCardProps) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [isHovered, setIsHovered] = useState(false);
+    const [currentIconIndex, setCurrentIconIndex] = useState(0);
+
+    // Get the current icon to try
+    const getCurrentIcon = () => {
+        if (Array.isArray(link.icon)) {
+            return link.icon[currentIconIndex] || link.icon[0];
+        }
+        return link.icon;
+    };
+
+    const hasMoreIcons = Array.isArray(link.icon) && currentIconIndex < link.icon.length - 1;
 
     const handleCardClick = () => {
         onLinkClick(link);
@@ -40,9 +52,18 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick }: LinkCardPr
         handleMenuClose();
     };
 
-    const truncateDescription = (text: string, maxLength: number = 60) => {
+    const truncateDescription = (text: string | undefined, maxLength: number = 60) => {
+        if (!text) return '';
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
+    };
+
+    const handleIconError = () => {
+        if (hasMoreIcons) {
+            // Try the next icon in the array
+            setCurrentIconIndex(prev => prev + 1);
+        }
+        // If no more icons to try, the Avatar will show the fallback LinkIcon
     };
 
     const CardContent = (
@@ -50,11 +71,14 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick }: LinkCardPr
             <Box className={styles.cardHeader}>
                 <Box className={styles.titleSection}>
                     <Avatar
-                        src={link.icon}
+                        src={getCurrentIcon()}
                         alt={link.title}
                         className={styles.icon}
                         variant="rounded"
-                    />
+                        onError={handleIconError}
+                    >
+                        {!hasMoreIcons && <LinkIcon />}
+                    </Avatar>
                     <Typography
                         variant="h6"
                         component="h3"
@@ -77,14 +101,16 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick }: LinkCardPr
                 )}
             </Box>
 
-            <Tooltip title={link.description} placement="top" arrow>
-                <Typography
-                    variant="body2"
-                    className={styles.description}
-                >
-                    {truncateDescription(link.description)}
-                </Typography>
-            </Tooltip>
+            {link.description && (
+                <Tooltip title={link.description} placement="top" arrow>
+                    <Typography
+                        variant="body2"
+                        className={styles.description}
+                    >
+                        {truncateDescription(link.description)}
+                    </Typography>
+                </Tooltip>
+            )}
         </MuiCardContent>
     );
 
