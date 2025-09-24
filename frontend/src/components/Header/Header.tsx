@@ -9,6 +9,7 @@ import styles from './Header.module.css';
 
 export const Header: React.FC = () => {
     const [settingsOpen, setSettingsOpen] = useState(false);
+    console.log('Header component rendered');
 
     // Local sub-component for the homepage title
     const HomepageTitle = (

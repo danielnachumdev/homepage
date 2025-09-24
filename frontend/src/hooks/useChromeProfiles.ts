@@ -45,6 +45,7 @@ interface UseChromeProfilesReturn {
 
 export function useChromeProfiles(): UseChromeProfilesReturn {
     const logger = useComponentLogger('useChromeProfiles');
+    logger.debug('useChromeProfiles hook called');
 
     const { settings, loading: settingsLoading, error: settingsError, refresh } = useSettings();
     const [activeProfile, setActiveProfile] = useState<ChromeProfile | null>(null);
@@ -52,9 +53,6 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
     const [profilesError, setProfilesError] = useState<string | null>(null);
     // Convert settings data to ChromeProfile format - memoized for performance
     const profiles: ChromeProfile[] = useMemo(() => {
-        logger.debug('Converting profiles', {
-            count: settings.chromeProfiles.profiles.length
-        });
         return settings.chromeProfiles.profiles.map(profileSetting => ({
             id: profileSetting.profileId,
             name: profileSetting.displayName,
@@ -62,7 +60,7 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
             is_active: false, // This will be determined by backend data
             enabled: profileSetting.enabled,
         }));
-    }, [settings.chromeProfiles.profiles]); // Remove logger from dependencies
+    }, [settings.chromeProfiles.profiles]);
 
     const loadChromeProfiles = useCallback(async () => {
         logger.debug('loadChromeProfiles called');

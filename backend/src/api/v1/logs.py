@@ -12,6 +12,24 @@ router = APIRouter(prefix="/logs", tags=["logs"])
 frontend_log_dir = r"C:\Users\User\Desktop\Programing\VCS\homepage\frontend\logs"
 os.makedirs(frontend_log_dir, exist_ok=True)
 
+# Global variable to track if we've initialized the log file
+_log_file_initialized = False
+
+
+def initialize_log_file():
+    """Initialize the log file with a startup marker"""
+    global _log_file_initialized
+    if not _log_file_initialized:
+        frontend_log_file = os.path.join(frontend_log_dir, f"frontend-{datetime.now().strftime('%Y-%m-%d')}.log")
+
+        # Write startup marker to indicate new backend session
+        startup_marker = f"{datetime.now().isoformat()} - BACKEND - Backend started - New session\n"
+        with open(frontend_log_file, 'w', encoding='utf-8') as f:
+            f.write(startup_marker)
+
+        _log_file_initialized = True
+        print(f"Frontend log file initialized: {frontend_log_file}")
+
 
 class LogEntry(BaseModel):
     timestamp: str
@@ -39,6 +57,9 @@ class LogsResponse(BaseModel):
 async def receive_logs(request: LogsRequest):
     """Receive logs from frontend and save them to frontend logs directory"""
     try:
+        # Initialize log file if not already done
+        initialize_log_file()
+
         received_count = 0
 
         # Create frontend log file path

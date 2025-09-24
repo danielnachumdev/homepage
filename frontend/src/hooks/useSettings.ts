@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { settingsService } from '../services/settings.service';
 import type { AppSettings, UseSettingsReturn, SettingsResponse } from '../types/settings';
 import { DEFAULT_SETTINGS, parseSettingsFromResponse } from '../types/settings';
@@ -6,7 +6,7 @@ import { useComponentLogger } from './useLogger';
 
 export function useSettings(): UseSettingsReturn {
     const logger = useComponentLogger('useSettings');
-    logger.debug('Hook initialized');
+    // logger.debug('Hook initialized'); // Temporarily disabled for debugging
 
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
@@ -105,13 +105,13 @@ export function useSettings(): UseSettingsReturn {
         loadSettings();
     }, [loadSettings]);
 
-    logger.debug('Returning hook state', { loading, hasError: !!error });
+    // logger.debug('Returning hook state', { loading, hasError: !!error }); // Temporarily disabled for debugging
 
-    return {
+    return useMemo(() => ({
         settings,
         loading,
         error,
         updateSetting,
         refresh,
-    };
+    }), [settings, loading, error, updateSetting, refresh]);
 }
