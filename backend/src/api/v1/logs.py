@@ -9,7 +9,9 @@ from datetime import datetime
 router = APIRouter(prefix="/logs", tags=["logs"])
 
 # Frontend logs directory
-frontend_log_dir = r"C:\Users\User\Desktop\Programing\VCS\homepage\frontend\logs"
+# Get project root directory (4 levels up from this file)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+frontend_log_dir = os.path.join(project_root, "frontend", "logs")
 os.makedirs(frontend_log_dir, exist_ok=True)
 
 # Global variable to track if we've initialized the log file
