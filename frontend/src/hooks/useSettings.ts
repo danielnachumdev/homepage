@@ -3,10 +3,11 @@ import { settingsService } from '../services/settings.service';
 import type { AppSettings, UseSettingsReturn, SettingsResponse } from '../types/settings';
 import { DEFAULT_SETTINGS, parseSettingsFromResponse } from '../types/settings';
 import { useComponentLogger } from './useLogger';
+import { usePerformanceTracking } from './usePerformanceTracking';
 
 export function useSettings(): UseSettingsReturn {
     const logger = useComponentLogger('useSettings');
-    // logger.debug('Hook initialized'); // Temporarily disabled for debugging
+    const { trackApiCall } = usePerformanceTracking('useSettings');
 
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [loading, setLoading] = useState(true);
@@ -20,6 +21,7 @@ export function useSettings(): UseSettingsReturn {
 
             // Load all settings in a single request
             logger.debug('Calling settingsService.getAllSettings');
+            trackApiCall('/api/v1/settings');
             const response: SettingsResponse = await settingsService.getAllSettings();
 
             if (response.success) {
@@ -39,7 +41,7 @@ export function useSettings(): UseSettingsReturn {
             logger.debug('Settings loading completed');
             setLoading(false);
         }
-    }, []); // Empty dependency array - this function doesn't depend on any props or state
+    }, [logger]); // Include logger in dependencies since it's used in the callback
 
     const updateSetting = useCallback(async <K extends keyof AppSettings>(
         category: K,

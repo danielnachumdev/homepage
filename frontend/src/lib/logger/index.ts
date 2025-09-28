@@ -28,7 +28,7 @@ const loggerManager = new LoggerManagerImpl();
 loggerManager.setLevel(LogLevel.DEBUG);
 
 // Configure logging: debug level to console with colors
-const consoleHandler = new BrowserConsoleHandler(LogLevel.ERROR, new BrowserColoredFormatter());
+const consoleHandler = new BrowserConsoleHandler(LogLevel.DEBUG, new BrowserColoredFormatter());
 loggerManager.addHandler(consoleHandler);
 // Add filter to exclude useBackendStatus logs
 const excludeBackendStatusFilter = new NameFilter(/^(?!.*useBackendStatus).*$/);

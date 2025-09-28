@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSettings } from './useSettings';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useAppSettings } from '../contexts/SettingsContext';
 import { api } from '../lib/api';
 import { useComponentLogger } from './useLogger';
+import { usePerformanceTracking } from './usePerformanceTracking';
 
 export interface ChromeProfile {
     id: string;
@@ -45,14 +46,33 @@ interface UseChromeProfilesReturn {
 
 export function useChromeProfiles(): UseChromeProfilesReturn {
     const logger = useComponentLogger('useChromeProfiles');
-    logger.debug('useChromeProfiles hook called');
+    const { trackApiCall } = usePerformanceTracking('useChromeProfiles');
 
-    const { settings, loading: settingsLoading, error: settingsError, refresh } = useSettings();
+    // Only log when the hook is actually called, not on every render
+    const renderCountRef = useRef(0);
+    renderCountRef.current += 1;
+
+    if (renderCountRef.current === 1) {
+        logger.debug('useChromeProfiles hook called');
+    }
+
+    const { settings, loading: settingsLoading, error: settingsError, refresh } = useAppSettings();
+
+    if (renderCountRef.current > 3) {
+        logger.debug('useChromeProfiles hook re-rendering', {
+            renderCount: renderCountRef.current,
+            settingsLoading,
+            profilesLength: settings.chromeProfiles.profiles.length
+        });
+    }
     const [activeProfile, setActiveProfile] = useState<ChromeProfile | null>(null);
     const [profilesLoading, setProfilesLoading] = useState(false);
     const [profilesError, setProfilesError] = useState<string | null>(null);
     // Convert settings data to ChromeProfile format - memoized for performance
     const profiles: ChromeProfile[] = useMemo(() => {
+        logger.debug('Computing profiles from settings', {
+            profilesCount: settings.chromeProfiles.profiles.length
+        });
         return settings.chromeProfiles.profiles.map(profileSetting => ({
             id: profileSetting.profileId,
             name: profileSetting.displayName,
@@ -60,7 +80,7 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
             is_active: false, // This will be determined by backend data
             enabled: profileSetting.enabled,
         }));
-    }, [settings.chromeProfiles.profiles]);
+    }, [settings.chromeProfiles.profiles, logger]);
 
     const loadChromeProfiles = useCallback(async () => {
         logger.debug('loadChromeProfiles called');
@@ -116,11 +136,12 @@ export function useChromeProfiles(): UseChromeProfilesReturn {
         } finally {
             setProfilesLoading(false);
         }
-    }, [refresh]); // Remove loadChromeProfiles from dependencies to avoid circular dependency
+    }, [refresh, loadChromeProfiles, logger]); // Include all dependencies properly
 
     const openUrlInProfile = useCallback(async (request: OpenUrlRequest): Promise<OpenUrlResponse> => {
         logger.debug('Opening URL in profile', { url: request.url, profileId: request.profile_id });
         try {
+            trackApiCall('/api/v1/chrome/open-url');
             const response = await api.post('/api/v1/chrome/open-url', request);
             logger.info('URL opened successfully in profile', {
                 url: request.url,

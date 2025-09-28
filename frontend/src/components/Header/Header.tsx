@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { BackendStatus } from './BackendStatus';
 import { StatusBadges } from './StatusBadges';
 import { Clock } from './Clock';
 import { ChromeProfileSwitcher } from './ChromeProfileSwitcher';
 import { SettingsIcon } from './SettingsIcon';
 import { SettingsModal } from '../Settings';
+import { useComponentLogger } from '../../hooks/useLogger';
 import styles from './Header.module.css';
 
 export const Header: React.FC = () => {
     const [settingsOpen, setSettingsOpen] = useState(false);
-    console.log('Header component rendered');
+    const renderCountRef = useRef(0);
+    renderCountRef.current += 1;
+    const logger = useComponentLogger('Header');
+    logger.debug(`Header component rendered - count: ${renderCountRef.current}`);
 
     // Local sub-component for the homepage title
     const HomepageTitle = (

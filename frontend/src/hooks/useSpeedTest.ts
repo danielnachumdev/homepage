@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../lib/api';
-import { useSettings } from './useSettings';
+import { useAppSettings } from '../contexts/SettingsContext';
 
 export interface SpeedTestPartialResult {
     download_speed_mbps?: number;
@@ -52,7 +52,7 @@ export const useSpeedTest = (options: UseSpeedTestOptions = {}): UseSpeedTestRet
     const { intervalSeconds = 1, autoStart = true } = options;
 
     // Get settings from useSettings hook
-    const { settings, updateSetting, loading, error: settingsError, refresh } = useSettings();
+    const { settings, updateSetting, loading, error: settingsError, refresh } = useAppSettings();
 
     const [state, setState] = useState<SpeedTestState>({
         result: null,

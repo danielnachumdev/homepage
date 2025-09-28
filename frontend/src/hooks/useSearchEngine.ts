@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useSettings } from './useSettings';
+import { useAppSettings } from '../contexts/SettingsContext';
 import { searchEngineManager, type SearchEngineStrategy } from '../components/Search/SearchEngineStrategy';
 
 interface UseSearchEngineReturn {
@@ -15,7 +15,7 @@ interface UseSearchEngineReturn {
 }
 
 export function useSearchEngine(): UseSearchEngineReturn {
-    const { settings, updateSetting, loading, error, refresh } = useSettings();
+    const { settings, updateSetting, loading, error, refresh } = useAppSettings();
 
     // Memoize expensive computations
     const selectedEngine = useMemo(() =>

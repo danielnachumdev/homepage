@@ -1,6 +1,5 @@
 import { Box, Container } from '@mui/material';
 import { SearchComponent } from '../Search';
-// import { AppHookDebugger } from '../shared';
 import { LinksSection } from '../Links';
 import { links } from '../../data/links';
 import { useComponentLogger } from '../../hooks/useLogger';
@@ -81,13 +80,6 @@ export function Homepage({ }: HomepageProps) {
 
       {LinksSectionComponent}
 
-      {/* Temporarily disabled to improve performance */}
-      {/* <AppHookDebugger
-        defaultVisible={false}
-        defaultExpanded={false}
-        title="App Hook Debugger"
-        position="bottom-right"
-      /> */}
     </Box>
   );
 }
