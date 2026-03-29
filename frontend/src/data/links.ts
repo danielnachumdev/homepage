@@ -35,6 +35,27 @@ export const GOOGLE_CALENDAR_LINK: LinkData = {
     url: 'https://calendar.google.com/'
 };
 
+const GOOGLE_DRIVE_SVG_FALLBACK = '/src/data/drive-color-svgrepo-com.svg';
+export const GOOGLE_DRIVE_LINK: LinkData = {
+    title: 'Google Drive',
+    icon: [
+        'https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png',
+        GOOGLE_DRIVE_SVG_FALLBACK
+    ],
+    description: 'Cloud storage and files by Google',
+    url: 'https://drive.google.com/',
+    chromeProfileEnabled: true,
+};
+
+const GLZ_BRAND_SVG = '/src/data/glz-brand.svg';
+const RADIO_WAVES_SVG = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231976d2"><path d="M3.24 6.15C2.51 6.43 2 7.17 2 8v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8.3l7.43-3c.56-.23.84-.89.61-1.45-.21-.55-.85-.83-1.45-.62L3.24 6.15zM7 15c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5-2c0 2.76-2.24 5-5 5s-5-2.24-5-5h2c0 1.66 1.34 3 3 3s3-1.34 3-3h2zm4 0c0 4.42-3.58 8-8 8v-2c3.31 0 6-2.69 6-6h2zm4 0c0 6.63-5.37 12-12 12v-2c5.52 0 10-4.48 10-10h2z"/></svg>';
+export const GALGALATZ_LINK: LinkData = {
+    title: 'גלגלצ',
+    icon: [GLZ_BRAND_SVG, RADIO_WAVES_SVG],
+    description: 'Israeli radio – Galgalatz (GLZ) live stream and site',
+    url: 'https://glz.co.il/%D7%92%D7%9C%D7%92%D7%9C%D7%A6'
+};
+
 export const PYPI_MANAGE_LINK: LinkData = {
     title: 'PyPI Manage',
     icon: 'https://pypi.org/static/images/logo-small.8998e9d1.svg',
@@ -84,6 +105,32 @@ export const AWS_CONSOLE_LINK: LinkData = {
     url: 'https://console.aws.amazon.com'
 };
 
+export const GCP_CONSOLE_LINK: LinkData = {
+    title: 'GCP',
+    icon: ['https://www.gstatic.com/pantheon/images/googleCloudColoredLogo.svg'],
+    description: 'Google Cloud Platform console',
+    url: 'https://console.cloud.google.com/',
+    chromeProfileEnabled: true,
+};
+
+const CLOUD_RUN_ICON = '/src/data/cloud-run.svg';
+export const GCP_CLOUD_RUN_LINK: LinkData = {
+    title: 'Cloud Run',
+    icon: [CLOUD_RUN_ICON],
+    description: 'Google Cloud Run services in the console',
+    url: 'https://console.cloud.google.com/run/services',
+    chromeProfileEnabled: true,
+};
+
+const CLOUD_STORAGE_ICON = '/src/data/cloud-storage.svg';
+export const GCP_CLOUD_STORAGE_LINK: LinkData = {
+    title: 'Cloud Storage',
+    icon: [CLOUD_STORAGE_ICON],
+    description: 'Google Cloud Storage buckets in the console',
+    url: 'https://console.cloud.google.com/storage/browser',
+    chromeProfileEnabled: true,
+};
+
 const LINKEDIN_SVG_BLUE = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%230077b5"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>';
 const LINKEDIN_SVG_WHITE = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="%230077b5"/><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z" fill="white"/></svg>';
 export const LINKEDIN_LINK: LinkData = {
@@ -126,13 +173,18 @@ export const links: LinkData[] = [
     GITHUB_LINK,
     GMAIL_LINK,
     GOOGLE_CALENDAR_LINK,
+    GOOGLE_DRIVE_LINK,
     PYPI_MANAGE_LINK,
     LOCALHOST_3000_LINK,
     LOCALHOST_8000_LINK,
     LOCALHOST_5173_LINK,
     CHATGPT_LINK,
     AWS_CONSOLE_LINK,
+    GCP_CONSOLE_LINK,
+    GCP_CLOUD_RUN_LINK,
+    GCP_CLOUD_STORAGE_LINK,
     LINKEDIN_LINK,
     YOUTUBE_LINK,
     YOUTUBE_STUDIO_LINK,
+    GALGALATZ_LINK,
 ];
