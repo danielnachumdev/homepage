@@ -49,8 +49,8 @@ The project consists of three main components that work together to create a sea
   - API endpoints for customization
   - Real-time updates via WebSockets
 
-#### 🔌 Browser Extension (`/browser-extension`)
-- **Technology Stack**: Vanilla JavaScript + Chrome Extension API
+#### 🔌 Browser Extension (`/extension`)
+- **Technology Stack**: TypeScript + Chrome Extension API (see `extension/package.json`)
 - **Purpose**: Chrome profile detection and enhanced customization
 - **Features**:
   - Active Chrome profile detection
@@ -62,8 +62,9 @@ The project consists of three main components that work together to create a sea
 
 ### Prerequisites
 - Python 3.11 or higher
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python venv and dependency installs)
 - Node.js 18 or higher
-- Docker and Docker Compose
+- Docker and Docker Compose (optional; for containerized run)
 - Chrome browser (for extension features)
 
 ### Quick Start with Docker
@@ -86,53 +87,56 @@ The project consists of three main components that work together to create a sea
 
 ### Development Setup
 
-#### Frontend Development
+From the repository root, install [uv](https://docs.astral.sh/uv/getting-started/installation/), then:
+
+```bash
+npm install
+npm run install
+```
+
+That runs backend install (`uv sync` from the repo root), frontend `npm i`, and extension installs in parallel (see root `package.json`).
+
+#### Full stack (backend + frontend)
+```bash
+npm run dev
+```
+
+#### Frontend only
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-#### Backend Development
+#### Backend only
 ```bash
-cd backend
-python -m venv venv
-# On Windows:
-venv\Scripts\activate
-# On Unix/MacOS:
-source venv/bin/activate
-
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uv sync
+cd backend && uv run python __main__.py
 ```
 
-#### Browser Extension Development
-```bash
-cd browser-extension
-# Load the extension in Chrome:
-# 1. Open Chrome and go to chrome://extensions/
-# 2. Enable "Developer mode"
-# 3. Click "Load unpacked" and select the browser-extension folder
-```
+#### Browser extension
+Load unpacked from the `extension/` folder in Chrome (`chrome://extensions/` → Developer mode → Load unpacked). Build steps, if any, are in `extension/package.json` and `extension/popup/package.json`.
 
 ## 📁 Project Structure
 
 ```
 homepage/
-├── backend/                 # Python FastAPI backend
-│   ├── app/
-│   ├── requirements.txt
+├── package.json            # Root scripts: install, dev, test (uses uv for backend)
+├── pyproject.toml          # Python deps (uv); uv.lock for lockfile
+├── backend/                # Python FastAPI backend
+│   ├── __main__.py
+│   ├── src/
 │   └── Dockerfile
 ├── frontend/               # React TypeScript frontend
 │   ├── src/
 │   ├── package.json
 │   └── Dockerfile
-├── browser-extension/      # Chrome extension
+├── extension/              # Chrome extension
 │   ├── manifest.json
-│   ├── background.js
-│   └── content.js
+│   ├── package.json
+│   └── popup/
 ├── docker-compose.yml      # Multi-service orchestration
-└── README.md              # This file
+└── README.md               # This file
 ```
 
 ## 🔧 Configuration
@@ -162,35 +166,29 @@ COMPOSE_PROJECT_NAME=homepage
 
 ## 🧪 Testing
 
-### Frontend Tests
+From the repository root:
+
+```bash
+npm run test
+```
+
+That runs backend tests (`uv run pytest` from the repo root; see `pyproject.toml`), frontend tests, and extension tests (see root `package.json`).
+
+### Frontend only
 ```bash
 cd frontend
 npm run test
-npm run test:coverage
 ```
 
-### Backend Tests
+### Backend only
 ```bash
-cd backend
-pytest
-pytest --cov=app
+uv run pytest
 ```
+Run from the repository root so `pyproject.toml` pytest settings apply.
 
 ## 📦 Deployment
 
-### Production Build
-```bash
-# Build all services
-docker-compose -f docker-compose.prod.yml build
-
-# Deploy to production
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-### Environment-Specific Configurations
-- `docker-compose.yml` - Development environment
-- `docker-compose.prod.yml` - Production environment
-- `docker-compose.test.yml` - Testing environment
+Docker-based deployment uses `docker-compose.yml` in this repository. Adjust compose files and env for your hosting environment; see `deploy.py` and `deployment/` if you use the project deployment tooling.
 
 ## 🤝 Contributing
 
