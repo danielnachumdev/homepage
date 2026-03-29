@@ -4,11 +4,18 @@ This script populates the database with default values that match the frontend D
 """
 
 import json
-from typing import Dict, Any, List
-from danielutils.abstractions.db import SelectQuery, UpdateQuery, WhereClause, Condition, Operator
+from typing import Any, Dict, List
 
-from .dependencies import get_db
+from danielutils.abstractions.db import (
+    Condition,
+    Operator,
+    SelectQuery,
+    UpdateQuery,
+    WhereClause,
+)
+
 from ..utils.logger import get_logger
+from .dependencies import get_db
 
 
 class DatabasePopulationScript:
@@ -29,7 +36,8 @@ class DatabasePopulationScript:
 
             # Check if the main record exists and is populated
             main_record: Dict = next(
-                (record for record in records if record.get("id") == "main"), None)
+                (record for record in records if record.get("id") == "main"), None
+            )
             return main_record.get("is_populated", False) if main_record else False
 
         except (KeyError, ValueError, TypeError) as e:
@@ -45,11 +53,10 @@ class DatabasePopulationScript:
 
             if not records:
                 # Create new record
-                await self.db.insert("db_settings", {
-                    "id": "main",
-                    "is_populated": True,
-                    "db_version": "1.0.0"
-                })
+                await self.db.insert(
+                    "db_settings",
+                    {"id": "main", "is_populated": True, "db_version": "1.0.0"},
+                )
             else:
                 # Update existing record
                 update_query = UpdateQuery(
@@ -57,16 +64,16 @@ class DatabasePopulationScript:
                     data={"is_populated": True},
                     where_clause=WhereClause(
                         conditions=[
-                            Condition(column="id", operator=Operator.EQ, value="main")]
-                    )
+                            Condition(column="id", operator=Operator.EQ, value="main")
+                        ]
+                    ),
                 )
                 await self.db.update(update_query)
 
             self.logger.info("Database marked as populated")
 
         except (KeyError, ValueError, TypeError) as e:
-            self.logger.error(
-                "Error marking database as populated: %s", str(e))
+            self.logger.error("Error marking database as populated: %s", str(e))
             raise
 
     def _get_default_settings(self) -> List[Dict[str, Any]]:
@@ -82,9 +89,8 @@ class DatabasePopulationScript:
                 "setting_type": "speedtest",
                 "value": json.dumps({"enabled": False}),
                 "description": "Enable/disable the speed test widget",
-                "is_user_editable": "true"
+                "is_user_editable": "true",
             },
-
             # Search Engine Settings
             {
                 "id": "search_engine_selected",
@@ -92,8 +98,8 @@ class DatabasePopulationScript:
                 "setting_type": "selected_engine",
                 "value": json.dumps({"selected_engine": "google"}),
                 "description": "Selected search engine for the homepage",
-                "is_user_editable": "true"
-            }
+                "is_user_editable": "true",
+            },
         ]
 
     async def _get_chrome_profiles_settings(self) -> List[Dict[str, Any]]:
@@ -106,30 +112,35 @@ class DatabasePopulationScript:
 
             # Import ChromeService locally to avoid circular imports
             from ..services.v1.chrome_service import ChromeService
+
             profiles_response = await ChromeService().discover()
 
             if not profiles_response.success:
                 self.logger.warning(
-                    "Failed to detect Chrome profiles: %s", profiles_response.message)
+                    "Failed to detect Chrome profiles: %s", profiles_response.message
+                )
                 return []
 
             chrome_settings = []
             for profile in profiles_response.profiles:
                 # Convert profile ID to snake_case for database storage
-                profile_id_snake = profile.id.replace(
-                    " ", "_").replace("-", "_").lower()
+                profile_id_snake = (
+                    profile.id.replace(" ", "_").replace("-", "_").lower()
+                )
                 setting_data = {
                     "id": f"chrome_profile_{profile_id_snake}",
                     "category": "chrome_profiles",
                     "setting_type": "profile_display",
-                    "value": json.dumps({
-                        "profile_id": profile.id,  # Keep original ID in the value
-                        "display_name": profile.name,
-                        "icon": profile.icon or "👤",
-                        "enabled": profile.is_visible or True
-                    }),
+                    "value": json.dumps(
+                        {
+                            "profile_id": profile.id,  # Keep original ID in the value
+                            "display_name": profile.name,
+                            "icon": profile.icon or "👤",
+                            "enabled": profile.is_visible or True,
+                        }
+                    ),
                     "description": f"Display settings for Chrome profile {profile.name}",
-                    "is_user_editable": "true"
+                    "is_user_editable": "true",
                 }
                 chrome_settings.append(setting_data)
 
@@ -142,20 +153,22 @@ class DatabasePopulationScript:
     async def _populate_default_settings(self) -> None:
         """Populate the database with default settings."""
         try:
-            self.logger.info(
-                "Starting database population with default settings...")
+            self.logger.info("Starting database population with default settings...")
 
             # Check if already populated
             if await self._is_database_populated():
                 self.logger.info(
-                    "Database already populated, skipping population script")
+                    "Database already populated, skipping population script"
+                )
                 return
 
             # Get default settings
             default_settings: List[Dict] = self._get_default_settings()
 
             # Get Chrome profiles settings
-            chrome_profiles_settings: List[Dict] = await self._get_chrome_profiles_settings()
+            chrome_profiles_settings: List[Dict] = (
+                await self._get_chrome_profiles_settings()
+            )
 
             # Combine all settings
             all_settings = default_settings + chrome_profiles_settings
@@ -168,24 +181,30 @@ class DatabasePopulationScript:
                         table="settings",
                         where=WhereClause(
                             conditions=[
-                                Condition(column="id", operator=Operator.EQ, value=setting_data["id"])]
-                        )
+                                Condition(
+                                    column="id",
+                                    operator=Operator.EQ,
+                                    value=setting_data["id"],
+                                )
+                            ]
+                        ),
                     )
                     existing_records = await self.db.get(query)
 
                     if existing_records:
                         self.logger.info(
-                            "Setting %s already exists, skipping", setting_data["id"])
+                            "Setting %s already exists, skipping", setting_data["id"]
+                        )
                         continue
 
                     # Insert new setting
                     await self.db.insert("settings", setting_data)
-                    self.logger.info(
-                        "Inserted default setting: %s", setting_data["id"])
+                    self.logger.info("Inserted default setting: %s", setting_data["id"])
 
                 except (KeyError, ValueError, TypeError) as e:
                     self.logger.error(
-                        "Error inserting setting %s: %s", setting_data["id"], str(e))
+                        "Error inserting setting %s: %s", setting_data["id"], str(e)
+                    )
                     # Continue with other settings even if one fails
                     continue
 
@@ -205,12 +224,11 @@ class DatabasePopulationScript:
                 await self._populate_default_settings()
             else:
                 self.logger.info(
-                    "Database already populated, skipping population script")
+                    "Database already populated, skipping population script"
+                )
         except (KeyError, ValueError, TypeError) as e:
             self.logger.error("Error running population script: %s", str(e))
             raise
 
 
-__all__ = [
-    "DatabasePopulationScript"
-]
+__all__ = ["DatabasePopulationScript"]

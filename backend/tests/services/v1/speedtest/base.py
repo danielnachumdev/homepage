@@ -1,6 +1,7 @@
 """
 Base test class for SpeedTest service testing.
 """
+
 from backend.tests.services.v1.base import BaseServiceTest
 
 
@@ -14,6 +15,4 @@ class BaseSpeedTestServiceTest(BaseServiceTest):
         # No mocking needed - tests will use actual speedtest functionality
 
 
-__all__ = [
-    "BaseSpeedTestServiceTest"
-]
+__all__ = ["BaseSpeedTestServiceTest"]

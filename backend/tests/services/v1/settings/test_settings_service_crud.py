@@ -1,9 +1,16 @@
 """
 Tests for SettingsService CRUD operations.
 """
+
 from unittest.mock import patch
+
+from backend.src.schemas.v1.settings import (
+    BulkSettingsUpdateRequest,
+    SettingUpdateRequest,
+    SettingValue,
+)
 from backend.src.services.v1.settings_service import SettingsService
-from backend.src.schemas.v1.settings import SettingValue, SettingUpdateRequest, BulkSettingsUpdateRequest
+
 from ..base import BaseDatabaseServiceTest
 
 
@@ -31,8 +38,12 @@ class TestSettingsServiceCRUD(BaseDatabaseServiceTest):
     def test_get_all_settings_with_data(self):
         """Test getting all settings with data in database."""
         # Create test settings
-        self.create_test_setting("test_setting_1", "category1", "type1", "value1", "Description 1")
-        self.create_test_setting("test_setting_2", "category2", "type2", "value2", "Description 2")
+        self.create_test_setting(
+            "test_setting_1", "category1", "type1", "value1", "Description 1"
+        )
+        self.create_test_setting(
+            "test_setting_2", "category2", "type2", "value2", "Description 2"
+        )
 
         result = self.run_async(self.service.get_all_settings())
 
@@ -48,7 +59,9 @@ class TestSettingsServiceCRUD(BaseDatabaseServiceTest):
     def test_get_setting_success(self):
         """Test getting a specific setting successfully."""
         # Create test setting
-        self.create_test_setting("test_setting", "category", "type", "value", "Description")
+        self.create_test_setting(
+            "test_setting", "category", "type", "value", "Description"
+        )
 
         result = self.run_async(self.service.get_setting("test_setting"))
 
@@ -68,7 +81,9 @@ class TestSettingsServiceCRUD(BaseDatabaseServiceTest):
     def test_update_setting_success(self):
         """Test successful setting update."""
         # Create test setting
-        self.create_test_setting("test_setting", "category", "type", "old_value", "Description")
+        self.create_test_setting(
+            "test_setting", "category", "type", "old_value", "Description"
+        )
 
         request = SettingUpdateRequest(id="test_setting", value="new_value")
         result = self.run_async(self.service.update_setting(request))
@@ -93,14 +108,16 @@ class TestSettingsServiceCRUD(BaseDatabaseServiceTest):
 
     def test_create_or_update_setting_create_new(self):
         """Test creating a new setting."""
-        result = self.run_async(self.service.create_or_update_setting(
-            setting_id="new_setting",
-            category="test_category",
-            setting_type="test_type",
-            value="test_value",
-            description="Test description",
-            is_user_editable=True
-        ))
+        result = self.run_async(
+            self.service.create_or_update_setting(
+                setting_id="new_setting",
+                category="test_category",
+                setting_type="test_type",
+                value="test_value",
+                description="Test description",
+                is_user_editable=True,
+            )
+        )
 
         self.assertTrue(result.success)
         self.assertIn("created successfully", result.message)
@@ -116,16 +133,20 @@ class TestSettingsServiceCRUD(BaseDatabaseServiceTest):
     def test_create_or_update_setting_update_existing(self):
         """Test updating an existing setting."""
         # Create initial setting
-        self.create_test_setting("existing_setting", "category", "type", "old_value", "Old description")
+        self.create_test_setting(
+            "existing_setting", "category", "type", "old_value", "Old description"
+        )
 
-        result = self.run_async(self.service.create_or_update_setting(
-            setting_id="existing_setting",
-            category="updated_category",
-            setting_type="updated_type",
-            value="new_value",
-            description="New description",
-            is_user_editable=False
-        ))
+        result = self.run_async(
+            self.service.create_or_update_setting(
+                setting_id="existing_setting",
+                category="updated_category",
+                setting_type="updated_type",
+                value="new_value",
+                description="New description",
+                is_user_editable=False,
+            )
+        )
 
         self.assertTrue(result.success)
         self.assertIn("updated successfully", result.message)
@@ -148,7 +169,7 @@ class TestSettingsServiceCRUD(BaseDatabaseServiceTest):
         request = BulkSettingsUpdateRequest(
             settings=[
                 SettingUpdateRequest(id="setting1", value="new_value1"),
-                SettingUpdateRequest(id="setting2", value="new_value2")
+                SettingUpdateRequest(id="setting2", value="new_value2"),
             ]
         )
 
@@ -173,8 +194,7 @@ class TestSettingsServiceCRUD(BaseDatabaseServiceTest):
         request = BulkSettingsUpdateRequest(
             settings=[
                 SettingUpdateRequest(id="setting1", value="new_value1"),
-                SettingUpdateRequest(
-                    id="nonexistent_setting", value="new_value2")
+                SettingUpdateRequest(id="nonexistent_setting", value="new_value2"),
             ]
         )
 

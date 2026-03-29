@@ -5,13 +5,15 @@ Docker gateway for container operations.
 import json
 import logging
 from typing import List, Optional
+
 from ....utils.command import AsyncCommand
 from ....utils.logger import get_logger
-from .models import ContainerInfo, DockerCommandResult, ContainerInspectInfo
+from .models import ContainerInfo, ContainerInspectInfo, DockerCommandResult
 
 
 class DockerGateway:
     """Gateway for Docker container operations."""
+
     logger: logging.Logger = get_logger(__name__)
 
     def __init__(self, container_name: str):
@@ -34,9 +36,7 @@ class DockerGateway:
         result = await async_cmd.execute()
 
         return DockerCommandResult(
-            raw=result,
-            container_name=container_name,
-            operation="start"
+            raw=result, container_name=container_name, operation="start"
         )
 
     @classmethod
@@ -49,9 +49,7 @@ class DockerGateway:
         result = await async_cmd.execute()
 
         return DockerCommandResult(
-            raw=result,
-            container_name=container_name,
-            operation="stop"
+            raw=result, container_name=container_name, operation="stop"
         )
 
     @classmethod
@@ -65,13 +63,13 @@ class DockerGateway:
         result = await async_cmd.execute()
 
         return DockerCommandResult(
-            raw=result,
-            container_name=container_name,
-            operation="restart"
+            raw=result, container_name=container_name, operation="restart"
         )
 
     @classmethod
-    async def delete(cls, container_name: str, force: bool = False) -> DockerCommandResult:
+    async def delete(
+        cls, container_name: str, force: bool = False
+    ) -> DockerCommandResult:
         """Delete a Docker container."""
 
         cls.logger.info("Deleting container: %s (force=%s)", container_name, force)
@@ -85,7 +83,7 @@ class DockerGateway:
             raw=result,
             container_name=container_name,
             operation="delete",
-            parsed_data={"force": force}
+            parsed_data={"force": force},
         )
 
     @classmethod
@@ -104,31 +102,44 @@ class DockerGateway:
             return []
 
         containers = []
-        lines = result.stdout.strip().split('\n')
+        lines = result.stdout.strip().split("\n")
 
         for line in lines:
             if line.strip():
                 try:
                     container_data = json.loads(line)
                     # Filter out invalid entries
-                    if all(key in container_data for key in ['ID', 'Image', 'Command', 'CreatedAt', 'Status']):
+                    if all(
+                        key in container_data
+                        for key in ["ID", "Image", "Command", "CreatedAt", "Status"]
+                    ):
                         container_info = ContainerInfo(
-                            id=container_data.get('ID', ''),
-                            image=container_data.get('Image', ''),
-                            command=container_data.get('Command', ''),
-                            created_at=container_data.get('CreatedAt', ''),
-                            state=container_data.get('State', ''),
-                            status=container_data.get('Status', ''),
-                            ports=container_data.get('Ports', ''),
-                            names=container_data.get('Names', ''),
-                            running_for=container_data.get('RunningFor', ''),
-                            size=container_data.get('Size', ''),
-                            labels=container_data.get('Labels', ''),
-                            local_volumes=container_data.get('LocalVolumes', ''),
+                            id=container_data.get("ID", ""),
+                            image=container_data.get("Image", ""),
+                            command=container_data.get("Command", ""),
+                            created_at=container_data.get("CreatedAt", ""),
+                            state=container_data.get("State", ""),
+                            status=container_data.get("Status", ""),
+                            ports=container_data.get("Ports", ""),
+                            names=container_data.get("Names", ""),
+                            running_for=container_data.get("RunningFor", ""),
+                            size=container_data.get("Size", ""),
+                            labels=container_data.get("Labels", ""),
+                            local_volumes=container_data.get("LocalVolumes", ""),
                             platform={
-                                'architecture': container_data.get('Platform', {}).get('architecture', '') if container_data.get('Platform') else '',
-                                'os': container_data.get('Platform', {}).get('os', '') if container_data.get('Platform') else ''
-                            }
+                                "architecture": (
+                                    container_data.get("Platform", {}).get(
+                                        "architecture", ""
+                                    )
+                                    if container_data.get("Platform")
+                                    else ""
+                                ),
+                                "os": (
+                                    container_data.get("Platform", {}).get("os", "")
+                                    if container_data.get("Platform")
+                                    else ""
+                                ),
+                            },
                         )
                         containers.append(container_info)
                 except json.JSONDecodeError:
@@ -147,12 +158,14 @@ class DockerGateway:
         result = await async_cmd.execute()
 
         if not result.success:
-            self.logger.error("Failed to inspect container %s: %s", self.container_name, result.stderr)
+            self.logger.error(
+                "Failed to inspect container %s: %s", self.container_name, result.stderr
+            )
             return None
 
         try:
             container_data = json.loads(result.stdout)
-            
+
             # Handle case where container_data might be a list
             if isinstance(container_data, list):
                 if container_data:
@@ -168,21 +181,25 @@ class DockerGateway:
                 for port_binding, host_bindings in network_settings["Ports"].items():
                     if host_bindings:
                         for host_binding in host_bindings:
-                            ports.append({
-                                "container_port": port_binding,
-                                "host_ip": host_binding.get("HostIp", ""),
-                                "host_port": host_binding.get("HostPort", "")
-                            })
+                            ports.append(
+                                {
+                                    "container_port": port_binding,
+                                    "host_ip": host_binding.get("HostIp", ""),
+                                    "host_port": host_binding.get("HostPort", ""),
+                                }
+                            )
 
             # Extract mounts
             mounts = []
             for mount in container_data.get("Mounts", []):
-                mounts.append({
-                    "source": mount.get("Source", ""),
-                    "destination": mount.get("Destination", ""),
-                    "type": mount.get("Type", ""),
-                    "read_only": not mount.get("RW", True)
-                })
+                mounts.append(
+                    {
+                        "source": mount.get("Source", ""),
+                        "destination": mount.get("Destination", ""),
+                        "type": mount.get("Type", ""),
+                        "read_only": not mount.get("RW", True),
+                    }
+                )
 
             # Extract networks
             networks = []
@@ -192,8 +209,8 @@ class DockerGateway:
             # Extract environment variables
             env_vars = {}
             for env in container_data.get("Config", {}).get("Env", []):
-                if '=' in env:
-                    key, value = env.split('=', 1)
+                if "=" in env:
+                    key, value = env.split("=", 1)
                     env_vars[key] = value
 
             # Extract labels
@@ -201,14 +218,17 @@ class DockerGateway:
 
             return ContainerInspectInfo(
                 id=container_data.get("Id", ""),
-                name=container_data.get("Name", "").lstrip('/'),
+                name=container_data.get("Name", "").lstrip("/"),
                 image=container_data.get("Config", {}).get("Image", ""),
                 image_id=container_data.get("Image", ""),
                 created=container_data.get("Created", ""),
                 state=container_data.get("State", {}).get("Status", ""),
                 status=container_data.get("State", {}).get("Status", ""),
-                health_status=container_data.get("State", {}).get("Health", {}).get("Status") if container_data.get(
-                    "State", {}).get("Health") else None,
+                health_status=(
+                    container_data.get("State", {}).get("Health", {}).get("Status")
+                    if container_data.get("State", {}).get("Health")
+                    else None
+                ),
                 ports=ports,
                 mounts=mounts,
                 networks=networks,
@@ -217,17 +237,23 @@ class DockerGateway:
                 entrypoint=container_data.get("Config", {}).get("Entrypoint", []),
                 working_dir=container_data.get("Config", {}).get("WorkingDir", ""),
                 user=container_data.get("Config", {}).get("User", ""),
-                restart_policy=container_data.get("HostConfig", {}).get("RestartPolicy", {}).get("Name"),
-                labels=labels
+                restart_policy=container_data.get("HostConfig", {})
+                .get("RestartPolicy", {})
+                .get("Name"),
+                labels=labels,
             )
 
         except json.JSONDecodeError as e:
-            self.logger.error("Failed to parse container JSON for %s: %s", self.container_name, str(e))
+            self.logger.error(
+                "Failed to parse container JSON for %s: %s", self.container_name, str(e)
+            )
             return None
 
     async def logs(self, tail_lines: int = 100) -> DockerCommandResult:
         """Get logs from the container."""
-        self.logger.info("Getting logs for container: %s (tail=%d)", self.container_name, tail_lines)
+        self.logger.info(
+            "Getting logs for container: %s (tail=%d)", self.container_name, tail_lines
+        )
 
         command = f"docker logs --tail {tail_lines} {self.container_name}"
         async_cmd = AsyncCommand.cmd(command)
@@ -237,12 +263,14 @@ class DockerGateway:
             raw=result,
             container_name=self.container_name,
             operation="logs",
-            parsed_data={"tail_lines": tail_lines}
+            parsed_data={"tail_lines": tail_lines},
         )
 
     async def exec(self, command: str) -> DockerCommandResult:
         """Execute a command in the container."""
-        self.logger.info("Running command in container %s: %s", self.container_name, command)
+        self.logger.info(
+            "Running command in container %s: %s", self.container_name, command
+        )
 
         full_command = f"docker exec {self.container_name} {command}"
         async_cmd = AsyncCommand.cmd(full_command)
@@ -252,10 +280,8 @@ class DockerGateway:
             raw=result,
             container_name=self.container_name,
             operation="run",
-            parsed_data={"executed_command": command}
+            parsed_data={"executed_command": command},
         )
 
 
-__all__ = [
-    "DockerGateway"
-]
+__all__ = ["DockerGateway"]

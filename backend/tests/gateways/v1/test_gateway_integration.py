@@ -3,13 +3,18 @@ Integration tests for Docker gateways working together.
 """
 
 import asyncio
-import tempfile
 import os
+import tempfile
 from pathlib import Path
-from backend.tests.base import BaseTest
-from backend.src.gateways.v1.docker_gateway.docker import DockerGateway
+
 from backend.src.gateways.v1.docker_gateway.compose import DockerComposeGateway
-from backend.src.gateways.v1.docker_gateway.models import ContainerInfo, ComposeProjectInfo, DockerCommandResult
+from backend.src.gateways.v1.docker_gateway.docker import DockerGateway
+from backend.src.gateways.v1.docker_gateway.models import (
+    ComposeProjectInfo,
+    ContainerInfo,
+    DockerCommandResult,
+)
+from backend.tests.base import BaseTest
 
 
 class TestDockerGatewayIntegration(BaseTest):
@@ -42,13 +47,17 @@ class TestDockerGatewayIntegration(BaseTest):
         self.logger.info("Testing Docker and Compose workflow integration")
 
         # Step 1: Create a container using Docker gateway
-        run_cmd = f"docker run -d --name {self.test_container_name} alpine:latest sleep 300"
+        run_cmd = (
+            f"docker run -d --name {self.test_container_name} alpine:latest sleep 300"
+        )
         container_result = self.run_async(self._run_docker_command(run_cmd))
 
         if container_result.success:
             # Step 2: Verify container exists using Docker gateway
             containers = self.run_async(DockerGateway.list())
-            container_found = any(c.names == self.test_container_name for c in containers)
+            container_found = any(
+                c.names == self.test_container_name for c in containers
+            )
             self.assertTrue(container_found, "Container should be found in list")
 
             # Step 3: Create a compose project
@@ -56,7 +65,9 @@ class TestDockerGatewayIntegration(BaseTest):
 
             try:
                 # Step 4: Start compose project
-                compose_result = self.run_async(DockerComposeGateway.up(compose_file, detached=True))
+                compose_result = self.run_async(
+                    DockerComposeGateway.up(compose_file, detached=True)
+                )
                 self.assertIsInstance(compose_result, DockerCommandResult)
 
                 # Step 5: Verify both container and compose project exist
@@ -64,7 +75,9 @@ class TestDockerGatewayIntegration(BaseTest):
                 compose_projects = self.run_async(DockerComposeGateway.list())
 
                 # Should have both our container and compose services
-                container_still_exists = any(c.names == self.test_container_name for c in containers_after)
+                container_still_exists = any(
+                    c.names == self.test_container_name for c in containers_after
+                )
                 self.assertTrue(container_still_exists, "Container should still exist")
 
                 # Step 6: Test operations on both
@@ -105,7 +118,9 @@ class TestDockerGatewayIntegration(BaseTest):
             for i in range(2):
                 compose_file = self._create_test_compose_file()
                 compose_files.append(compose_file)
-                compose_tasks.append(DockerComposeGateway.up(compose_file, detached=True))
+                compose_tasks.append(
+                    DockerComposeGateway.up(compose_file, detached=True)
+                )
 
             compose_results = self.run_async(asyncio.gather(*compose_tasks))
 
@@ -120,11 +135,21 @@ class TestDockerGatewayIntegration(BaseTest):
             mixed_tasks = [
                 DockerGateway.list(),
                 DockerComposeGateway.list(),
-                DockerGateway.start(container_names[0]) if container_names else asyncio.sleep(0),
-                DockerComposeGateway.ps(compose_files[0]) if compose_files else asyncio.sleep(0)
+                (
+                    DockerGateway.start(container_names[0])
+                    if container_names
+                    else asyncio.sleep(0)
+                ),
+                (
+                    DockerComposeGateway.ps(compose_files[0])
+                    if compose_files
+                    else asyncio.sleep(0)
+                ),
             ]
 
-            mixed_results = self.run_async(asyncio.gather(*mixed_tasks, return_exceptions=True))
+            mixed_results = self.run_async(
+                asyncio.gather(*mixed_tasks, return_exceptions=True)
+            )
 
             # Verify mixed operations completed
             self.assertEqual(len(mixed_results), 4)
@@ -163,13 +188,17 @@ class TestDockerGatewayIntegration(BaseTest):
             self.assertIsInstance(compose_services, list)
 
             # Find our test project in compose projects
-            test_project = next((p for p in compose_projects if self.test_project_name in p.name), None)
+            test_project = next(
+                (p for p in compose_projects if self.test_project_name in p.name), None
+            )
             if test_project:
                 self.assertIsInstance(test_project, ComposeProjectInfo)
                 self.assertIn(self.test_project_name, test_project.name)
 
             # Find our test services in containers
-            test_containers = [c for c in containers if self.test_project_name in c.names]
+            test_containers = [
+                c for c in containers if self.test_project_name in c.names
+            ]
             self.assertGreaterEqual(len(test_containers), 1)
 
         finally:
@@ -185,7 +214,9 @@ class TestDockerGatewayIntegration(BaseTest):
         self.assertFalse(docker_result.success)
 
         # Test Compose gateway errors
-        compose_result = self.run_async(DockerComposeGateway.up("/nonexistent/compose.yml"))
+        compose_result = self.run_async(
+            DockerComposeGateway.up("/nonexistent/compose.yml")
+        )
         self.assertIsInstance(compose_result, DockerCommandResult)
         self.assertFalse(compose_result.success)
 
@@ -240,7 +271,9 @@ class TestDockerGatewayIntegration(BaseTest):
             self.assertTrue(container_exists, "Container should exist")
 
             compose_projects = self.run_async(DockerComposeGateway.list())
-            project_exists = any(self.test_project_name in p.name for p in compose_projects)
+            project_exists = any(
+                self.test_project_name in p.name for p in compose_projects
+            )
             self.assertTrue(project_exists, "Compose project should exist")
 
         finally:
@@ -254,7 +287,9 @@ class TestDockerGatewayIntegration(BaseTest):
 
             # Verify cleanup
             containers_after = self.run_async(DockerGateway.list())
-            container_still_exists = any(c.names == container_name for c in containers_after)
+            container_still_exists = any(
+                c.names == container_name for c in containers_after
+            )
             self.assertFalse(container_still_exists, "Container should be cleaned up")
 
     def _create_test_compose_file(self) -> str:
@@ -274,7 +309,7 @@ services:
       - com.docker.compose.service=test-service
 """
 
-        with open(self.compose_file, 'w') as f:
+        with open(self.compose_file, "w") as f:
             f.write(compose_content)
 
         return self.compose_file
@@ -284,13 +319,15 @@ services:
         try:
             # First, stop and remove compose services
             self.run_async(DockerComposeGateway.down(compose_file))
-            
+
             # Then, remove any remaining containers with the project name
             containers = self.run_async(DockerGateway.list())
             for container in containers:
                 if self.test_project_name in container.names:
                     try:
-                        self.run_async(DockerGateway.delete(container.names, force=True))
+                        self.run_async(
+                            DockerGateway.delete(container.names, force=True)
+                        )
                     except Exception:
                         pass  # Container might already be removed
         except Exception:
@@ -298,18 +335,14 @@ services:
 
     async def _run_docker_command(self, command: str) -> DockerCommandResult:
         """Helper method to run a raw Docker command."""
-        from backend.src.utils.command import AsyncCommand
         from backend.src.gateways.v1.docker_gateway.models import DockerCommandResult
+        from backend.src.utils.command import AsyncCommand
 
         async_cmd = AsyncCommand.cmd(command)
         result = await async_cmd.execute()
         return DockerCommandResult(
-            raw=result,
-            operation="run",
-            parsed_data={"command": command}
+            raw=result, operation="run", parsed_data={"command": command}
         )
 
 
-__all__ = [
-    "TestDockerGatewayIntegration"
-]
+__all__ = ["TestDockerGatewayIntegration"]

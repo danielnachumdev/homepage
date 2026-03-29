@@ -1,10 +1,10 @@
 # Utils package for deployment CLI
 
-from .logger import *
 from .interpreter import *
+from .logger import *
+from .process_checker import *
 from .requirements import *
 from .types import *
-from .process_checker import *
 
 __all__ = [
     "setup_logger",
@@ -22,5 +22,5 @@ __all__ = [
     "is_frontend_running",
     "is_backend_running",
     "kill_process",
-    "kill_processes_carefully"
+    "kill_processes_carefully",
 ]

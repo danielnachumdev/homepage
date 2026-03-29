@@ -3,13 +3,15 @@ Data models for Docker gateway operations.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
+
 from ....utils.command import CommandExecutionResult
 
 
 @dataclass
 class ContainerInfo:
     """Normalized container information from docker ps --format json."""
+
     id: str
     image: str
     command: str
@@ -28,6 +30,7 @@ class ContainerInfo:
 @dataclass
 class ComposeProjectInfo:
     """Normalized compose project information."""
+
     name: str
     status: str
     config_files: List[str]
@@ -40,6 +43,7 @@ class ComposeProjectInfo:
 @dataclass
 class ComposeServiceInfo:
     """Normalized compose service information."""
+
     name: str
     project: str
     status: str
@@ -52,6 +56,7 @@ class ComposeServiceInfo:
 @dataclass
 class DockerCommandResult:
     """Enriched result of a Docker command execution."""
+
     raw: CommandExecutionResult
     container_name: Optional[str] = None
     operation: Optional[str] = None
@@ -86,6 +91,7 @@ class DockerCommandResult:
 @dataclass
 class ContainerInspectInfo:
     """Detailed container information from docker inspect."""
+
     id: str
     name: str
     image: str
@@ -111,5 +117,5 @@ __all__ = [
     "ComposeProjectInfo",
     "ComposeServiceInfo",
     "DockerCommandResult",
-    "ContainerInspectInfo"
+    "ContainerInspectInfo",
 ]

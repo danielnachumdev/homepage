@@ -1,13 +1,15 @@
 """
 Tests for ChromeService class.
 """
-import os
+
 import json
+import os
 import tempfile
 from unittest.mock import patch
-from backend.tests.services.v1.chrome.base import BaseChromeServiceTest
-from backend.src.services.v1.chrome_service import ChromeService
+
 from backend.src.schemas.v1.chrome import ChromeProfile, ChromeProfileInfo
+from backend.src.services.v1.chrome_service import ChromeService
+from backend.tests.services.v1.chrome.base import BaseChromeServiceTest
 
 
 class TestChromeService(BaseChromeServiceTest):
@@ -31,17 +33,19 @@ class TestChromeService(BaseChromeServiceTest):
             preferences_file = os.path.join(temp_dir, "Preferences")
             preferences_data = {
                 "profile": {"name": "Test Profile"},
-                "account_info": [{
-                    "account_id": "12345",
-                    "email": "test@example.com",
-                    "full_name": "Test User",
-                    "given_name": "Test",
-                    "picture_url": "https://example.com/pic.jpg",
-                    "locale": "en-US"
-                }]
+                "account_info": [
+                    {
+                        "account_id": "12345",
+                        "email": "test@example.com",
+                        "full_name": "Test User",
+                        "given_name": "Test",
+                        "picture_url": "https://example.com/pic.jpg",
+                        "locale": "en-US",
+                    }
+                ],
             }
 
-            with open(preferences_file, 'w', encoding='utf-8') as f:
+            with open(preferences_file, "w", encoding="utf-8") as f:
                 json.dump(preferences_data, f)
 
             result = self.service._extract_profile_information(temp_dir)
@@ -66,7 +70,7 @@ class TestChromeService(BaseChromeServiceTest):
         """Test profile extraction with invalid JSON in Preferences file."""
         with tempfile.TemporaryDirectory() as temp_dir:
             preferences_file = os.path.join(temp_dir, "Preferences")
-            with open(preferences_file, 'w', encoding='utf-8') as f:
+            with open(preferences_file, "w", encoding="utf-8") as f:
                 f.write("invalid json content")
 
             result = self.service._extract_profile_information(temp_dir)
@@ -81,7 +85,7 @@ class TestChromeService(BaseChromeServiceTest):
                 # No account_info
             }
 
-            with open(preferences_file, 'w', encoding='utf-8') as f:
+            with open(preferences_file, "w", encoding="utf-8") as f:
                 json.dump(preferences_data, f)
 
             result = self.service._extract_profile_information(temp_dir)
@@ -105,7 +109,7 @@ class TestChromeService(BaseChromeServiceTest):
         self.assertIn("--no-default-browser-check", command)
         self.assertEqual(command[-1], url)
 
-    @patch('os.path.exists')
+    @patch("os.path.exists")
     def test_build_chrome_command_chrome_paths(self, mock_exists):
         """Test Chrome command building with different Chrome paths."""
         # Mock Chrome executable not found in common paths
@@ -121,13 +125,17 @@ class TestChromeService(BaseChromeServiceTest):
 
     def test_open_url_in_profile_success(self):
         """Test successful URL opening in profile."""
-        self.run_async(self.service.open_url_in_profile("https://example.com", "test_profile"))
+        self.run_async(
+            self.service.open_url_in_profile("https://example.com", "test_profile")
+        )
 
     def test_open_url_in_profile_invalid_url(self):
         """Test URL opening with invalid URL."""
         # Test with an invalid URL - should raise ValueError
         with self.assertRaises(ValueError):
-            self.run_async(self.service.open_url_in_profile("invalid-url", "test_profile"))
+            self.run_async(
+                self.service.open_url_in_profile("invalid-url", "test_profile")
+            )
 
     def test_open_url_in_profile_empty_url(self):
         """Test URL opening with empty URL."""
@@ -151,7 +159,9 @@ class TestChromeService(BaseChromeServiceTest):
         """Test URL opening with unsupported scheme."""
         # Test with unsupported scheme - should raise ValueError
         with self.assertRaises(ValueError):
-            self.run_async(self.service.open_url_in_profile("ftp://example.com", "test_profile"))
+            self.run_async(
+                self.service.open_url_in_profile("ftp://example.com", "test_profile")
+            )
 
     def test_open_url_in_profile_url_normalization(self):
         """Test URL normalization (adding https:// prefix)."""
@@ -180,8 +190,7 @@ class TestChromeService(BaseChromeServiceTest):
         self.assertEqual(result, "https://example.com")
 
         # Test with file URL
-        result = self.service._validate_and_normalize_url(
-            "file:///path/to/file")
+        result = self.service._validate_and_normalize_url("file:///path/to/file")
         self.assertEqual(result, "file:///path/to/file")
 
     def test_validate_and_normalize_url_invalid_urls(self):

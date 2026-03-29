@@ -7,8 +7,8 @@ This strategy deploys the entire homepage application using Docker Compose.
 from typing import List, Optional
 
 from deployment.src.steps import Step
-from deployment.src.strategies.base_strategy import Strategy
 from deployment.src.steps.docker_deploy_step import DockerDeployStep
+from deployment.src.strategies.base_strategy import Strategy
 
 
 class DockerDeployStrategy(Strategy):
@@ -19,11 +19,13 @@ class DockerDeployStrategy(Strategy):
     deployment process using docker-compose.
     """
 
-    def __init__(self,
-                 project_root: Optional[str] = None,
-                 compose_file: Optional[str] = None,
-                 name: str = "docker-deploy",
-                 description: str = "Deploy homepage using Docker Compose"):
+    def __init__(
+        self,
+        project_root: Optional[str] = None,
+        compose_file: Optional[str] = None,
+        name: str = "docker-deploy",
+        description: str = "Deploy homepage using Docker Compose",
+    ):
         """
         Initialize the Docker deployment strategy.
 
@@ -53,7 +55,7 @@ class DockerDeployStrategy(Strategy):
             project_root=self.project_root,
             compose_file=self.compose_file,
             name="docker-deploy-step",
-            description="Deploy homepage application using Docker Compose"
+            description="Deploy homepage application using Docker Compose",
         )
 
         return [docker_step]
@@ -66,14 +68,14 @@ class DockerDeployStrategy(Strategy):
             Dict containing strategy metadata
         """
         metadata = await super().get_metadata()
-        metadata.update({
-            "project_root": self.project_root,
-            "compose_file": self.compose_file,
-            "deployment_type": "docker-compose"
-        })
+        metadata.update(
+            {
+                "project_root": self.project_root,
+                "compose_file": self.compose_file,
+                "deployment_type": "docker-compose",
+            }
+        )
         return metadata
 
 
-__all__ = [
-    "DockerDeployStrategy"
-]
+__all__ = ["DockerDeployStrategy"]

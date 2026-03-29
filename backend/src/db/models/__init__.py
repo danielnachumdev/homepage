@@ -1,9 +1,5 @@
 from .base import Base
-from .settings import SettingsModel
 from .db_settings import DbSettingsModel
+from .settings import SettingsModel
 
-__all__ = [
-    "Base",
-    "SettingsModel",
-    "DbSettingsModel"
-]
+__all__ = ["Base", "SettingsModel", "DbSettingsModel"]

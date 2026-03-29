@@ -7,6 +7,4 @@ def get_db() -> Database:
     return DatabaseFactory.get_database_from_settings()
 
 
-__all__ = [
-    "get_db"
-]
+__all__ = ["get_db"]

@@ -1,10 +1,13 @@
 from fastapi import APIRouter, HTTPException
 
-from ...services.v1.settings_service import SettingsService
 from ...schemas.v1.settings import (
-    SettingsResponse, SettingUpdateRequest, SettingUpdateResponse,
-    BulkSettingsUpdateRequest, BulkSettingsUpdateResponse
+    BulkSettingsUpdateRequest,
+    BulkSettingsUpdateResponse,
+    SettingsResponse,
+    SettingUpdateRequest,
+    SettingUpdateResponse,
 )
+from ...services.v1.settings_service import SettingsService
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 settings_service = SettingsService()
@@ -58,10 +61,7 @@ async def update_search_engine_setting(selected_engine: str):
 
 @router.put("/chrome-profiles/{profile_id}")
 async def update_chrome_profile_setting(
-    profile_id: str,
-    display_name: str,
-    icon: str,
-    enabled: bool
+    profile_id: str, display_name: str, icon: str, enabled: bool
 ):
     """Update Chrome profile setting."""
     response = await settings_service.update_chrome_profile_setting(

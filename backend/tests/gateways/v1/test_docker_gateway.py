@@ -4,9 +4,14 @@ Tests for DockerGateway using real Docker containers.
 
 import asyncio
 import os
-from backend.tests.base import BaseTest
+
 from backend.src.gateways.v1.docker_gateway.docker import DockerGateway
-from backend.src.gateways.v1.docker_gateway.models import ContainerInfo, DockerCommandResult, ContainerInspectInfo
+from backend.src.gateways.v1.docker_gateway.models import (
+    ContainerInfo,
+    ContainerInspectInfo,
+    DockerCommandResult,
+)
+from backend.tests.base import BaseTest
 
 
 class TestDockerGateway(BaseTest):
@@ -149,8 +154,8 @@ class TestDockerGateway(BaseTest):
 
             # Test platform info
             self.assertIsInstance(container.platform, dict)
-            self.assertIn('architecture', container.platform)
-            self.assertIn('os', container.platform)
+            self.assertIn("architecture", container.platform)
+            self.assertIn("os", container.platform)
 
     def test_06_error_handling(self):
         """Test error handling for invalid operations."""
@@ -203,15 +208,12 @@ class TestDockerGateway(BaseTest):
     async def _run_docker_command(self, command: str) -> DockerCommandResult:
         """Helper method to run a raw Docker command."""
         from backend.src.utils.command import AsyncCommand
+
         async_cmd = AsyncCommand.cmd(command)
         result = await async_cmd.execute()
         return DockerCommandResult(
-            raw=result,
-            operation="run",
-            parsed_data={"command": command}
+            raw=result, operation="run", parsed_data={"command": command}
         )
 
 
-__all__ = [
-    "TestDockerGateway"
-]
+__all__ = ["TestDockerGateway"]

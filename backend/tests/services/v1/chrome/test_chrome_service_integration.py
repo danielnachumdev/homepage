@@ -1,13 +1,15 @@
 """
 Integration tests for ChromeService.
 """
-import os
+
 import json
+import os
 import tempfile
 from unittest.mock import patch
-from backend.tests.services.v1.chrome.base import BaseChromeServiceTest
-from backend.src.services.v1.chrome_service import ChromeService, extract_jsonpath_value
+
 from backend.src.schemas.v1.chrome import ChromeProfile, ChromeProfileInfo
+from backend.src.services.v1.chrome_service import ChromeService, extract_jsonpath_value
+from backend.tests.services.v1.chrome.base import BaseChromeServiceTest
 
 
 class TestChromeServiceIntegration(BaseChromeServiceTest):
@@ -24,24 +26,22 @@ class TestChromeServiceIntegration(BaseChromeServiceTest):
             # Create a realistic Preferences file
             preferences_data = {
                 "profile": {"name": "Work Profile"},
-                "account_info": [{
-                    "account_id": "work_account_123",
-                    "email": "work@company.com",
-                    "full_name": "John Doe",
-                    "given_name": "John",
-                    "picture_url": "https://lh3.googleusercontent.com/photo.jpg",
-                    "locale": "en-US"
-                }],
-                "extensions": {
-                    "settings": {}
-                },
-                "browser": {
-                    "has_seen_welcome_page": True
-                }
+                "account_info": [
+                    {
+                        "account_id": "work_account_123",
+                        "email": "work@company.com",
+                        "full_name": "John Doe",
+                        "given_name": "John",
+                        "picture_url": "https://lh3.googleusercontent.com/photo.jpg",
+                        "locale": "en-US",
+                    }
+                ],
+                "extensions": {"settings": {}},
+                "browser": {"has_seen_welcome_page": True},
             }
 
             preferences_file = os.path.join(temp_dir, "Preferences")
-            with open(preferences_file, 'w', encoding='utf-8') as f:
+            with open(preferences_file, "w", encoding="utf-8") as f:
                 json.dump(preferences_data, f)
 
             # Extract profile information
@@ -58,7 +58,7 @@ class TestChromeServiceIntegration(BaseChromeServiceTest):
         profile = ChromeProfile(id="Default", name="Default Profile")
         url = "https://google.com"
 
-        with patch('os.path.exists') as mock_exists:
+        with patch("os.path.exists") as mock_exists:
             # Mock Chrome found in Program Files
             def exists_side_effect(path):
                 return path == r"C:\Program Files\Google\Chrome\Application\chrome.exe"
@@ -68,6 +68,7 @@ class TestChromeServiceIntegration(BaseChromeServiceTest):
             command = self.service._build_chrome_command(url, profile)
 
             self.assertEqual(
-                command[0], r"C:\Program Files\Google\Chrome\Application\chrome.exe")
+                command[0], r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+            )
             self.assertIn("--profile-directory=Default", command)
             self.assertEqual(command[-1], url)

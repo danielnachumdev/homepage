@@ -6,33 +6,42 @@ and creates startup shortcuts for automatic launch on login.
 """
 
 from typing import List, Optional
+
+from deployment.src.steps import (
+    NativeBackendDependencyInstallStep,
+    NativeBackendDeployStep,
+    NativeFrontendDependencyInstallStep,
+    NativeFrontendDeployStep,
+    Step,
+    WindowsStartOnLoginStep,
+)
 from deployment.src.strategies.base_strategy import Strategy
-from deployment.src.steps import NativeBackendDependencyInstallStep, NativeBackendDeployStep, \
-    NativeFrontendDependencyInstallStep, NativeFrontendDeployStep, WindowsStartOnLoginStep, Step
 
 
 class WindowsNativeDeployStrategy(Strategy):
     """
     Strategy that deploys the homepage application using native Windows processes.
-    
+
     This strategy:
     1. Installs backend Python dependencies
-    2. Installs frontend Node.js dependencies  
+    2. Installs frontend Node.js dependencies
     3. Starts the backend server process
     4. Starts the frontend development server
     5. Creates Windows startup shortcuts for automatic launch
-    
+
     The strategy ensures proper port synchronization and careful process management.
     """
 
-    def __init__(self,
-                 project_root: Optional[str] = None,
-                 backend_dir: Optional[str] = None,
-                 frontend_dir: Optional[str] = None,
-                 backend_port: int = 8000,
-                 frontend_port: int = 5173,
-                 name: str = "windows-native-deploy",
-                 description: str = "Deploy homepage using native Windows processes with startup shortcuts"):
+    def __init__(
+        self,
+        project_root: Optional[str] = None,
+        backend_dir: Optional[str] = None,
+        frontend_dir: Optional[str] = None,
+        backend_port: int = 8000,
+        frontend_port: int = 5173,
+        name: str = "windows-native-deploy",
+        description: str = "Deploy homepage using native Windows processes with startup shortcuts",
+    ):
         """
         Initialize the Windows native deployment strategy.
 
@@ -67,7 +76,7 @@ class WindowsNativeDeployStrategy(Strategy):
             project_root=self.project_root,
             backend_dir=self.backend_dir,
             name="windows-backend-deps",
-            description="Install Python dependencies for backend"
+            description="Install Python dependencies for backend",
         )
         steps.append(backend_deps_step)
 
@@ -76,7 +85,7 @@ class WindowsNativeDeployStrategy(Strategy):
             project_root=self.project_root,
             frontend_dir=self.frontend_dir,
             name="windows-frontend-deps",
-            description="Install Node.js dependencies for frontend"
+            description="Install Node.js dependencies for frontend",
         )
         steps.append(frontend_deps_step)
 
@@ -85,7 +94,7 @@ class WindowsNativeDeployStrategy(Strategy):
             project_root=self.project_root,
             backend_dir=self.backend_dir,
             name="windows-backend-deploy",
-            description="Start backend server process"
+            description="Start backend server process",
         )
         steps.append(backend_deploy_step)
 
@@ -94,7 +103,7 @@ class WindowsNativeDeployStrategy(Strategy):
             project_root=self.project_root,
             frontend_dir=self.frontend_dir,
             name="windows-frontend-deploy",
-            description="Start frontend development server"
+            description="Start frontend development server",
         )
         steps.append(frontend_deploy_step)
 
@@ -104,7 +113,7 @@ class WindowsNativeDeployStrategy(Strategy):
             frontend_dir=self.frontend_dir,
             backend_dir=self.backend_dir,
             name="windows-startup-shortcuts",
-            description="Create Windows startup shortcuts for auto-launch"
+            description="Create Windows startup shortcuts for auto-launch",
         )
         steps.append(startup_step)
 
@@ -117,13 +126,18 @@ class WindowsNativeDeployStrategy(Strategy):
         Returns:
             bool: True if all steps were installed successfully, False otherwise
         """
-        self.logger.info(f"Starting Windows native deployment of strategy '{self.name}'")
-        self.logger.info(f"Backend port: {self.backend_port}, Frontend port: {self.frontend_port}")
+        self.logger.info(
+            f"Starting Windows native deployment of strategy '{self.name}'"
+        )
+        self.logger.info(
+            f"Backend port: {self.backend_port}, Frontend port: {self.frontend_port}"
+        )
 
         # Set environment variables for port synchronization
         import os
-        os.environ['BACKEND_PORT'] = str(self.backend_port)
-        os.environ['FRONTEND_PORT'] = str(self.frontend_port)
+
+        os.environ["BACKEND_PORT"] = str(self.backend_port)
+        os.environ["FRONTEND_PORT"] = str(self.frontend_port)
 
         # Call parent install method
         return await super().install()
@@ -135,8 +149,12 @@ class WindowsNativeDeployStrategy(Strategy):
         Returns:
             bool: True if all steps were uninstalled successfully, False otherwise
         """
-        self.logger.info(f"Starting Windows native uninstallation of strategy '{self.name}'")
-        self.logger.info("This will carefully stop all running processes and remove startup shortcuts")
+        self.logger.info(
+            f"Starting Windows native uninstallation of strategy '{self.name}'"
+        )
+        self.logger.info(
+            "This will carefully stop all running processes and remove startup shortcuts"
+        )
 
         # Call parent uninstall method
         return await super().uninstall()
@@ -149,12 +167,14 @@ class WindowsNativeDeployStrategy(Strategy):
             Dict containing strategy metadata
         """
         metadata = await super().get_metadata()
-        metadata.update({
-            "backend_port": self.backend_port,
-            "frontend_port": self.frontend_port,
-            "strategy_type": "windows_native",
-            "platform": "windows"
-        })
+        metadata.update(
+            {
+                "backend_port": self.backend_port,
+                "frontend_port": self.frontend_port,
+                "strategy_type": "windows_native",
+                "platform": "windows",
+            }
+        )
         return metadata
 
     def get_port_info(self) -> dict:
@@ -168,10 +188,8 @@ class WindowsNativeDeployStrategy(Strategy):
             "backend_port": self.backend_port,
             "frontend_port": self.frontend_port,
             "backend_url": f"http://localhost:{self.backend_port}",
-            "frontend_url": f"http://localhost:{self.frontend_port}"
+            "frontend_url": f"http://localhost:{self.frontend_port}",
         }
 
 
-__all__ = [
-    "WindowsNativeDeployStrategy"
-]
+__all__ = ["WindowsNativeDeployStrategy"]

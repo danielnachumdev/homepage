@@ -6,7 +6,8 @@ in sequence. Uninstall operations are performed in reverse order.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any, Type
+from typing import Any, Dict, List, Optional, Type
+
 from ..steps.base_step import Step
 from ..utils.logger import setup_logger
 
@@ -20,7 +21,7 @@ class Strategy(ABC):
     """
 
     # Registry of all concrete strategy classes
-    _strategies: List[Type['Strategy']] = []
+    _strategies: List[Type["Strategy"]] = []
 
     def __init_subclass__(cls, **kwargs):
         """
@@ -32,13 +33,13 @@ class Strategy(ABC):
         super().__init_subclass__(**kwargs)
 
         # Check if this is a concrete class (not abstract)
-        if not getattr(cls, '__abstractmethods__', None):
+        if not getattr(cls, "__abstractmethods__", None):
             # Add to registry if not already present
             if cls not in cls._strategies:
                 cls._strategies.append(cls)
 
     @classmethod
-    def get_registered_strategies(cls) -> List[Type['Strategy']]:
+    def get_registered_strategies(cls) -> List[Type["Strategy"]]:
         """
         Get all registered concrete strategy classes.
 
@@ -91,11 +92,11 @@ class Strategy(ABC):
         """
         if step not in self._steps:
             self._steps.append(step)
-            self.logger.info(
-                f"Added step '{step.name}' to strategy '{self.name}'")
+            self.logger.info(f"Added step '{step.name}' to strategy '{self.name}'")
         else:
             self.logger.warning(
-                f"Step '{step.name}' already exists in strategy '{self.name}'")
+                f"Step '{step.name}' already exists in strategy '{self.name}'"
+            )
 
     def remove_step(self, step: Step) -> bool:
         """
@@ -109,12 +110,12 @@ class Strategy(ABC):
         """
         if step in self._steps:
             self._steps.remove(step)
-            self.logger.info(
-                f"Removed step '{step.name}' from strategy '{self.name}'")
+            self.logger.info(f"Removed step '{step.name}' from strategy '{self.name}'")
             return True
         else:
             self.logger.warning(
-                f"Step '{step.name}' not found in strategy '{self.name}'")
+                f"Step '{step.name}' not found in strategy '{self.name}'"
+            )
             return False
 
     async def install(self) -> bool:
@@ -136,7 +137,8 @@ class Strategy(ABC):
         for step in steps:
             if not await step.validate():
                 self.logger.error(
-                    f"Validation failed for step '{step.name}' in strategy '{self.name}'")
+                    f"Validation failed for step '{step.name}' in strategy '{self.name}'"
+                )
                 return False
 
         # Install steps in order
@@ -154,7 +156,8 @@ class Strategy(ABC):
 
         self._installed = True
         self.logger.info(
-            f"Successfully installed strategy '{self.name}' with {len(steps)} steps")
+            f"Successfully installed strategy '{self.name}' with {len(steps)} steps"
+        )
         return True
 
     async def uninstall(self) -> bool:
@@ -178,8 +181,7 @@ class Strategy(ABC):
             self.logger.info(f"Uninstalling step '{step.name}'")
             if await step.uninstall():
                 uninstalled_steps.append(step)
-                self.logger.info(
-                    f"Successfully uninstalled step '{step.name}'")
+                self.logger.info(f"Successfully uninstalled step '{step.name}'")
             else:
                 self.logger.error(f"Failed to uninstall step '{step.name}'")
                 # Continue with remaining steps even if one fails
@@ -187,7 +189,8 @@ class Strategy(ABC):
 
         self._installed = False
         self.logger.info(
-            f"Uninstallation of strategy '{self.name}' completed. {len(uninstalled_steps)}/{len(steps)} steps uninstalled")
+            f"Uninstallation of strategy '{self.name}' completed. {len(uninstalled_steps)}/{len(steps)} steps uninstalled"
+        )
         return len(uninstalled_steps) == len(steps)
 
     async def _rollback_installation(self, installed_steps: List[Step]) -> None:
@@ -197,8 +200,7 @@ class Strategy(ABC):
         Args:
             installed_steps: List of steps that were successfully installed
         """
-        self.logger.info(
-            f"Rolling back installation of strategy '{self.name}'")
+        self.logger.info(f"Rolling back installation of strategy '{self.name}'")
         for step in reversed(installed_steps):
             self.logger.info(f"Rolling back step '{step.name}'")
             await step.uninstall()
@@ -217,7 +219,7 @@ class Strategy(ABC):
             "installed": self._installed,
             "type": self.__class__.__name__,
             "step_count": len(steps),
-            "steps": [await step.get_metadata() for step in steps]
+            "steps": [await step.get_metadata() for step in steps],
         }
 
     def get_status(self) -> Dict[str, Any]:
@@ -232,16 +234,16 @@ class Strategy(ABC):
             "strategy": {
                 "name": self.name,
                 "installed": self._installed,
-                "step_count": len(steps)
+                "step_count": len(steps),
             },
             "steps": [
                 {
                     "name": step.name,
                     "installed": step.is_installed,
-                    "type": step.__class__.__name__
+                    "type": step.__class__.__name__,
                 }
                 for step in steps
-            ]
+            ],
         }
 
     def __str__(self) -> str:
@@ -256,6 +258,4 @@ class Strategy(ABC):
         return f"{self.__class__.__name__}(name='{self.name}', description='{self.description}', steps={step_count}, installed={self._installed})"
 
 
-__all__ = [
-    "Strategy"
-]
+__all__ = ["Strategy"]

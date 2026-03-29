@@ -1,13 +1,15 @@
 """
 Tests for extract_jsonpath_value utility function.
 """
-import os
+
 import json
+import os
 import tempfile
 from unittest.mock import patch
-from backend.tests.services.v1.chrome.base import BaseChromeServiceTest
-from backend.src.services.v1.chrome_service import ChromeService, extract_jsonpath_value
+
 from backend.src.schemas.v1.chrome import ChromeProfile, ChromeProfileInfo
+from backend.src.services.v1.chrome_service import ChromeService, extract_jsonpath_value
+from backend.tests.services.v1.chrome.base import BaseChromeServiceTest
 
 
 class TestExtractJsonpathValue(BaseChromeServiceTest):
@@ -17,7 +19,7 @@ class TestExtractJsonpathValue(BaseChromeServiceTest):
         """Test successful extraction of value using jsonpath."""
         data = {
             "profile": {"name": "Test Profile"},
-            "account_info": [{"email": "test@example.com"}]
+            "account_info": [{"email": "test@example.com"}],
         }
 
         # Test simple path

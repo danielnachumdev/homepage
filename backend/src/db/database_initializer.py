@@ -2,17 +2,15 @@ from typing import Sequence, Type
 
 from danielutils.abstractions.db import DatabaseInitializer as BaseDatabaseInitializer
 from danielutils.abstractions.db.database_initializer import DeclarativeBase
-from .models import SettingsModel, DbSettingsModel
+
+from .models import DbSettingsModel, SettingsModel
 from .population_script import DatabasePopulationScript
 
 
 class DatabaseInitializer(BaseDatabaseInitializer):
     @classmethod
     def _get_models(cls) -> Sequence[Type[DeclarativeBase]]:
-        return [
-            SettingsModel,
-            DbSettingsModel
-        ]
+        return [SettingsModel, DbSettingsModel]
 
     async def init_db(self, db) -> None:
         """Initialize database and populate with default settings."""
@@ -23,6 +21,4 @@ class DatabaseInitializer(BaseDatabaseInitializer):
         await DatabasePopulationScript().run_population_if_needed()
 
 
-__all__ = [
-    "DatabaseInitializer"
-]
+__all__ = ["DatabaseInitializer"]

@@ -12,6 +12,4 @@ class BaseService:
         cls.logger = get_logger(cls.__module__)
 
 
-__all__ = [
-    "BaseService"
-]
+__all__ = ["BaseService"]

@@ -1,10 +1,15 @@
 """
 Tests for SettingsService exception handling.
 """
+
 from unittest.mock import patch
-from backend.tests.services.v1.base import BaseDatabaseServiceTest
+
+from backend.src.schemas.v1.settings import (
+    BulkSettingsUpdateRequest,
+    SettingUpdateRequest,
+)
 from backend.src.services.v1.settings_service import SettingsService
-from backend.src.schemas.v1.settings import SettingUpdateRequest, BulkSettingsUpdateRequest
+from backend.tests.services.v1.base import BaseDatabaseServiceTest
 
 
 class TestSettingsServiceExceptions(BaseDatabaseServiceTest):
@@ -18,7 +23,9 @@ class TestSettingsServiceExceptions(BaseDatabaseServiceTest):
     def test_get_all_settings_exception_handling(self):
         """Test exception handling in get_all_settings."""
         # Mock database to raise an exception
-        with patch.object(self.service.db, 'get', side_effect=Exception("Database error")):
+        with patch.object(
+            self.service.db, "get", side_effect=Exception("Database error")
+        ):
             result = self.run_async(self.service.get_all_settings())
 
             self.assertFalse(result.success)
@@ -28,7 +35,9 @@ class TestSettingsServiceExceptions(BaseDatabaseServiceTest):
     def test_get_setting_exception_handling(self):
         """Test exception handling in get_setting."""
         # Mock database to raise an exception
-        with patch.object(self.service.db, 'get', side_effect=Exception("Database error")):
+        with patch.object(
+            self.service.db, "get", side_effect=Exception("Database error")
+        ):
             result = self.run_async(self.service.get_setting("test_setting"))
 
             self.assertIsNone(result)
@@ -38,7 +47,9 @@ class TestSettingsServiceExceptions(BaseDatabaseServiceTest):
         request = SettingUpdateRequest(id="test_setting", value="new_value")
 
         # Mock database to raise an exception
-        with patch.object(self.service.db, 'update', side_effect=Exception("Database error")):
+        with patch.object(
+            self.service.db, "update", side_effect=Exception("Database error")
+        ):
             result = self.run_async(self.service.update_setting(request))
 
             self.assertFalse(result.success)
@@ -47,13 +58,17 @@ class TestSettingsServiceExceptions(BaseDatabaseServiceTest):
     def test_create_or_update_setting_exception_handling(self):
         """Test exception handling in create_or_update_setting."""
         # Mock database to raise an exception
-        with patch.object(self.service.db, 'insert', side_effect=Exception("Database error")):
-            result = self.run_async(self.service.create_or_update_setting(
-                setting_id="test_setting",
-                category="category",
-                setting_type="type",
-                value="value"
-            ))
+        with patch.object(
+            self.service.db, "insert", side_effect=Exception("Database error")
+        ):
+            result = self.run_async(
+                self.service.create_or_update_setting(
+                    setting_id="test_setting",
+                    category="category",
+                    setting_type="type",
+                    value="value",
+                )
+            )
 
             self.assertFalse(result.success)
             self.assertIn("Error creating/updating setting", result.message)
@@ -65,7 +80,9 @@ class TestSettingsServiceExceptions(BaseDatabaseServiceTest):
         )
 
         # Mock database to raise an exception
-        with patch.object(self.service.db, 'get', side_effect=Exception("Database error")):
+        with patch.object(
+            self.service.db, "get", side_effect=Exception("Database error")
+        ):
             result = self.run_async(self.service.bulk_update_settings(request))
 
             self.assertFalse(result.success)

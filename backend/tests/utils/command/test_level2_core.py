@@ -12,10 +12,15 @@ These tests assume Level 1 tests pass.
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+from backend.src.utils.command import (
+    AsyncCommand,
+    CommandExecutionResult,
+    CommandState,
+    CommandType,
+)
 from backend.tests.utils.command.base import BaseCommandTest
-from backend.src.utils.command import AsyncCommand, CommandType, CommandState, CommandExecutionResult
 
 
 class TestLevel2Core(BaseCommandTest):
@@ -33,10 +38,7 @@ class TestLevel2Core(BaseCommandTest):
             error_command = cmd
             error_exception = exception
 
-        cmd = AsyncCommand(
-            ['nonexistent_command_12345'],
-            on_error=error_callback
-        )
+        cmd = AsyncCommand(["nonexistent_command_12345"], on_error=error_callback)
         result = self.run_async(cmd.execute())
 
         # Verify error callback was called
@@ -68,7 +70,7 @@ class TestLevel2Core(BaseCommandTest):
         self.assertEqual(complete_result, result)
 
         # Verify command succeeded
-        self.assert_command_success(result, 'Hello World')
+        self.assert_command_success(result, "Hello World")
 
     def test_13_start_callback_execution(self) -> None:
         """Test start callback is called when command starts."""
@@ -95,25 +97,25 @@ class TestLevel2Core(BaseCommandTest):
         callbacks_called = []
 
         def start_callback(cmd):
-            callbacks_called.append('start')
+            callbacks_called.append("start")
 
         def complete_callback(cmd, result):
-            callbacks_called.append('complete')
+            callbacks_called.append("complete")
 
         def error_callback(cmd, exception):
-            callbacks_called.append('error')
+            callbacks_called.append("error")
 
         # Test successful command
         cmd = AsyncCommand.cmd(
             "echo test",
             on_start=start_callback,
             on_complete=complete_callback,
-            on_error=error_callback
+            on_error=error_callback,
         )
         result = self.run_async(cmd.execute())
 
         # Verify only start and complete callbacks were called
-        self.assertEqual(callbacks_called, ['start', 'complete'])
+        self.assertEqual(callbacks_called, ["start", "complete"])
         self.assert_command_success(result)
 
     def test_15_gui_command_execution(self) -> None:
@@ -123,8 +125,8 @@ class TestLevel2Core(BaseCommandTest):
 
         # Verify GUI command properties
         self.assertEqual(result.command_type, CommandType.GUI)
-        self.assertEqual(result.stdout, '')  # GUI commands don't capture output
-        self.assertEqual(result.stderr, '')  # GUI commands don't capture output
+        self.assertEqual(result.stdout, "")  # GUI commands don't capture output
+        self.assertEqual(result.stderr, "")  # GUI commands don't capture output
         self.assertIsNotNone(result.pid)
         self.assertGreater(result.execution_time, 0)
 
@@ -143,40 +145,33 @@ class TestLevel2Core(BaseCommandTest):
         self.assertEqual(gui_result.command_type, CommandType.GUI)
 
         # CLI captures output, GUI doesn't
-        self.assertIn('CLI Test', cli_result.stdout)
-        self.assertEqual(gui_result.stdout, '')
+        self.assertIn("CLI Test", cli_result.stdout)
+        self.assertEqual(gui_result.stdout, "")
 
     def test_17_environment_variables_complex(self) -> None:
         """Test complex environment variable scenarios."""
-        env = {
-            'VAR1': 'value1',
-            'VAR2': 'value2',
-            'PATH': 'custom_path'
-        }
+        env = {"VAR1": "value1", "VAR2": "value2", "PATH": "custom_path"}
 
         cmd = AsyncCommand.cmd("echo %VAR1% %VAR2%", env=env)
         result = self.run_async(cmd.execute())
 
         # Verify environment variables were passed
         self.assert_command_success(result)
-        self.assertIn('value1', result.stdout)
-        self.assertIn('value2', result.stdout)
+        self.assertIn("value1", result.stdout)
+        self.assertIn("value2", result.stdout)
 
     def test_18_working_directory_complex(self) -> None:
         """Test complex working directory scenarios."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a test file in the directory
-            test_file = Path(temp_dir) / 'test.txt'
-            test_file.write_text('test content')
+            test_file = Path(temp_dir) / "test.txt"
+            test_file.write_text("test content")
 
-            cmd = AsyncCommand(
-                ['cmd', '/c', 'type', 'test.txt'],
-                cwd=temp_dir
-            )
+            cmd = AsyncCommand(["cmd", "/c", "type", "test.txt"], cwd=temp_dir)
             result = self.run_async(cmd.execute())
 
             # Verify command executed in correct directory
-            self.assert_command_success(result, 'test content')
+            self.assert_command_success(result, "test content")
 
     def test_19_command_with_timeout_parameter(self) -> None:
         """Test command with timeout parameter (not execution timeout)."""
@@ -195,26 +190,26 @@ class TestLevel2Core(BaseCommandTest):
             callbacks_called = []
 
             def start_callback(cmd):
-                callbacks_called.append('start')
+                callbacks_called.append("start")
 
             def complete_callback(cmd, result):
-                callbacks_called.append('complete')
+                callbacks_called.append("complete")
 
             cmd = AsyncCommand.cmd(
                 "echo %TEST_VAR%",
                 command_type=CommandType.CLI,
                 timeout=5.0,
                 cwd=temp_dir,
-                env={'TEST_VAR': 'mixed_test'},
+                env={"TEST_VAR": "mixed_test"},
                 on_start=start_callback,
-                on_complete=complete_callback
+                on_complete=complete_callback,
             )
 
             result = self.run_async(cmd.execute())
 
             # Verify all parameters worked together
-            self.assert_command_success(result, 'mixed_test')
-            self.assertEqual(callbacks_called, ['start', 'complete'])
+            self.assert_command_success(result, "mixed_test")
+            self.assertEqual(callbacks_called, ["start", "complete"])
             self.assertIn(temp_dir, str(result.command.cwd))
 
     def test_21_command_result_immutability(self) -> None:
@@ -250,7 +245,7 @@ class TestLevel2Core(BaseCommandTest):
 
     def test_23_command_execution_with_whitespace_args(self) -> None:
         """Test command execution with whitespace-only arguments."""
-        cmd = AsyncCommand(['   ', '\t', '\n'])
+        cmd = AsyncCommand(["   ", "\t", "\n"])
         result = self.run_async(cmd.execute())
 
         # Whitespace-only command should fail
@@ -259,6 +254,4 @@ class TestLevel2Core(BaseCommandTest):
         self.assertNotEqual(result.return_code, 0)
 
 
-__all__ = [
-    "TestLevel2Core"
-]
+__all__ = ["TestLevel2Core"]

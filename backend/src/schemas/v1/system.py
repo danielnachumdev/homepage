@@ -1,5 +1,6 @@
+from typing import List, Optional
+
 from pydantic import BaseModel
-from typing import Optional, List
 
 
 class CommandRequest(BaseModel):
@@ -8,6 +9,7 @@ class CommandRequest(BaseModel):
 
 class CommandResult(BaseModel):
     """Comprehensive result object for command execution."""
+
     args: List[str]
     returncode: int
     stdout: str
@@ -29,8 +31,4 @@ class CommandResponse(BaseModel):
     result: Optional[CommandResult] = None
 
 
-__all__ = [
-    "CommandRequest",
-    "CommandResponse",
-    "CommandResult"
-]
+__all__ = ["CommandRequest", "CommandResponse", "CommandResult"]

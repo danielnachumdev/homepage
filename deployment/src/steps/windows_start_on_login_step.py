@@ -9,8 +9,10 @@ import os
 import subprocess
 from pathlib import Path
 from typing import Optional
-from .base_step import Step
+
 from backend.src.utils.command import AsyncCommand
+
+from .base_step import Step
 
 
 class WindowsStartOnLoginStep(Step):
@@ -23,12 +25,14 @@ class WindowsStartOnLoginStep(Step):
     - Uninstall: Remove shortcuts from Windows startup folder
     """
 
-    def __init__(self,
-                 project_root: Optional[str] = None,
-                 frontend_dir: Optional[str] = None,
-                 backend_dir: Optional[str] = None,
-                 name: str = "windows-start-on-login",
-                 description: str = "Create Windows startup shortcuts to auto-launch services"):
+    def __init__(
+        self,
+        project_root: Optional[str] = None,
+        frontend_dir: Optional[str] = None,
+        backend_dir: Optional[str] = None,
+        name: str = "windows-start-on-login",
+        description: str = "Create Windows startup shortcuts to auto-launch services",
+    ):
         """
         Initialize the Windows start on login step.
 
@@ -59,8 +63,9 @@ class WindowsStartOnLoginStep(Step):
             self.backend_dir = Path(backend_dir)
 
         # Path to the startup script
-        self.startup_script = self.project_root / \
-            "deployment" / "scripts" / "startup_launcher.ps1"
+        self.startup_script = (
+            self.project_root / "deployment" / "scripts" / "startup_launcher.ps1"
+        )
 
         # Windows startup folder path
         self.startup_folder = self._get_startup_folder()
@@ -78,15 +83,22 @@ class WindowsStartOnLoginStep(Step):
         try:
             # Get the user's startup folder
             startup_path = os.path.expanduser(
-                "~\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup")
+                "~\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+            )
             return Path(startup_path)
         except Exception as e:
             self.logger.error("Failed to get startup folder path: %s", e)
             # Fallback to a relative path
             return Path("startup")
 
-    async def _create_shortcut(self, target_path: str, shortcut_path: str, arguments: str = "",
-                         working_directory: str = "", description: str = "") -> bool:
+    async def _create_shortcut(
+        self,
+        target_path: str,
+        shortcut_path: str,
+        arguments: str = "",
+        working_directory: str = "",
+        description: str = "",
+    ) -> bool:
         """
         Create a Windows shortcut using PowerShell.
 
@@ -162,26 +174,23 @@ $Shortcut.Save()
         self.logger.info("Creating Windows startup shortcuts")
 
         # Check if we're on Windows
-        if os.name != 'nt':
+        if os.name != "nt":
             self.logger.error("This step is only supported on Windows")
             return False
 
         # Check if startup script exists
         if not self.startup_script.exists():
-            self.logger.error(
-                "Startup script not found: %s", self.startup_script)
+            self.logger.error("Startup script not found: %s", self.startup_script)
             return False
 
         # Ensure startup folder exists
         if not self.startup_folder.exists():
-            self.logger.info("Creating startup folder: %s",
-                             self.startup_folder)
+            self.logger.info("Creating startup folder: %s", self.startup_folder)
             self.startup_folder.mkdir(parents=True, exist_ok=True)
 
         # Check if startup folder is writable
         if not os.access(self.startup_folder, os.W_OK):
-            self.logger.error(
-                "Startup folder is not writable: %s", self.startup_folder)
+            self.logger.error("Startup folder is not writable: %s", self.startup_folder)
             return False
 
         # Create the shortcut
@@ -195,12 +204,11 @@ $Shortcut.Save()
             shortcut_path=str(shortcut_path),
             arguments=f'-ExecutionPolicy Bypass -File "{self.startup_script}" {arguments}',
             working_directory=str(self.project_root),
-            description="Auto-start Homepage Frontend and Backend Services"
+            description="Auto-start Homepage Frontend and Backend Services",
         )
 
         if success:
-            self.logger.info(
-                "Startup shortcut created successfully: %s", shortcut_path)
+            self.logger.info("Startup shortcut created successfully: %s", shortcut_path)
             return True
         else:
             self.logger.error("Failed to create startup shortcut")
@@ -218,7 +226,7 @@ $Shortcut.Save()
         self.logger.info("Removing Windows startup shortcuts")
 
         # Check if we're on Windows
-        if os.name != 'nt':
+        if os.name != "nt":
             self.logger.error("This step is only supported on Windows")
             return False
 
@@ -243,14 +251,13 @@ $Shortcut.Save()
         self.logger.info("Validating Windows startup environment")
 
         # Check if we're on Windows
-        if os.name != 'nt':
+        if os.name != "nt":
             self.logger.error("This step is only supported on Windows")
             return False
 
         # Check if startup script exists
         if not self.startup_script.exists():
-            self.logger.error(
-                "Startup script not found: %s", self.startup_script)
+            self.logger.error("Startup script not found: %s", self.startup_script)
             return False
 
         self.logger.info("Startup script found: %s", self.startup_script)
@@ -258,15 +265,15 @@ $Shortcut.Save()
         # Check if startup folder exists or can be created
         if not self.startup_folder.exists():
             self.logger.info(
-                "Startup folder does not exist, will be created: %s", self.startup_folder)
+                "Startup folder does not exist, will be created: %s",
+                self.startup_folder,
+            )
         else:
-            self.logger.info("Startup folder found: %s",
-                             self.startup_folder)
+            self.logger.info("Startup folder found: %s", self.startup_folder)
 
         # Check if startup folder is writable
         if not os.access(self.startup_folder, os.W_OK):
-            self.logger.error(
-                "Startup folder is not writable: %s", self.startup_folder)
+            self.logger.error("Startup folder is not writable: %s", self.startup_folder)
             return False
 
         # Check if PowerShell is available using AsyncCommand
@@ -285,13 +292,11 @@ $Shortcut.Save()
 
         # Check if directories exist
         if not self.frontend_dir.exists():
-            self.logger.error(
-                "Frontend directory not found: %s", self.frontend_dir)
+            self.logger.error("Frontend directory not found: %s", self.frontend_dir)
             return False
 
         if not self.backend_dir.exists():
-            self.logger.error(
-                "Backend directory not found: %s", self.backend_dir)
+            self.logger.error("Backend directory not found: %s", self.backend_dir)
             return False
 
         self.logger.info("Windows startup validation passed")
@@ -314,8 +319,11 @@ $Shortcut.Save()
             startup_folder_exists = self.startup_folder.exists()
 
             # Check if startup folder is writable
-            startup_folder_writable = os.access(
-                self.startup_folder, os.W_OK) if startup_folder_exists else False
+            startup_folder_writable = (
+                os.access(self.startup_folder, os.W_OK)
+                if startup_folder_exists
+                else False
+            )
 
             # Check if shortcut already exists
             shortcut_path = self.startup_folder / self.shortcut_name
@@ -331,28 +339,32 @@ $Shortcut.Save()
             except Exception:
                 pass
 
-            metadata.update({
-                "project_root": str(self.project_root),
-                "frontend_dir": str(self.frontend_dir),
-                "backend_dir": str(self.backend_dir),
-                "startup_script": str(self.startup_script),
-                "startup_script_exists": startup_script_exists,
-                "startup_folder": str(self.startup_folder),
-                "startup_folder_exists": startup_folder_exists,
-                "startup_folder_writable": startup_folder_writable,
-                "shortcut_name": self.shortcut_name,
-                "shortcut_path": str(shortcut_path),
-                "shortcut_exists": shortcut_exists,
-                "powershell_available": powershell_available,
-                "platform": os.name
-            })
+            metadata.update(
+                {
+                    "project_root": str(self.project_root),
+                    "frontend_dir": str(self.frontend_dir),
+                    "backend_dir": str(self.backend_dir),
+                    "startup_script": str(self.startup_script),
+                    "startup_script_exists": startup_script_exists,
+                    "startup_folder": str(self.startup_folder),
+                    "startup_folder_exists": startup_folder_exists,
+                    "startup_folder_writable": startup_folder_writable,
+                    "shortcut_name": self.shortcut_name,
+                    "shortcut_path": str(shortcut_path),
+                    "shortcut_exists": shortcut_exists,
+                    "powershell_available": powershell_available,
+                    "platform": os.name,
+                }
+            )
         except Exception as e:
-            metadata.update({
-                "project_root": str(self.project_root),
-                "frontend_dir": str(self.frontend_dir),
-                "backend_dir": str(self.backend_dir),
-                "error": str(e)
-            })
+            metadata.update(
+                {
+                    "project_root": str(self.project_root),
+                    "frontend_dir": str(self.frontend_dir),
+                    "backend_dir": str(self.backend_dir),
+                    "error": str(e),
+                }
+            )
 
         return metadata
 
@@ -385,16 +397,10 @@ $Shortcut.Save()
                 "path": str(shortcut_path),
                 "size": stat.st_size,
                 "created": stat.st_ctime,
-                "modified": stat.st_mtime
+                "modified": stat.st_mtime,
             }
         except Exception as e:
-            return {
-                "status": "error",
-                "path": str(shortcut_path),
-                "error": str(e)
-            }
+            return {"status": "error", "path": str(shortcut_path), "error": str(e)}
 
 
-__all__ = [
-    "WindowsStartOnLoginStep"
-]
+__all__ = ["WindowsStartOnLoginStep"]

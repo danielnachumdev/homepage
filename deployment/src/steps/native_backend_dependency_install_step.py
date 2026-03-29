@@ -7,11 +7,13 @@ using the correct Python interpreter for the backend.
 
 import subprocess
 from pathlib import Path
-from typing import Optional, List
-from .base_step import Step
+from typing import List, Optional
+
 from backend.src.utils.command import AsyncCommand
+
 from ..utils.interpreter import find_python_interpreter, get_interpreter_info
 from ..utils.requirements import find_requirements_file, validate_requirements_file
+from .base_step import Step
 
 
 class NativeBackendDependencyInstallStep(Step):
@@ -23,11 +25,13 @@ class NativeBackendDependencyInstallStep(Step):
     - Uninstall: Not applicable for dependencies (they remain installed)
     """
 
-    def __init__(self,
-                 project_root: Optional[str] = None,
-                 backend_dir: Optional[str] = None,
-                 name: str = "native-backend-dependency-install",
-                 description: str = "Install Python dependencies from requirements.txt for backend"):
+    def __init__(
+        self,
+        project_root: Optional[str] = None,
+        backend_dir: Optional[str] = None,
+        name: str = "native-backend-dependency-install",
+        description: str = "Install Python dependencies from requirements.txt for backend",
+    ):
         """
         Initialize the dependency installation step.
 
@@ -59,31 +63,33 @@ class NativeBackendDependencyInstallStep(Step):
             bool: True if installation was successful, False otherwise
         """
         self.logger.info(
-            "Starting dependency installation for backend at %s", self.backend_dir)
+            "Starting dependency installation for backend at %s", self.backend_dir
+        )
 
         # Find the correct Python interpreter
         interpreter_path = await find_python_interpreter(
-            self.project_root, self.backend_dir)
+            self.project_root, self.backend_dir
+        )
         self.logger.info("Using Python interpreter: %s", interpreter_path)
 
         # Get interpreter info
         interpreter_info = await get_interpreter_info(interpreter_path)
         if not interpreter_info.working:
-            self.logger.error(
-                "Python interpreter is not working: %s", interpreter_path)
+            self.logger.error("Python interpreter is not working: %s", interpreter_path)
             return False
 
-        self.logger.info("Python interpreter info: %s",
-                         interpreter_info.version)
+        self.logger.info("Python interpreter info: %s", interpreter_info.version)
         if interpreter_info.is_virtual_env:
-            self.logger.info("Using virtual environment: %s",
-                             interpreter_info.executable)
+            self.logger.info(
+                "Using virtual environment: %s", interpreter_info.executable
+            )
 
         # Find requirements.txt file
         requirements_file = find_requirements_file(self.backend_dir)
         if requirements_file is None:
             self.logger.error(
-                "Requirements file not found in backend directory: %s", self.backend_dir)
+                "Requirements file not found in backend directory: %s", self.backend_dir
+            )
             return False
 
         self.logger.info("Found requirements file: %s", requirements_file)
@@ -92,17 +98,26 @@ class NativeBackendDependencyInstallStep(Step):
         validation_result = validate_requirements_file(requirements_file)
         if not validation_result.valid:
             self.logger.error(
-                "Requirements file validation failed: %s", validation_result.error)
+                "Requirements file validation failed: %s", validation_result.error
+            )
             return False
 
         requirements_info = validation_result.info
-        self.logger.info("Requirements file contains %d packages",
-                         requirements_info.package_count)
+        self.logger.info(
+            "Requirements file contains %d packages", requirements_info.package_count
+        )
 
         # Create command to install dependencies
         pip_install_cmd = AsyncCommand(
-            args=[interpreter_path, '-m', 'pip', 'install', '-r', str(requirements_file)],
-            cwd=self.backend_dir
+            args=[
+                interpreter_path,
+                "-m",
+                "pip",
+                "install",
+                "-r",
+                str(requirements_file),
+            ],
+            cwd=self.backend_dir,
         )
 
         result = await pip_install_cmd.execute()
@@ -119,9 +134,9 @@ class NativeBackendDependencyInstallStep(Step):
             bool: Always True (no-op)
         """
         self.logger.info(
-            "Dependency uninstallation requested - this is a no-op operation")
-        self.logger.info(
-            "Dependencies will remain installed for potential future use")
+            "Dependency uninstallation requested - this is a no-op operation"
+        )
+        self.logger.info("Dependencies will remain installed for potential future use")
         return True  # No-op, consider success
 
     async def validate(self) -> bool:
@@ -135,22 +150,21 @@ class NativeBackendDependencyInstallStep(Step):
 
         # Find the correct Python interpreter
         interpreter_path = await find_python_interpreter(
-            self.project_root, self.backend_dir)
+            self.project_root, self.backend_dir
+        )
         self.logger.info("Found Python interpreter: %s", interpreter_path)
 
         # Get interpreter info
         interpreter_info = await get_interpreter_info(interpreter_path)
         if not interpreter_info.working:
-            self.logger.error(
-                "Python interpreter is not working: %s", interpreter_path)
+            self.logger.error("Python interpreter is not working: %s", interpreter_path)
             return False
 
-        self.logger.info("Python interpreter is working: %s",
-                         interpreter_info.version)
+        self.logger.info("Python interpreter is working: %s", interpreter_info.version)
 
         # Check if pip is available
         pip_version_cmd = AsyncCommand(
-            args=[interpreter_path, '-m', 'pip', '--version']
+            args=[interpreter_path, "-m", "pip", "--version"]
         )
         result = await pip_version_cmd.execute()
         if not result.success:
@@ -162,7 +176,8 @@ class NativeBackendDependencyInstallStep(Step):
         requirements_file = find_requirements_file(self.backend_dir)
         if requirements_file is None:
             self.logger.error(
-                "Requirements file not found in backend directory: %s", self.backend_dir)
+                "Requirements file not found in backend directory: %s", self.backend_dir
+            )
             return False
 
         self.logger.info("Found requirements file: %s", requirements_file)
@@ -171,12 +186,15 @@ class NativeBackendDependencyInstallStep(Step):
         validation_result = validate_requirements_file(requirements_file)
         if not validation_result.valid:
             self.logger.error(
-                "Requirements file validation failed: %s", validation_result.error)
+                "Requirements file validation failed: %s", validation_result.error
+            )
             return False
 
         requirements_info = validation_result.info
         self.logger.info(
-            "Requirements file is valid with %d packages", requirements_info.package_count)
+            "Requirements file is valid with %d packages",
+            requirements_info.package_count,
+        )
 
         self.logger.info("Dependency installation validation passed")
         return True
@@ -192,39 +210,46 @@ class NativeBackendDependencyInstallStep(Step):
 
         try:
             # Get interpreter info
-            interpreter_path = await find_python_interpreter(self.project_root, self.backend_dir)
+            interpreter_path = await find_python_interpreter(
+                self.project_root, self.backend_dir
+            )
             interpreter_info = await get_interpreter_info(interpreter_path)
 
             # Get requirements info
             requirements_file = find_requirements_file(self.backend_dir)
             requirements_info = None
             if requirements_file:
-                validation_result = validate_requirements_file(
-                    requirements_file)
+                validation_result = validate_requirements_file(requirements_file)
                 if validation_result.valid:
                     requirements_info = validation_result.info
 
-            metadata.update({
-                "project_root": str(self.project_root),
-                "backend_dir": str(self.backend_dir),
-                "interpreter_path": interpreter_path,
-                "interpreter_working": interpreter_info.working,
-                "interpreter_version": interpreter_info.version,
-                "is_virtual_env": interpreter_info.is_virtual_env,
-                "requirements_file": str(requirements_file) if requirements_file else None,
-                "requirements_valid": requirements_info is not None,
-                "package_count": requirements_info.package_count if requirements_info else 0
-            })
+            metadata.update(
+                {
+                    "project_root": str(self.project_root),
+                    "backend_dir": str(self.backend_dir),
+                    "interpreter_path": interpreter_path,
+                    "interpreter_working": interpreter_info.working,
+                    "interpreter_version": interpreter_info.version,
+                    "is_virtual_env": interpreter_info.is_virtual_env,
+                    "requirements_file": (
+                        str(requirements_file) if requirements_file else None
+                    ),
+                    "requirements_valid": requirements_info is not None,
+                    "package_count": (
+                        requirements_info.package_count if requirements_info else 0
+                    ),
+                }
+            )
         except Exception as e:
-            metadata.update({
-                "project_root": str(self.project_root),
-                "backend_dir": str(self.backend_dir),
-                "error": str(e)
-            })
+            metadata.update(
+                {
+                    "project_root": str(self.project_root),
+                    "backend_dir": str(self.backend_dir),
+                    "error": str(e),
+                }
+            )
 
         return metadata
 
 
-__all__ = [
-    "NativeBackendDependencyInstallStep"
-]
+__all__ = ["NativeBackendDependencyInstallStep"]

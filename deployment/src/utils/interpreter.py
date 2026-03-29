@@ -8,13 +8,16 @@ prioritizing virtual environments over system Python.
 import os
 import sys
 from pathlib import Path
-from typing import Optional, List
-from .types import InterpreterInfo
+from typing import List, Optional
+
 from backend.src.utils.command import AsyncCommand
 
+from .types import InterpreterInfo
 
-async def find_python_interpreter(project_root: Optional[str] = None,
-                            backend_dir: Optional[str] = None) -> str:
+
+async def find_python_interpreter(
+    project_root: Optional[str] = None, backend_dir: Optional[str] = None
+) -> str:
     """
     Find the best Python interpreter to use for deployment.
 
@@ -46,18 +49,16 @@ async def find_python_interpreter(project_root: Optional[str] = None,
     # 1. Check for virtual environment in project root
     project_venv_paths = [
         project_root / "venv" / "Scripts" / "python.exe",  # Windows
-        project_root / "venv" / "bin" / "python",          # Linux/macOS
-        project_root / "venv" / "Scripts" /
-        "python",      # Windows (alternative)
+        project_root / "venv" / "bin" / "python",  # Linux/macOS
+        project_root / "venv" / "Scripts" / "python",  # Windows (alternative)
     ]
     interpreter_candidates.extend(project_venv_paths)
 
     # 2. Check for virtual environment in backend directory
     backend_venv_paths = [
-        backend_dir / "venv" / "Scripts" / "python.exe",   # Windows
-        backend_dir / "venv" / "bin" / "python",           # Linux/macOS
-        backend_dir / "venv" / "Scripts" /
-        "python",       # Windows (alternative)
+        backend_dir / "venv" / "Scripts" / "python.exe",  # Windows
+        backend_dir / "venv" / "bin" / "python",  # Linux/macOS
+        backend_dir / "venv" / "Scripts" / "python",  # Windows (alternative)
     ]
     interpreter_candidates.extend(backend_venv_paths)
 
@@ -89,7 +90,7 @@ async def _is_valid_python_interpreter(interpreter_path: Path) -> bool:
             return False
 
         # Try to run the interpreter
-        cmd = AsyncCommand([str(interpreter_path), '--version'])
+        cmd = AsyncCommand([str(interpreter_path), "--version"])
         result = await cmd.execute()
 
         # If we get here, the interpreter works
@@ -111,26 +112,35 @@ async def get_interpreter_info(interpreter_path: str) -> InterpreterInfo:
     """
     try:
         # Get version
-        version_cmd = AsyncCommand([interpreter_path, '--version'])
+        version_cmd = AsyncCommand([interpreter_path, "--version"])
         version_result = await version_cmd.execute()
 
         # Get executable path
-        executable_cmd = AsyncCommand([interpreter_path, '-c', 'import sys; print(sys.executable)'])
+        executable_cmd = AsyncCommand(
+            [interpreter_path, "-c", "import sys; print(sys.executable)"]
+        )
         executable_result = await executable_cmd.execute()
 
         # Check if it's in a virtual environment
-        venv_cmd = AsyncCommand([interpreter_path, '-c',
-            'import sys; print(hasattr(sys, "real_prefix") or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix))'])
+        venv_cmd = AsyncCommand(
+            [
+                interpreter_path,
+                "-c",
+                'import sys; print(hasattr(sys, "real_prefix") or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix))',
+            ]
+        )
         venv_result = await venv_cmd.execute()
 
-        is_venv = venv_result.stdout.strip().lower() == 'true'
+        is_venv = venv_result.stdout.strip().lower() == "true"
 
         return InterpreterInfo(
             path=interpreter_path,
             version=version_result.stdout.strip(),
             executable=executable_result.stdout.strip(),
             is_virtual_env=is_venv,
-            working=version_result.success and executable_result.success and venv_result.success
+            working=version_result.success
+            and executable_result.success
+            and venv_result.success,
         )
 
     except Exception as e:
@@ -140,12 +150,13 @@ async def get_interpreter_info(interpreter_path: str) -> InterpreterInfo:
             executable=interpreter_path,
             is_virtual_env=False,
             working=False,
-            error=str(e)
+            error=str(e),
         )
 
 
-async def list_available_interpreters(project_root: Optional[str] = None,
-                                backend_dir: Optional[str] = None) -> List[InterpreterInfo]:
+async def list_available_interpreters(
+    project_root: Optional[str] = None, backend_dir: Optional[str] = None
+) -> List[InterpreterInfo]:
     """
     List all available Python interpreters in order of preference.
 
@@ -172,18 +183,16 @@ async def list_available_interpreters(project_root: Optional[str] = None,
     # 1. Check for virtual environment in project root
     project_venv_paths = [
         project_root / "venv" / "Scripts" / "python.exe",  # Windows
-        project_root / "venv" / "bin" / "python",          # Linux/macOS
-        project_root / "venv" / "Scripts" /
-        "python",      # Windows (alternative)
+        project_root / "venv" / "bin" / "python",  # Linux/macOS
+        project_root / "venv" / "Scripts" / "python",  # Windows (alternative)
     ]
     interpreter_candidates.extend(project_venv_paths)
 
     # 2. Check for virtual environment in backend directory
     backend_venv_paths = [
-        backend_dir / "venv" / "Scripts" / "python.exe",   # Windows
-        backend_dir / "venv" / "bin" / "python",           # Linux/macOS
-        backend_dir / "venv" / "Scripts" /
-        "python",       # Windows (alternative)
+        backend_dir / "venv" / "Scripts" / "python.exe",  # Windows
+        backend_dir / "venv" / "bin" / "python",  # Linux/macOS
+        backend_dir / "venv" / "Scripts" / "python",  # Windows (alternative)
     ]
     interpreter_candidates.extend(backend_venv_paths)
 
@@ -203,5 +212,5 @@ async def list_available_interpreters(project_root: Optional[str] = None,
 __all__ = [
     "find_python_interpreter",
     "get_interpreter_info",
-    "list_available_interpreters"
+    "list_available_interpreters",
 ]

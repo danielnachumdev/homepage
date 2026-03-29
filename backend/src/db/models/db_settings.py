@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Boolean, DateTime, String
-from typing import Dict, Any
+from typing import Any, Dict
+
+from sqlalchemy import Boolean, Column, DateTime, String
 
 from ...utils.datetime import utc_now
 from .base import Base
@@ -30,13 +31,11 @@ class DbSettingsModel(Base):
             "is_populated": self.is_populated,
             "db_version": self.db_version,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
     def __repr__(self) -> str:
         return f"<DbSettingsModel(id='{self.id}', is_populated={self.is_populated}, version='{self.db_version}')>"
 
 
-__all__ = [
-    "DbSettingsModel"
-]
+__all__ = ["DbSettingsModel"]

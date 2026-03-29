@@ -5,6 +5,4 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-__all__ = [
-    "utc_now"
-]
+__all__ = ["utc_now"]

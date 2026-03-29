@@ -6,9 +6,10 @@ This step handles deploying the application using Docker Compose.
 
 from pathlib import Path
 from typing import Optional
-from deployment.src.steps.base_step import Step
-from backend.src.utils.command import AsyncCommand
+
 from backend.src.gateways.v1.docker_gateway.compose import DockerComposeGateway
+from backend.src.utils.command import AsyncCommand
+from deployment.src.steps.base_step import Step
 
 
 class DockerDeployStep(Step):
@@ -20,11 +21,13 @@ class DockerDeployStep(Step):
     - Uninstall: Run 'docker compose down' to stop and remove the services
     """
 
-    def __init__(self,
-                 project_root: Optional[str] = None,
-                 compose_file: Optional[str] = None,
-                 name: str = "docker-deploy",
-                 description: str = "Deploy homepage using Docker Compose"):
+    def __init__(
+        self,
+        project_root: Optional[str] = None,
+        compose_file: Optional[str] = None,
+        name: str = "docker-deploy",
+        description: str = "Deploy homepage using Docker Compose",
+    ):
         """
         Initialize the Docker deployment step.
 
@@ -60,25 +63,24 @@ class DockerDeployStep(Step):
         self.logger.warning("DOCKER DEPLOYMENT WARNING")
         self.logger.warning("=" * 60)
         self.logger.warning("You are deploying using Docker containers.")
-        self.logger.warning(
-            "This deployment method may limit some functionalities:")
+        self.logger.warning("This deployment method may limit some functionalities:")
         self.logger.warning("- Limited access to host system resources")
         self.logger.warning("- Potential networking restrictions")
-        self.logger.warning(
-            "- Reduced performance compared to native deployment")
+        self.logger.warning("- Reduced performance compared to native deployment")
         self.logger.warning("- May not support all system integrations")
         self.logger.warning("")
         self.logger.warning(
-            "For full functionality, consider using native deployment instead.")
+            "For full functionality, consider using native deployment instead."
+        )
         self.logger.warning("=" * 60)
 
         self.logger.info(
-            "Starting Docker deployment for project at %s", self.project_root)
+            "Starting Docker deployment for project at %s", self.project_root
+        )
 
         # Check if docker-compose.yml exists
         if not self.compose_file.exists():
-            self.logger.error(
-                "Docker compose file not found: %s", self.compose_file)
+            self.logger.error("Docker compose file not found: %s", self.compose_file)
             return False
 
         # Use DockerComposeGateway for the actual deployment
@@ -87,17 +89,21 @@ class DockerDeployStep(Step):
                 compose_file=str(self.compose_file),
                 project_dir=str(self.project_root),
                 detached=True,
-                build=True
+                build=True,
             )
 
             if result.raw.success:
                 self.logger.info("Docker compose up completed successfully")
                 self.logger.debug("Docker compose output: %s", result.raw.stdout)
                 if result.raw.stderr:
-                    self.logger.warning("Docker compose warnings: %s", result.raw.stderr)
+                    self.logger.warning(
+                        "Docker compose warnings: %s", result.raw.stderr
+                    )
                 return True
             else:
-                self.logger.error("Failed to start Docker services: %s", result.raw.stderr)
+                self.logger.error(
+                    "Failed to start Docker services: %s", result.raw.stderr
+                )
                 return False
 
         except Exception as e:
@@ -112,12 +118,12 @@ class DockerDeployStep(Step):
             bool: True if uninstallation was successful, False otherwise
         """
         self.logger.info(
-            "Stopping Docker deployment for project at %s", self.project_root)
+            "Stopping Docker deployment for project at %s", self.project_root
+        )
 
         # Check if docker-compose.yml exists
         if not self.compose_file.exists():
-            self.logger.warning(
-                "Docker compose file not found: %s", self.compose_file)
+            self.logger.warning("Docker compose file not found: %s", self.compose_file)
             # Consider this a success since there's nothing to uninstall
             return True
 
@@ -126,17 +132,21 @@ class DockerDeployStep(Step):
             result = await DockerComposeGateway.down(
                 compose_file=str(self.compose_file),
                 project_dir=str(self.project_root),
-                remove_volumes=False
+                remove_volumes=False,
             )
 
             if result.raw.success:
                 self.logger.info("Docker compose down completed successfully")
                 self.logger.debug("Docker compose output: %s", result.raw.stdout)
                 if result.raw.stderr:
-                    self.logger.warning("Docker compose warnings: %s", result.raw.stderr)
+                    self.logger.warning(
+                        "Docker compose warnings: %s", result.raw.stderr
+                    )
                 return True
             else:
-                self.logger.error("Failed to stop Docker services: %s", result.raw.stderr)
+                self.logger.error(
+                    "Failed to stop Docker services: %s", result.raw.stderr
+                )
                 return False
 
         except Exception as e:
@@ -152,7 +162,8 @@ class DockerDeployStep(Step):
         """
         # Display warnings about Docker deployment limitations
         self.logger.warning(
-            "Docker deployment validation - functionality limitations may apply")
+            "Docker deployment validation - functionality limitations may apply"
+        )
 
         self.logger.info("Validating Docker deployment environment")
 
@@ -166,8 +177,7 @@ class DockerDeployStep(Step):
 
         # Check if docker-compose.yml exists
         if not self.compose_file.exists():
-            self.logger.error(
-                "Docker compose file not found: %s", self.compose_file)
+            self.logger.error("Docker compose file not found: %s", self.compose_file)
             return False
 
         self.logger.info("Docker compose file found: %s", self.compose_file)
@@ -175,16 +185,15 @@ class DockerDeployStep(Step):
         # Check if project root is accessible
         if not self.project_root.exists() or not self.project_root.is_dir():
             self.logger.error(
-                "Project root directory not accessible: %s", self.project_root)
+                "Project root directory not accessible: %s", self.project_root
+            )
             return False
 
-        self.logger.info(
-            "Project root directory accessible: %s", self.project_root)
+        self.logger.info("Project root directory accessible: %s", self.project_root)
 
         # Try to validate the docker-compose.yml file
         config_cmd = AsyncCommand.cmd(
-            f"docker compose -f {self.compose_file} config",
-            cwd=self.project_root
+            f"docker compose -f {self.compose_file} config", cwd=self.project_root
         )
         result = await config_cmd.execute()
         if not result.success:
@@ -204,15 +213,15 @@ class DockerDeployStep(Step):
             Dict containing step metadata
         """
         metadata = await super().get_metadata()
-        metadata.update({
-            "project_root": str(self.project_root),
-            "compose_file": str(self.compose_file),
-            "compose_file_exists": self.compose_file.exists(),
-            "project_root_exists": self.project_root.exists()
-        })
+        metadata.update(
+            {
+                "project_root": str(self.project_root),
+                "compose_file": str(self.compose_file),
+                "compose_file_exists": self.compose_file.exists(),
+                "project_root_exists": self.project_root.exists(),
+            }
+        )
         return metadata
 
 
-__all__ = [
-    "DockerDeployStep"
-]
+__all__ = ["DockerDeployStep"]

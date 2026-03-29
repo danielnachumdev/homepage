@@ -6,7 +6,8 @@ This utility handles finding and managing requirements.txt files for deployment.
 
 import os
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
+
 from .types import PackageInfo, RequirementsInfo, RequirementsValidationResult
 
 
@@ -56,7 +57,7 @@ def get_requirements_info(requirements_file: Path) -> RequirementsInfo:
                 exists=False,
                 readable=False,
                 package_count=0,
-                packages=[]
+                packages=[],
             )
 
         if not requirements_file.is_file():
@@ -65,18 +66,18 @@ def get_requirements_info(requirements_file: Path) -> RequirementsInfo:
                 exists=True,
                 readable=False,
                 package_count=0,
-                packages=[]
+                packages=[],
             )
 
         # Read the file and parse packages
         packages = []
         try:
-            with open(requirements_file, 'r', encoding='utf-8') as f:
+            with open(requirements_file, "r", encoding="utf-8") as f:
                 for line_num, line in enumerate(f, 1):
                     line = line.strip()
 
                     # Skip empty lines and comments
-                    if not line or line.startswith('#'):
+                    if not line or line.startswith("#"):
                         continue
 
                     # Parse package specification
@@ -91,7 +92,7 @@ def get_requirements_info(requirements_file: Path) -> RequirementsInfo:
                 readable=False,
                 package_count=0,
                 packages=[],
-                error=str(e)
+                error=str(e),
             )
 
         return RequirementsInfo(
@@ -99,7 +100,7 @@ def get_requirements_info(requirements_file: Path) -> RequirementsInfo:
             exists=True,
             readable=True,
             package_count=len(packages),
-            packages=packages
+            packages=packages,
         )
 
     except Exception as e:
@@ -109,7 +110,7 @@ def get_requirements_info(requirements_file: Path) -> RequirementsInfo:
             readable=False,
             package_count=0,
             packages=[],
-            error=str(e)
+            error=str(e),
         )
 
 
@@ -126,57 +127,48 @@ def _parse_package_line(line: str, line_num: int) -> Optional[PackageInfo]:
     """
     try:
         # Remove any inline comments
-        if '#' in line:
-            line = line[:line.index('#')].strip()
+        if "#" in line:
+            line = line[: line.index("#")].strip()
 
         if not line:
             return None
 
         # Handle different requirement formats
-        if line.startswith('-r ') or line.startswith('--requirement '):
+        if line.startswith("-r ") or line.startswith("--requirement "):
             # Reference to another requirements file
-            ref_file = line.split(' ', 1)[1].strip()
+            ref_file = line.split(" ", 1)[1].strip()
             return PackageInfo(
                 type="reference",
                 name=ref_file,
                 line_number=line_num,
-                original_line=line
+                original_line=line,
             )
 
-        elif line.startswith('-e ') or line.startswith('--editable '):
+        elif line.startswith("-e ") or line.startswith("--editable "):
             # Editable install
-            package = line.split(' ', 1)[1].strip()
+            package = line.split(" ", 1)[1].strip()
             return PackageInfo(
-                type="editable",
-                name=package,
-                line_number=line_num,
-                original_line=line
+                type="editable", name=package, line_number=line_num, original_line=line
             )
 
-        elif line.startswith('-f ') or line.startswith('--find-links '):
+        elif line.startswith("-f ") or line.startswith("--find-links "):
             # Find links
-            url = line.split(' ', 1)[1].strip()
+            url = line.split(" ", 1)[1].strip()
             return PackageInfo(
-                type="find_links",
-                name=url,
-                line_number=line_num,
-                original_line=line
+                type="find_links", name=url, line_number=line_num, original_line=line
             )
 
-        elif line.startswith('-i ') or line.startswith('--index-url '):
+        elif line.startswith("-i ") or line.startswith("--index-url "):
             # Index URL
-            url = line.split(' ', 1)[1].strip()
+            url = line.split(" ", 1)[1].strip()
             return PackageInfo(
-                type="index_url",
-                name=url,
-                line_number=line_num,
-                original_line=line
+                type="index_url", name=url, line_number=line_num, original_line=line
             )
 
         else:
             # Regular package specification
             # Parse package name and version constraints
-            parts = line.split('==', 1)
+            parts = line.split("==", 1)
             if len(parts) == 2:
                 name, version = parts
                 return PackageInfo(
@@ -185,10 +177,10 @@ def _parse_package_line(line: str, line_num: int) -> Optional[PackageInfo]:
                     version=version.strip(),
                     constraint="==",
                     line_number=line_num,
-                    original_line=line
+                    original_line=line,
                 )
 
-            parts = line.split('>=', 1)
+            parts = line.split(">=", 1)
             if len(parts) == 2:
                 name, version = parts
                 return PackageInfo(
@@ -197,10 +189,10 @@ def _parse_package_line(line: str, line_num: int) -> Optional[PackageInfo]:
                     version=version.strip(),
                     constraint=">=",
                     line_number=line_num,
-                    original_line=line
+                    original_line=line,
                 )
 
-            parts = line.split('<=', 1)
+            parts = line.split("<=", 1)
             if len(parts) == 2:
                 name, version = parts
                 return PackageInfo(
@@ -209,10 +201,10 @@ def _parse_package_line(line: str, line_num: int) -> Optional[PackageInfo]:
                     version=version.strip(),
                     constraint="<=",
                     line_number=line_num,
-                    original_line=line
+                    original_line=line,
                 )
 
-            parts = line.split('>', 1)
+            parts = line.split(">", 1)
             if len(parts) == 2:
                 name, version = parts
                 return PackageInfo(
@@ -221,10 +213,10 @@ def _parse_package_line(line: str, line_num: int) -> Optional[PackageInfo]:
                     version=version.strip(),
                     constraint=">",
                     line_number=line_num,
-                    original_line=line
+                    original_line=line,
                 )
 
-            parts = line.split('<', 1)
+            parts = line.split("<", 1)
             if len(parts) == 2:
                 name, version = parts
                 return PackageInfo(
@@ -233,7 +225,7 @@ def _parse_package_line(line: str, line_num: int) -> Optional[PackageInfo]:
                     version=version.strip(),
                     constraint="<",
                     line_number=line_num,
-                    original_line=line
+                    original_line=line,
                 )
 
             # No version constraint, just package name
@@ -243,16 +235,13 @@ def _parse_package_line(line: str, line_num: int) -> Optional[PackageInfo]:
                 version=None,
                 constraint=None,
                 line_number=line_num,
-                original_line=line
+                original_line=line,
             )
 
     except Exception:
         # If parsing fails, return basic info
         return PackageInfo(
-            type="unknown",
-            name=line,
-            line_number=line_num,
-            original_line=line
+            type="unknown", name=line, line_number=line_num, original_line=line
         )
 
 
@@ -270,23 +259,17 @@ def validate_requirements_file(requirements_file: Path) -> RequirementsValidatio
 
     if not info.exists:
         return RequirementsValidationResult(
-            valid=False,
-            error="Requirements file does not exist",
-            info=info
+            valid=False, error="Requirements file does not exist", info=info
         )
 
     if not info.readable:
         return RequirementsValidationResult(
-            valid=False,
-            error="Requirements file is not readable",
-            info=info
+            valid=False, error="Requirements file is not readable", info=info
         )
 
     if info.package_count == 0:
         return RequirementsValidationResult(
-            valid=False,
-            error="No packages found in requirements file",
-            info=info
+            valid=False, error="No packages found in requirements file", info=info
         )
 
     # Check for any parsing errors
@@ -294,24 +277,19 @@ def validate_requirements_file(requirements_file: Path) -> RequirementsValidatio
     for package in info.packages:
         if package.type == "unknown":
             errors.append(
-                f"Line {package.line_number}: Could not parse '{package.original_line}'")
+                f"Line {package.line_number}: Could not parse '{package.original_line}'"
+            )
 
     if errors:
         return RequirementsValidationResult(
-            valid=False,
-            error="Parsing errors found",
-            errors=errors,
-            info=info
+            valid=False, error="Parsing errors found", errors=errors, info=info
         )
 
-    return RequirementsValidationResult(
-        valid=True,
-        info=info
-    )
+    return RequirementsValidationResult(valid=True, info=info)
 
 
 __all__ = [
     "find_requirements_file",
     "get_requirements_info",
-    "validate_requirements_file"
+    "validate_requirements_file",
 ]

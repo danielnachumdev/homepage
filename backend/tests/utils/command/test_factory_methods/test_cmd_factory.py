@@ -144,7 +144,9 @@ class TestCmdFactory(BaseCommandTest):
 
     def test_complex_combination(self):
         """Test complex combination of quotes, paths, and redirection."""
-        cmd = AsyncCommand.cmd('echo "C:\\Program Files\\Test" > output.txt && type output.txt')
+        cmd = AsyncCommand.cmd(
+            'echo "C:\\Program Files\\Test" > output.txt && type output.txt'
+        )
         result = self.run_async(cmd.execute())
         self.assertTrue(result.success, f"Command failed with stderr: {result.stderr}")
         self.assertIn("C:\\Program Files\\Test", result.stdout.strip())

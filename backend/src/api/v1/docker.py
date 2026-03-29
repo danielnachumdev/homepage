@@ -1,9 +1,17 @@
 from fastapi import APIRouter, HTTPException
+
 from ...schemas.v1.docker import (
-    ContainerNameRequest, LogsRequest, RemoveContainerRequest, RedeployRequest,
-    ContainerInfoResponse, ContainerListResponse, ContainerOperationResponse,
-    ContainerHealthResponse, ContainerLogsResponse, ContainerRemoveResponse,
-    ContainerRedeployResponse
+    ContainerHealthResponse,
+    ContainerInfoResponse,
+    ContainerListResponse,
+    ContainerLogsResponse,
+    ContainerNameRequest,
+    ContainerOperationResponse,
+    ContainerRedeployResponse,
+    ContainerRemoveResponse,
+    LogsRequest,
+    RedeployRequest,
+    RemoveContainerRequest,
 )
 from ...services.v1.docker_service import DockerService
 
@@ -113,6 +121,4 @@ async def batch_restart_containers(container_names: list[str]):
     return result
 
 
-__all__ = [
-    "router"
-]
+__all__ = ["router"]

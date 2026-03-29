@@ -40,8 +40,8 @@ Examples:
     python deploy.py --project_root=/path/to/project --log_level=DEBUG install_step docker-deploy
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add the current directory to Python path so we can import deployment modules

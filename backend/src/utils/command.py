@@ -9,13 +9,13 @@ import asyncio
 import os
 import subprocess
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Union, Callable, Dict, Literal
-from datetime import datetime
+from typing import Callable, Dict, List, Literal, Optional, Union
 
 try:
-    from ..schemas.v1.system import CommandResult, CommandResponse
+    from ..schemas.v1.system import CommandResponse, CommandResult
     from ..utils.logger import get_logger
 except ImportError:
     # Fallback for when running as standalone
@@ -27,7 +27,6 @@ except ImportError:
             for key, value in kwargs.items():
                 setattr(self, key, value)
 
-
     class CommandResponse:
         """Response object for command execution."""
 
@@ -35,14 +34,15 @@ except ImportError:
             for key, value in kwargs.items():
                 setattr(self, key, value)
 
-
     def get_logger(name):
         import logging
+
         return logging.getLogger(name)
 
 
 class CommandState(Enum):
     """Enumeration of possible command states."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -53,6 +53,7 @@ class CommandState(Enum):
 
 class CommandType(Enum):
     """Enumeration of command types."""
+
     CLI = "cli"
     GUI = "gui"
 
@@ -60,7 +61,8 @@ class CommandType(Enum):
 @dataclass
 class CommandExecutionResult:
     """Result of command execution with comprehensive details."""
-    command: 'AsyncCommand'
+
+    command: "AsyncCommand"
     success: bool
     return_code: int
     stdout: str
@@ -104,15 +106,17 @@ class AsyncCommand:
     """
 
     def __init__(
-            self,
-            args: List[str],
-            command_type: CommandType = CommandType.CLI,
-            timeout: Optional[float] = None,
-            cwd: Optional[Union[str, Path]] = None,
-            env: Optional[Dict[str, str]] = None,
-            on_start: Optional[Callable[['AsyncCommand'], None]] = None,
-            on_complete: Optional[Callable[['AsyncCommand', CommandExecutionResult], None]] = None,
-            on_error: Optional[Callable[['AsyncCommand', Exception], None]] = None,
+        self,
+        args: List[str],
+        command_type: CommandType = CommandType.CLI,
+        timeout: Optional[float] = None,
+        cwd: Optional[Union[str, Path]] = None,
+        env: Optional[Dict[str, str]] = None,
+        on_start: Optional[Callable[["AsyncCommand"], None]] = None,
+        on_complete: Optional[
+            Callable[["AsyncCommand", CommandExecutionResult], None]
+        ] = None,
+        on_error: Optional[Callable[["AsyncCommand", Exception], None]] = None,
     ):
         """
         Initialize the AsyncCommand.
@@ -161,7 +165,12 @@ class AsyncCommand:
     @property
     def is_completed(self) -> bool:
         """Check if the command has completed (successfully or not)."""
-        return self._state in [CommandState.COMPLETED, CommandState.FAILED, CommandState.TIMEOUT, CommandState.KILLED]
+        return self._state in [
+            CommandState.COMPLETED,
+            CommandState.FAILED,
+            CommandState.TIMEOUT,
+            CommandState.KILLED,
+        ]
 
     @property
     def result(self) -> Optional[CommandExecutionResult]:
@@ -182,16 +191,19 @@ class AsyncCommand:
             RuntimeError: If command is not in pending state
         """
         # Log command execution start
-        self.logger.info("Executing command (async)", extra={
-            "data": {
-                "command": " ".join(self.args),
-                "command_args": self.args,
-                "command_type": self.command_type.value,
-                "timeout": timeout or self.timeout,
-                "cwd": str(self.cwd) if self.cwd else None,
-                "env_keys": list(self.env.keys()) if self.env else None
-            }
-        })
+        self.logger.info(
+            "Executing command (async)",
+            extra={
+                "data": {
+                    "command": " ".join(self.args),
+                    "command_args": self.args,
+                    "command_type": self.command_type.value,
+                    "timeout": timeout or self.timeout,
+                    "cwd": str(self.cwd) if self.cwd else None,
+                    "env_keys": list(self.env.keys()) if self.env else None,
+                }
+            },
+        )
 
         # Check if command is in pending state
         if self._state != CommandState.PENDING:
@@ -209,7 +221,7 @@ class AsyncCommand:
                 execution_time=0.0,
                 start_time=self._start_time,
                 end_time=end_time,
-                state=CommandState.FAILED
+                state=CommandState.FAILED,
             )
             self._result = result
             self._state = CommandState.FAILED
@@ -232,7 +244,12 @@ class AsyncCommand:
 
             return result
 
-        except (OSError, ValueError, subprocess.SubprocessError, asyncio.TimeoutError) as e:
+        except (
+            OSError,
+            ValueError,
+            subprocess.SubprocessError,
+            asyncio.TimeoutError,
+        ) as e:
             # Handle unexpected errors
             end_time = datetime.now()
             execution_time = (end_time - self._start_time).total_seconds()
@@ -248,7 +265,7 @@ class AsyncCommand:
                 start_time=self._start_time,
                 end_time=end_time,
                 command_type=self.command_type,
-                exception=e
+                exception=e,
             )
 
             self._state = CommandState.FAILED
@@ -259,7 +276,9 @@ class AsyncCommand:
 
             return result
 
-    async def _execute_cli_strategy(self, timeout: Optional[float] = None) -> CommandExecutionResult:
+    async def _execute_cli_strategy(
+        self, timeout: Optional[float] = None
+    ) -> CommandExecutionResult:
         """Execute using CLI strategy asynchronously."""
         start_time = self._start_time or datetime.now()
         effective_timeout = timeout if timeout is not None else self.timeout
@@ -278,78 +297,94 @@ class AsyncCommand:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=str(self.cwd) if self.cwd else None,
-                env=env
+                env=env,
             )
 
             pid = self._process.pid
-            self.logger.debug("CLI subprocess created (async)", extra={
-                "data": {
-                    "pid": pid,
-                    "command": " ".join(self.args),
-                    "timeout": effective_timeout
-                }
-            })
+            self.logger.debug(
+                "CLI subprocess created (async)",
+                extra={
+                    "data": {
+                        "pid": pid,
+                        "command": " ".join(self.args),
+                        "timeout": effective_timeout,
+                    }
+                },
+            )
 
             # Wait for completion with timeout
             try:
                 # Use asyncio.wait_for with the process directly instead of asyncio.to_thread
-                stdout, stderr = await asyncio.wait_for(self._process.communicate(),
-                                                        timeout=effective_timeout)
+                stdout, stderr = await asyncio.wait_for(
+                    self._process.communicate(), timeout=effective_timeout
+                )
                 returncode = self._process.returncode
 
                 # Decode bytes to strings
-                stdout = stdout.decode('utf8') if stdout else ""
-                stderr = stderr.decode('utf8') if stderr else ""
+                stdout = stdout.decode("utf8") if stdout else ""
+                stderr = stderr.decode("utf8") if stderr else ""
 
                 if returncode == 0:
-                    self.logger.info("CLI subprocess completed successfully (async)", extra={
-                        "data": {
-                            "pid": pid,
-                            "command": " ".join(self.args),
-                            "returncode": returncode,
-                            "stdout_length": len(stdout),
-                            "stderr_length": len(stderr)
-                        }
-                    })
+                    self.logger.info(
+                        "CLI subprocess completed successfully (async)",
+                        extra={
+                            "data": {
+                                "pid": pid,
+                                "command": " ".join(self.args),
+                                "returncode": returncode,
+                                "stdout_length": len(stdout),
+                                "stderr_length": len(stderr),
+                            }
+                        },
+                    )
                 else:
-                    self.logger.warning("CLI subprocess completed with non-zero exit code (async)", extra={
-                        "data": {
-                            "pid": pid,
-                            "command": " ".join(self.args),
-                            "returncode": returncode,
-                            "stderr_length": len(stderr)
-                        }
-                    })
+                    self.logger.warning(
+                        "CLI subprocess completed with non-zero exit code (async)",
+                        extra={
+                            "data": {
+                                "pid": pid,
+                                "command": " ".join(self.args),
+                                "returncode": returncode,
+                                "stderr_length": len(stderr),
+                            }
+                        },
+                    )
 
             except asyncio.TimeoutError:
                 # Kill the process on timeout
-                self.logger.warning("CLI subprocess timed out, killing process (async)", extra={
-                    "data": {
-                        "pid": pid,
-                        "command": " ".join(self.args),
-                        "timeout": effective_timeout
-                    }
-                })
+                self.logger.warning(
+                    "CLI subprocess timed out, killing process (async)",
+                    extra={
+                        "data": {
+                            "pid": pid,
+                            "command": " ".join(self.args),
+                            "timeout": effective_timeout,
+                        }
+                    },
+                )
 
                 try:
                     self._process.kill()
                     stdout, stderr = await self._process.communicate()
                     # Decode bytes to strings
-                    stdout = stdout.decode('utf-8', errors='replace') if stdout else ""
-                    stderr = stderr.decode('utf-8', errors='replace') if stderr else ""
+                    stdout = stdout.decode("utf-8", errors="replace") if stdout else ""
+                    stderr = stderr.decode("utf-8", errors="replace") if stderr else ""
                 except (OSError, subprocess.SubprocessError, BaseException):
                     stdout, stderr = "", ""
                 returncode = -1
 
-                self.logger.error("CLI subprocess killed due to timeout (async)", extra={
-                    "data": {
-                        "pid": pid,
-                        "command": " ".join(self.args),
-                        "timeout": effective_timeout,
-                        "stderr_length": len(stderr),
-                        "stdout_length": len(stdout)
-                    }
-                })
+                self.logger.error(
+                    "CLI subprocess killed due to timeout (async)",
+                    extra={
+                        "data": {
+                            "pid": pid,
+                            "command": " ".join(self.args),
+                            "timeout": effective_timeout,
+                            "stderr_length": len(stderr),
+                            "stdout_length": len(stdout),
+                        }
+                    },
+                )
 
                 # Set timeout state and return early
                 end_time = datetime.now()
@@ -367,7 +402,7 @@ class AsyncCommand:
                     start_time=start_time,
                     end_time=end_time,
                     pid=pid,
-                    command_type=self.command_type
+                    command_type=self.command_type,
                 )
 
                 self._state = CommandState.TIMEOUT
@@ -383,13 +418,16 @@ class AsyncCommand:
             stdout = ""
             stderr = f"CLI command failed to start: {str(e)}"
 
-            self.logger.error("CLI subprocess execution failed (async)", extra={
-                "data": {
-                    "command": " ".join(self.args),
-                    "error": str(e),
-                    "timeout": effective_timeout
-                }
-            })
+            self.logger.error(
+                "CLI subprocess execution failed (async)",
+                extra={
+                    "data": {
+                        "command": " ".join(self.args),
+                        "error": str(e),
+                        "timeout": effective_timeout,
+                    }
+                },
+            )
 
         end_time = datetime.now()
         execution_time = (end_time - start_time).total_seconds()
@@ -398,7 +436,11 @@ class AsyncCommand:
 
         # Check if this was a timeout
         timeout_occurred = False
-        if returncode == -1 and effective_timeout is not None and execution_time >= effective_timeout * 0.9:
+        if (
+            returncode == -1
+            and effective_timeout is not None
+            and execution_time >= effective_timeout * 0.9
+        ):
             state = CommandState.TIMEOUT
             timeout_occurred = True
 
@@ -414,7 +456,7 @@ class AsyncCommand:
             start_time=start_time,
             end_time=end_time,
             pid=self._process.pid if self._process else None,
-            command_type=self.command_type
+            command_type=self.command_type,
         )
 
         self._state = state
@@ -430,7 +472,9 @@ class AsyncCommand:
 
         return result
 
-    async def _execute_gui_strategy(self, timeout: Optional[float] = None) -> CommandExecutionResult:
+    async def _execute_gui_strategy(
+        self, timeout: Optional[float] = None
+    ) -> CommandExecutionResult:
         """Execute using GUI strategy asynchronously."""
         start_time = self._start_time or datetime.now()
         effective_timeout = timeout if timeout is not None else self.timeout
@@ -443,54 +487,62 @@ class AsyncCommand:
                 env.update(self.env)
 
             self._process = subprocess.Popen(
-                self.args,
-                shell=True,
-                cwd=str(self.cwd) if self.cwd else None,
-                env=env
+                self.args, shell=True, cwd=str(self.cwd) if self.cwd else None, env=env
             )
 
             pid = self._process.pid
-            self.logger.debug("GUI subprocess created (async)", extra={
-                "data": {
-                    "pid": pid,
-                    "command": " ".join(self.args),
-                    "timeout": effective_timeout
-                }
-            })
+            self.logger.debug(
+                "GUI subprocess created (async)",
+                extra={
+                    "data": {
+                        "pid": pid,
+                        "command": " ".join(self.args),
+                        "timeout": effective_timeout,
+                    }
+                },
+            )
 
             # Wait for completion with timeout
             try:
                 returncode = await asyncio.wait_for(
-                    asyncio.to_thread(self._process.wait),
-                    timeout=effective_timeout
+                    asyncio.to_thread(self._process.wait), timeout=effective_timeout
                 )
 
                 if returncode == 0:
-                    self.logger.info("GUI subprocess completed successfully (async)", extra={
-                        "data": {
-                            "pid": pid,
-                            "command": " ".join(self.args),
-                            "returncode": returncode
-                        }
-                    })
+                    self.logger.info(
+                        "GUI subprocess completed successfully (async)",
+                        extra={
+                            "data": {
+                                "pid": pid,
+                                "command": " ".join(self.args),
+                                "returncode": returncode,
+                            }
+                        },
+                    )
                 else:
-                    self.logger.warning("GUI subprocess completed with non-zero exit code (async)", extra={
-                        "data": {
-                            "pid": pid,
-                            "command": " ".join(self.args),
-                            "returncode": returncode
-                        }
-                    })
+                    self.logger.warning(
+                        "GUI subprocess completed with non-zero exit code (async)",
+                        extra={
+                            "data": {
+                                "pid": pid,
+                                "command": " ".join(self.args),
+                                "returncode": returncode,
+                            }
+                        },
+                    )
 
             except asyncio.TimeoutError:
                 # Kill the process on timeout
-                self.logger.warning("GUI subprocess timed out, killing process (async)", extra={
-                    "data": {
-                        "pid": pid,
-                        "command": " ".join(self.args),
-                        "timeout": effective_timeout
-                    }
-                })
+                self.logger.warning(
+                    "GUI subprocess timed out, killing process (async)",
+                    extra={
+                        "data": {
+                            "pid": pid,
+                            "command": " ".join(self.args),
+                            "timeout": effective_timeout,
+                        }
+                    },
+                )
 
                 try:
                     self._process.kill()
@@ -499,13 +551,16 @@ class AsyncCommand:
                     pass
                 returncode = -1
 
-                self.logger.error("GUI subprocess killed due to timeout (async)", extra={
-                    "data": {
-                        "pid": pid,
-                        "command": " ".join(self.args),
-                        "timeout": effective_timeout
-                    }
-                })
+                self.logger.error(
+                    "GUI subprocess killed due to timeout (async)",
+                    extra={
+                        "data": {
+                            "pid": pid,
+                            "command": " ".join(self.args),
+                            "timeout": effective_timeout,
+                        }
+                    },
+                )
 
                 # Set timeout state and return early
                 end_time = datetime.now()
@@ -523,7 +578,7 @@ class AsyncCommand:
                     start_time=start_time,
                     end_time=end_time,
                     pid=pid,
-                    command_type=self.command_type
+                    command_type=self.command_type,
                 )
 
                 self._state = CommandState.TIMEOUT
@@ -536,13 +591,16 @@ class AsyncCommand:
 
         except (OSError, ValueError, subprocess.SubprocessError) as e:
             returncode = -1
-            self.logger.error("GUI subprocess execution failed (async)", extra={
-                "data": {
-                    "command": " ".join(self.args),
-                    "error": str(e),
-                    "timeout": effective_timeout
-                }
-            })
+            self.logger.error(
+                "GUI subprocess execution failed (async)",
+                extra={
+                    "data": {
+                        "command": " ".join(self.args),
+                        "error": str(e),
+                        "timeout": effective_timeout,
+                    }
+                },
+            )
 
         end_time = datetime.now()
         execution_time = (end_time - start_time).total_seconds()
@@ -551,7 +609,11 @@ class AsyncCommand:
 
         # Check if this was a timeout
         timeout_occurred = False
-        if returncode == -1 and effective_timeout is not None and execution_time >= effective_timeout * 0.9:
+        if (
+            returncode == -1
+            and effective_timeout is not None
+            and execution_time >= effective_timeout * 0.9
+        ):
             state = CommandState.TIMEOUT
             timeout_occurred = True
 
@@ -567,7 +629,7 @@ class AsyncCommand:
             start_time=start_time,
             end_time=end_time,
             pid=self._process.pid if self._process else None,
-            command_type=self.command_type
+            command_type=self.command_type,
         )
 
         self._state = state
@@ -590,23 +652,29 @@ class AsyncCommand:
         Returns:
             bool: True if the command was killed, False otherwise
         """
-        self.logger.info("Attempting to kill command", extra={
-            "data": {
-                "command": " ".join(self.args),
-                "state": self._state.value,
-                "has_process": self._process is not None
-            }
-        })
-
-        if not self._process or not self.is_running:
-            self.logger.warning("Attempted to kill command that is not running", extra={
+        self.logger.info(
+            "Attempting to kill command",
+            extra={
                 "data": {
                     "command": " ".join(self.args),
                     "state": self._state.value,
                     "has_process": self._process is not None,
-                    "is_running": self.is_running
                 }
-            })
+            },
+        )
+
+        if not self._process or not self.is_running:
+            self.logger.warning(
+                "Attempted to kill command that is not running",
+                extra={
+                    "data": {
+                        "command": " ".join(self.args),
+                        "state": self._state.value,
+                        "has_process": self._process is not None,
+                        "is_running": self.is_running,
+                    }
+                },
+            )
             return False
 
         pid = self._process.pid
@@ -614,23 +682,29 @@ class AsyncCommand:
             self._process.kill()
             self._state = CommandState.KILLED
 
-            self.logger.info("Command killed successfully", extra={
-                "data": {
-                    "command": " ".join(self.args),
-                    "pid": pid,
-                    "state": self._state.value
-                }
-            })
+            self.logger.info(
+                "Command killed successfully",
+                extra={
+                    "data": {
+                        "command": " ".join(self.args),
+                        "pid": pid,
+                        "state": self._state.value,
+                    }
+                },
+            )
             return True
         except (OSError, subprocess.SubprocessError) as e:
-            self.logger.error("Failed to kill command", extra={
-                "data": {
-                    "command": " ".join(self.args),
-                    "pid": pid,
-                    "error": str(e),
-                    "error_type": type(e).__name__
-                }
-            })
+            self.logger.error(
+                "Failed to kill command",
+                extra={
+                    "data": {
+                        "command": " ".join(self.args),
+                        "pid": pid,
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                    }
+                },
+            )
             return False
 
     def cleanup(self) -> None:
@@ -652,21 +726,24 @@ class AsyncCommand:
         Returns:
             CommandExecutionResult: The execution result
         """
-        self.logger.info("Waiting for command to complete", extra={
-            "data": {
-                "command": " ".join(self.args),
-                "state": self._state.value
-            }
-        })
+        self.logger.info(
+            "Waiting for command to complete",
+            extra={
+                "data": {"command": " ".join(self.args), "state": self._state.value}
+            },
+        )
 
         if self._result:
-            self.logger.debug("Command already completed, returning cached result", extra={
-                "data": {
-                    "command": " ".join(self.args),
-                    "state": self._state.value,
-                    "success": self._result.success
-                }
-            })
+            self.logger.debug(
+                "Command already completed, returning cached result",
+                extra={
+                    "data": {
+                        "command": " ".join(self.args),
+                        "state": self._state.value,
+                        "success": self._result.success,
+                    }
+                },
+            )
             return self._result
 
         # If not running, execute first
@@ -677,13 +754,16 @@ class AsyncCommand:
         while not self.is_completed:
             await asyncio.sleep(0.1)
 
-        self.logger.info("Command completed", extra={
-            "data": {
-                "command": " ".join(self.args),
-                "state": self._state.value,
-                "success": self._result.success if self._result else False
-            }
-        })
+        self.logger.info(
+            "Command completed",
+            extra={
+                "data": {
+                    "command": " ".join(self.args),
+                    "state": self._state.value,
+                    "success": self._result.success if self._result else False,
+                }
+            },
+        )
 
         return self._result
 
@@ -695,7 +775,7 @@ class AsyncCommand:
                 return_code=-1,
                 stdout="",
                 stderr="Command not executed",
-                execution_time=0.0
+                execution_time=0.0,
             )
 
         return CommandResult(
@@ -703,29 +783,31 @@ class AsyncCommand:
             return_code=self._result.return_code,
             stdout=self._result.stdout,
             stderr=self._result.stderr,
-            execution_time=self._result.execution_time
+            execution_time=self._result.execution_time,
         )
 
     def to_command_response(self) -> CommandResponse:
         """Convert to CommandResponse schema."""
         if not self._result:
             return CommandResponse(
-                success=False,
-                message="Command not executed",
-                data={}
+                success=False, message="Command not executed", data={}
             )
 
         return CommandResponse(
             success=self._result.success,
-            message="Command executed successfully" if self._result.success else "Command failed",
+            message=(
+                "Command executed successfully"
+                if self._result.success
+                else "Command failed"
+            ),
             data={
                 "return_code": self._result.return_code,
                 "stdout": self._result.stdout,
                 "stderr": self._result.stderr,
                 "execution_time": self._result.execution_time,
                 "state": self._state.value,
-                "pid": self._result.pid
-            }
+                "pid": self._result.pid,
+            },
         )
 
     @staticmethod
@@ -767,7 +849,7 @@ class AsyncCommand:
                     # Start of quoted string
                     in_quotes = True
                     quote_char = char
-                elif char == ' ':
+                elif char == " ":
                     # Space outside quotes - end of current argument
                     if current_arg:
                         args.append(current_arg)
@@ -793,7 +875,7 @@ class AsyncCommand:
         return args
 
     @staticmethod
-    def from_str(command: str, **kwargs) -> 'AsyncCommand':
+    def from_str(command: str, **kwargs) -> "AsyncCommand":
         """
         Create a shell command.
 
@@ -804,18 +886,17 @@ class AsyncCommand:
         Returns:
             AsyncCommand: Configured command instance
         """
-        kwargs['command_type'] = kwargs.get('command_type', CommandType.CLI)
+        kwargs["command_type"] = kwargs.get("command_type", CommandType.CLI)
         if '"' in command or "'" in command:
             logger.warning(
                 "Command '{}' contains quotes which can lead to the command failing due to parsing. It is recommended to build explicitly using the constructor to be able to escape the quotes correctly.".format(
-                    command))
-        return AsyncCommand(
-            args=AsyncCommand._parse_command_string(command),
-            **kwargs
-        )
+                    command
+                )
+            )
+        return AsyncCommand(args=AsyncCommand._parse_command_string(command), **kwargs)
 
     @staticmethod
-    def cmd(command: str, **kwargs) -> 'AsyncCommand':
+    def cmd(command: str, **kwargs) -> "AsyncCommand":
         """Create a Windows CMD command with proper argument handling."""
         stripped_command = command.strip()
         # For cmd, we pass the command directly to /c without additional quoting
@@ -824,7 +905,7 @@ class AsyncCommand:
         return AsyncCommand(args, **kwargs)
 
     @staticmethod
-    def powershell(command: str, **kwargs) -> 'AsyncCommand':
+    def powershell(command: str, **kwargs) -> "AsyncCommand":
         """Create a PowerShell command with proper argument handling."""
         stripped_command = command.strip()
         # For PowerShell, we pass the command directly to -Command without additional quoting
@@ -833,7 +914,7 @@ class AsyncCommand:
         return AsyncCommand(args, **kwargs)
 
     @staticmethod
-    def wsl(command: str, **kwargs) -> 'AsyncCommand':
+    def wsl(command: str, **kwargs) -> "AsyncCommand":
         """Create a WSL command with proper argument handling."""
         stripped_command = command.strip()
         # For WSL, we pass the command directly to bash -c
@@ -851,8 +932,8 @@ class AsyncCommand:
 
 class CommonCommands:
     @staticmethod
-    def kill_pid(pid: int, **kwargs) -> 'AsyncCommand':
-        return AsyncCommand.powershell(f'taskkill /PID {pid} /F', **kwargs)
+    def kill_pid(pid: int, **kwargs) -> "AsyncCommand":
+        return AsyncCommand.powershell(f"taskkill /PID {pid} /F", **kwargs)
 
 
 __all__ = [
@@ -860,5 +941,5 @@ __all__ = [
     "CommandType",
     "CommandExecutionResult",
     "AsyncCommand",
-    "CommonCommands"
+    "CommonCommands",
 ]

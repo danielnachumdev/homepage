@@ -1,11 +1,13 @@
 """
 Tests for SpeedTestService continuous testing functionality.
 """
+
 import asyncio
 from unittest.mock import patch
-from backend.tests.services.v1.speedtest.base import BaseSpeedTestServiceTest
-from backend.src.services.v1.speedtest_service import SpeedTestService
+
 from backend.src.schemas.v1.speedtest import SpeedTestRequest
+from backend.src.services.v1.speedtest_service import SpeedTestService
+from backend.tests.services.v1.speedtest.base import BaseSpeedTestServiceTest
 
 
 class TestSpeedTestServiceContinuous(BaseSpeedTestServiceTest):
@@ -116,7 +118,9 @@ class TestSpeedTestServiceContinuous(BaseSpeedTestServiceTest):
     def test_continuous_test_loop_exception(self):
         """Test continuous test loop exception handling."""
         # Mock perform_speed_test to raise an exception
-        with patch.object(self.service, 'perform_speed_test', side_effect=Exception("Test error")):
+        with patch.object(
+            self.service, "perform_speed_test", side_effect=Exception("Test error")
+        ):
             request = SpeedTestRequest(interval_seconds=0.1)
             self.run_async(self.service.start_continuous_testing(request))
 
@@ -129,7 +133,7 @@ class TestSpeedTestServiceContinuous(BaseSpeedTestServiceTest):
     def test_start_continuous_testing_exception(self):
         """Test exception handling in start_continuous_testing."""
         # Mock asyncio.create_task to raise an exception
-        with patch('asyncio.create_task', side_effect=Exception("Task creation error")):
+        with patch("asyncio.create_task", side_effect=Exception("Task creation error")):
             request = SpeedTestRequest(interval_seconds=5)
             result = self.run_async(self.service.start_continuous_testing(request))
 
@@ -143,7 +147,9 @@ class TestSpeedTestServiceContinuous(BaseSpeedTestServiceTest):
         self.run_async(self.service.start_continuous_testing(request))
 
         # Mock task.cancel to raise an exception
-        with patch.object(self.service._test_task, 'cancel', side_effect=Exception("Cancel error")):
+        with patch.object(
+            self.service._test_task, "cancel", side_effect=Exception("Cancel error")
+        ):
             result = self.run_async(self.service.stop_continuous_testing())
 
             self.assertFalse(result.success)

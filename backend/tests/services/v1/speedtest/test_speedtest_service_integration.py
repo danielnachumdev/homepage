@@ -1,10 +1,12 @@
 """
 Integration tests for SpeedTestService.
 """
+
 import asyncio
-from backend.tests.services.v1.speedtest.base import BaseSpeedTestServiceTest
-from backend.src.services.v1.speedtest_service import SpeedTestService
+
 from backend.src.schemas.v1.speedtest import SpeedTestRequest
+from backend.src.services.v1.speedtest_service import SpeedTestService
+from backend.tests.services.v1.speedtest.base import BaseSpeedTestServiceTest
 
 
 class TestSpeedTestServiceIntegration(BaseSpeedTestServiceTest):

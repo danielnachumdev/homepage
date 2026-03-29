@@ -1,6 +1,6 @@
+import io
 import logging
 import sys
-import io
 from typing import Optional
 
 
@@ -12,9 +12,9 @@ class UTF8StreamHandler(logging.StreamHandler):
             stream = sys.stdout
         super().__init__(stream)
         # Ensure the stream uses UTF-8 encoding
-        if hasattr(stream, 'reconfigure'):
+        if hasattr(stream, "reconfigure"):
             try:
-                stream.reconfigure(encoding='utf-8', errors='replace')
+                stream.reconfigure(encoding="utf-8", errors="replace")
             except (AttributeError, OSError):
                 pass
 
@@ -49,11 +49,11 @@ class ExtraDataFormatter(logging.Formatter):
             # Check for data in two ways:
             # 1. Direct 'data' attribute
             # 2. 'data' key inside 'extra' dict
-            data = getattr(record, 'data', None)
+            data = getattr(record, "data", None)
             if data is None:
-                extra = getattr(record, 'extra', None)
+                extra = getattr(record, "extra", None)
                 if extra and isinstance(extra, dict):
-                    data = extra.get('data')
+                    data = extra.get("data")
 
             if data and isinstance(data, dict):
                 # Format data as key=value pairs, sorted alphabetically by key
@@ -63,8 +63,8 @@ class ExtraDataFormatter(logging.Formatter):
                 for k, v in sorted_items:
                     try:
                         # Ensure both key and value are properly encoded
-                        k_str = str(k) if k is not None else 'None'
-                        v_str = str(v) if v is not None else 'None'
+                        k_str = str(k) if k is not None else "None"
+                        v_str = str(v) if v is not None else "None"
                         data_pairs.append(f"{k_str}={v_str}")
                     except UnicodeError:
                         # Fallback for problematic Unicode characters
@@ -82,7 +82,7 @@ class ExtraDataFormatter(logging.Formatter):
 def setup_logger(
     name: str = "homepage_backend",
     level: int = logging.INFO,
-    format_string: Optional[str] = None
+    format_string: Optional[str] = None,
 ) -> logging.Logger:
     """
     Set up a logger that outputs to stdout with proper formatting.
@@ -96,7 +96,7 @@ def setup_logger(
         Configured logger instance
     """
     if format_string is None:
-        format_string = '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+        format_string = "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
 
     # Create logger
     logger = logging.getLogger(name)
@@ -151,5 +151,5 @@ __all__ = [
     "ExtraDataFormatter",
     "setup_logger",
     "get_logger",
-    "default_logger"
+    "default_logger",
 ]

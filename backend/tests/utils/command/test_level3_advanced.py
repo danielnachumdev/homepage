@@ -13,10 +13,15 @@ These tests assume Level 1 and Level 2 tests pass.
 import asyncio
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+from backend.src.utils.command import (
+    AsyncCommand,
+    CommandExecutionResult,
+    CommandState,
+    CommandType,
+)
 from backend.tests.utils.command.base import BaseCommandTest
-from backend.src.utils.command import AsyncCommand, CommandType, CommandState, CommandExecutionResult
 
 
 class TestLevel3Advanced(BaseCommandTest):
@@ -24,10 +29,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_24_command_timeout_handling(self) -> None:
         """Test command timeout handling."""
-        cmd = AsyncCommand(
-            ['ping', '127.0.0.1', '-n', '100'],
-            timeout=0.1
-        )
+        cmd = AsyncCommand(["ping", "127.0.0.1", "-n", "100"], timeout=0.1)
         result = self.run_async(cmd.execute())
 
         # Verify timeout occurred
@@ -50,9 +52,9 @@ class TestLevel3Advanced(BaseCommandTest):
             timeout_result = result
 
         cmd = AsyncCommand(
-            ['ping', '127.0.0.1', '-n', '100'],
+            ["ping", "127.0.0.1", "-n", "100"],
             timeout=0.1,
-            on_complete=complete_callback
+            on_complete=complete_callback,
         )
         result = self.run_async(cmd.execute())
 
@@ -160,10 +162,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_32_command_execution_with_long_running_process(self) -> None:
         """Test command execution with a long-running process."""
-        cmd = AsyncCommand(
-            ['ping', '127.0.0.1', '-n', '5'],
-            timeout=2.0
-        )
+        cmd = AsyncCommand(["ping", "127.0.0.1", "-n", "5"], timeout=2.0)
         result = self.run_async(cmd.execute())
 
         # Should timeout due to short timeout
@@ -174,10 +173,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_33_command_execution_with_very_short_timeout(self) -> None:
         """Test command execution with very short timeout."""
-        cmd = AsyncCommand(
-            ['ping', '127.0.0.1', '-n', '100'],
-            timeout=0.01
-        )
+        cmd = AsyncCommand(["ping", "127.0.0.1", "-n", "100"], timeout=0.01)
         result = self.run_async(cmd.execute())
 
         # Should timeout very quickly
@@ -188,9 +184,7 @@ class TestLevel3Advanced(BaseCommandTest):
 
     def test_34_command_execution_with_no_timeout(self) -> None:
         """Test command execution with no timeout."""
-        cmd = AsyncCommand(
-            ['ping', '127.0.0.1', '-n', '3']
-        )
+        cmd = AsyncCommand(["ping", "127.0.0.1", "-n", "3"])
         result = self.run_async(cmd.execute())
 
         # Should complete successfully
@@ -202,24 +196,18 @@ class TestLevel3Advanced(BaseCommandTest):
     def test_35_command_execution_with_environment_and_timeout(self) -> None:
         """Test command execution with environment variables and timeout."""
         cmd = AsyncCommand.cmd(
-            "echo %TEST_VAR%",
-            env={'TEST_VAR': 'timeout_test'},
-            timeout=1.0
+            "echo %TEST_VAR%", env={"TEST_VAR": "timeout_test"}, timeout=1.0
         )
         result = self.run_async(cmd.execute())
 
         # Should complete successfully with environment variable
-        self.assert_command_success(result, 'timeout_test')
+        self.assert_command_success(result, "timeout_test")
         self.assertFalse(result.timeout_occurred)
 
     def test_36_command_execution_with_cwd_and_timeout(self) -> None:
         """Test command execution with working directory and timeout."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            cmd = AsyncCommand.cmd(
-                "echo %CD%",
-                cwd=temp_dir,
-                timeout=1.0
-            )
+            cmd = AsyncCommand.cmd("echo %CD%", cwd=temp_dir, timeout=1.0)
             result = self.run_async(cmd.execute())
 
             # Should complete successfully in correct directory
@@ -232,33 +220,31 @@ class TestLevel3Advanced(BaseCommandTest):
         callbacks_called = []
 
         def start_callback(cmd):
-            callbacks_called.append('start')
+            callbacks_called.append("start")
 
         def complete_callback(cmd, result):
-            callbacks_called.append('complete')
+            callbacks_called.append("complete")
 
         def error_callback(cmd, exception):
-            callbacks_called.append('error')
+            callbacks_called.append("error")
 
         cmd = AsyncCommand.cmd(
             "echo callback_test",
             timeout=1.0,
             on_start=start_callback,
             on_complete=complete_callback,
-            on_error=error_callback
+            on_error=error_callback,
         )
         result = self.run_async(cmd.execute())
 
         # Verify callbacks were called in correct order
-        self.assertEqual(callbacks_called, ['start', 'complete'])
-        self.assert_command_success(result, 'callback_test')
+        self.assertEqual(callbacks_called, ["start", "complete"])
+        self.assert_command_success(result, "callback_test")
 
     def test_38_command_execution_with_gui_and_timeout(self) -> None:
         """Test GUI command execution with timeout."""
         cmd = AsyncCommand.cmd(
-            "echo GUI timeout test",
-            command_type=CommandType.GUI,
-            timeout=1.0
+            "echo GUI timeout test", command_type=CommandType.GUI, timeout=1.0
         )
         result = self.run_async(cmd.execute())
 
@@ -276,10 +262,10 @@ class TestLevel3Advanced(BaseCommandTest):
         states = []
 
         def start_callback(cmd):
-            states.append(('start', cmd.state))
+            states.append(("start", cmd.state))
 
         def complete_callback(cmd, result):
-            states.append(('complete', cmd.state))
+            states.append(("complete", cmd.state))
 
         cmd.on_start = start_callback
         cmd.on_complete = complete_callback
@@ -291,8 +277,8 @@ class TestLevel3Advanced(BaseCommandTest):
         self.assertEqual(cmd.result, result)
 
         # Verify state transitions were recorded
-        self.assertIn(('start', CommandState.RUNNING), states)
-        self.assertIn(('complete', CommandState.COMPLETED), states)
+        self.assertIn(("start", CommandState.RUNNING), states)
+        self.assertIn(("complete", CommandState.COMPLETED), states)
 
     def test_40_command_execution_with_mixed_parameters_advanced(self) -> None:
         """Test command execution with all advanced parameters combined."""
@@ -300,35 +286,33 @@ class TestLevel3Advanced(BaseCommandTest):
             callbacks_called = []
 
             def start_callback(cmd):
-                callbacks_called.append('start')
+                callbacks_called.append("start")
 
             def complete_callback(cmd, result):
-                callbacks_called.append('complete')
+                callbacks_called.append("complete")
 
             def error_callback(cmd, exception):
-                callbacks_called.append('error')
+                callbacks_called.append("error")
 
             cmd = AsyncCommand.cmd(
                 "echo %TEST_VAR%",
                 command_type=CommandType.CLI,
                 timeout=2.0,
                 cwd=temp_dir,
-                env={'TEST_VAR': 'advanced_test'},
+                env={"TEST_VAR": "advanced_test"},
                 on_start=start_callback,
                 on_complete=complete_callback,
-                on_error=error_callback
+                on_error=error_callback,
             )
 
             result = self.run_async(cmd.execute())
 
             # Verify all advanced features worked together
-            self.assert_command_success(result, 'advanced_test')
-            self.assertEqual(callbacks_called, ['start', 'complete'])
+            self.assert_command_success(result, "advanced_test")
+            self.assertEqual(callbacks_called, ["start", "complete"])
             self.assertIn(temp_dir, str(result.command.cwd))
             self.assertFalse(result.timeout_occurred)
             self.assertEqual(result.command_type, CommandType.CLI)
 
 
-__all__ = [
-    "TestLevel3Advanced"
-]
+__all__ = ["TestLevel3Advanced"]

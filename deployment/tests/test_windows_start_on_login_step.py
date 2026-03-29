@@ -2,13 +2,14 @@
 Unit tests for WindowsStartOnLoginStep.
 """
 
-import tempfile
-import shutil
-import os
 import json
+import os
+import shutil
+import tempfile
 from pathlib import Path
-from deployment.tests.base import BaseTest
+
 from deployment.src.steps.windows_start_on_login_step import WindowsStartOnLoginStep
+from deployment.tests.base import BaseTest
 
 
 class TestWindowsStartOnLoginStep(BaseTest):
@@ -23,29 +24,29 @@ class TestWindowsStartOnLoginStep(BaseTest):
         self.backend_dir = self.project_root / "backend"
         self.deployment_dir = self.project_root / "deployment"
         self.scripts_dir = self.deployment_dir / "scripts"
-        
+
         # Create directory structure
         self.frontend_dir.mkdir(parents=True)
         self.backend_dir.mkdir(parents=True)
         self.scripts_dir.mkdir(parents=True)
-        
+
         # Create startup script
-        startup_script = '''# Test startup script
+        startup_script = """# Test startup script
 param([string]$ProjectRoot, [string]$FrontendDir, [string]$BackendDir)
 Write-Host "Test startup script executed"
 Write-Host "Project Root: $ProjectRoot"
 Write-Host "Frontend Dir: $FrontendDir"
 Write-Host "Backend Dir: $BackendDir"
-'''
+"""
         (self.scripts_dir / "startup_launcher.ps1").write_text(startup_script)
-        
+
         # Create minimal frontend package.json
         package_json = {
             "name": "test-frontend",
-            "scripts": {"dev": "echo 'Frontend started'"}
+            "scripts": {"dev": "echo 'Frontend started'"},
         }
         (self.frontend_dir / "package.json").write_text(json.dumps(package_json))
-        
+
         # Create minimal backend __main__.py
         (self.backend_dir / "__main__.py").write_text("print('Backend started')")
 
@@ -60,9 +61,9 @@ Write-Host "Backend Dir: $BackendDir"
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
             backend_dir=str(self.backend_dir),
-            name="test-windows-startup"
+            name="test-windows-startup",
         )
-        
+
         self.assertEqual(step.name, "test-windows-startup")
         self.assertEqual(step.project_root, self.project_root)
         self.assertEqual(step.frontend_dir, self.frontend_dir)
@@ -71,7 +72,7 @@ Write-Host "Backend Dir: $BackendDir"
     def test_initialization_with_defaults(self):
         """Test step initialization with default values."""
         step = WindowsStartOnLoginStep()
-        
+
         # Should use current working directory as project root
         self.assertEqual(step.project_root, Path.cwd())
         self.assertEqual(step.frontend_dir, Path.cwd() / "frontend")
@@ -83,13 +84,13 @@ Write-Host "Backend Dir: $BackendDir"
         custom_backend = self.project_root / "custom_backend"
         custom_frontend.mkdir()
         custom_backend.mkdir()
-        
+
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(custom_frontend),
-            backend_dir=str(custom_backend)
+            backend_dir=str(custom_backend),
         )
-        
+
         self.assertEqual(step.frontend_dir, custom_frontend)
         self.assertEqual(step.backend_dir, custom_backend)
 
@@ -98,9 +99,9 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         # Should have a startup folder path
         self.assertIsNotNone(step.startup_folder)
         self.assertIsInstance(step.startup_folder, Path)
@@ -110,9 +111,9 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         result = self.run_async(step.validate())
         self.assertTrue(result, "Validation should pass with valid setup")
 
@@ -120,13 +121,13 @@ Write-Host "Backend Dir: $BackendDir"
         """Test validation with missing startup script."""
         # Remove startup script
         (self.scripts_dir / "startup_launcher.ps1").unlink()
-        
+
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         result = self.run_async(step.validate())
         self.assertFalse(result, "Validation should fail with missing startup script")
 
@@ -135,31 +136,35 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir="/non/existent/frontend",
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         result = self.run_async(step.validate())
-        self.assertFalse(result, "Validation should fail with missing frontend directory")
+        self.assertFalse(
+            result, "Validation should fail with missing frontend directory"
+        )
 
     def test_validate_missing_backend_dir(self):
         """Test validation with missing backend directory."""
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir="/non/existent/backend"
+            backend_dir="/non/existent/backend",
         )
-        
+
         result = self.run_async(step.validate())
-        self.assertFalse(result, "Validation should fail with missing backend directory")
+        self.assertFalse(
+            result, "Validation should fail with missing backend directory"
+        )
 
     def test_install_success(self):
         """Test successful installation (creating shortcut)."""
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         result = self.run_async(step.install())
         # Note: This might fail on non-Windows systems or without proper permissions
         # We'll test that it doesn't crash rather than asserting success
@@ -170,9 +175,9 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         result = self.run_async(step.uninstall())
         # Note: This might fail on non-Windows systems
         # We'll test that it doesn't crash rather than asserting success
@@ -183,9 +188,9 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         # Initially should not be installed
         self.assertFalse(step.is_shortcut_installed())
 
@@ -194,11 +199,11 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         shortcut_info = step.get_shortcut_info()
-        
+
         self.assertIn("status", shortcut_info)
         self.assertEqual(shortcut_info["status"], "not_installed")
 
@@ -208,17 +213,17 @@ Write-Host "Backend Dir: $BackendDir"
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
             backend_dir=str(self.backend_dir),
-            name="test-metadata"
+            name="test-metadata",
         )
-        
+
         metadata = self.run_async(step.get_metadata())
-        
+
         # Check basic metadata
         self.assertEqual(metadata["name"], "test-metadata")
         self.assertIn("description", metadata)
         self.assertIn("installed", metadata)
         self.assertIn("type", metadata)
-        
+
         # Check step-specific metadata
         self.assertEqual(str(metadata["project_root"]), str(self.project_root))
         self.assertEqual(str(metadata["frontend_dir"]), str(self.frontend_dir))
@@ -231,11 +236,11 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root="/non/existent/path",
             frontend_dir="/non/existent/frontend",
-            backend_dir="/non/existent/backend"
+            backend_dir="/non/existent/backend",
         )
-        
+
         metadata = self.run_async(step.get_metadata())
-        
+
         # Should still return metadata even with errors
         self.assertIn("name", metadata)
         self.assertIn("error", metadata)
@@ -246,13 +251,13 @@ Write-Host "Backend Dir: $BackendDir"
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
             backend_dir=str(self.backend_dir),
-            name="test-step"
+            name="test-step",
         )
-        
+
         str_repr = str(step)
         self.assertIn("WindowsStartOnLoginStep", str_repr)
         self.assertIn("test-step", str_repr)
-        
+
         repr_str = repr(step)
         self.assertIn("WindowsStartOnLoginStep", repr_str)
         self.assertIn("test-step", repr_str)
@@ -262,9 +267,9 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         self.assertFalse(step.is_installed, "Step should not be installed initially")
 
     def test_startup_script_detection(self):
@@ -272,12 +277,12 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         # Test with existing startup script
         self.assertTrue(step.startup_script.exists())
-        
+
         # Test with missing startup script
         step.startup_script.unlink()
         self.assertFalse(step.startup_script.exists())
@@ -287,13 +292,13 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         # Should have a shortcut name
         self.assertIsNotNone(step.shortcut_name)
         self.assertTrue(step.shortcut_name.endswith(".lnk"))
-        
+
         # Should generate a shortcut path
         shortcut_path = step.startup_folder / step.shortcut_name
         self.assertIsInstance(shortcut_path, Path)
@@ -303,9 +308,9 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         # The validation should check for Windows platform
         # We can't easily mock this, so we'll just ensure it doesn't crash
         result = self.run_async(step.validate())
@@ -316,9 +321,9 @@ Write-Host "Backend Dir: $BackendDir"
         step = WindowsStartOnLoginStep(
             project_root=str(self.project_root),
             frontend_dir=str(self.frontend_dir),
-            backend_dir=str(self.backend_dir)
+            backend_dir=str(self.backend_dir),
         )
-        
+
         # The validation should check for PowerShell availability
         # We can't easily mock this, so we'll just ensure it doesn't crash
         result = self.run_async(step.validate())

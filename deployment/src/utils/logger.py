@@ -19,27 +19,27 @@ class DeploymentLogFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         """
         Filter log records based on logger name and verbose mode.
-        
+
         Args:
             record: The log record to filter
-            
+
         Returns:
             True if the record should be logged, False otherwise
         """
         if self.verbose:
             return True
-        return record.name.startswith('deployment')
+        return record.name.startswith("deployment")
 
 
 def _patch_backend_loggers(verbose: bool = False) -> None:
     """
     Patch backend loggers to use our deployment filter.
-    
+
     Since backend loggers use propagate=False, we need to directly
     modify their handlers to apply our filter.
     """
     # Get the backend command logger
-    command_logger = logging.getLogger('backend.src.utils.command')
+    command_logger = logging.getLogger("backend.src.utils.command")
 
     # Apply our filter to all existing handlers
     for handler in command_logger.handlers:
@@ -58,7 +58,7 @@ def _patch_backend_loggers(verbose: bool = False) -> None:
 def configure_global_logging(verbose: bool = False) -> None:
     """
     Configure global logging with deployment log filtering.
-    
+
     Args:
         verbose: Enable verbose logging (shows all logs including AsyncCommand)
     """
@@ -79,7 +79,7 @@ def configure_global_logging(verbose: bool = False) -> None:
 
     # Create formatter with filename and line number (matching backend format)
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
+        "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
     )
     handler.setFormatter(formatter)
 
@@ -90,7 +90,9 @@ def configure_global_logging(verbose: bool = False) -> None:
     _patch_backend_loggers(verbose=verbose)
 
 
-def setup_logger(name: str, level: Optional[int] = None, verbose: bool = False) -> logging.Logger:
+def setup_logger(
+    name: str, level: Optional[int] = None, verbose: bool = False
+) -> logging.Logger:
     """
     Setup a logger with consistent formatting and deployment log filtering.
 
@@ -114,8 +116,4 @@ def setup_logger(name: str, level: Optional[int] = None, verbose: bool = False) 
     return logger
 
 
-__all__ = [
-    'setup_logger',
-    'configure_global_logging',
-    'DeploymentLogFilter'
-]
+__all__ = ["setup_logger", "configure_global_logging", "DeploymentLogFilter"]

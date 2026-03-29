@@ -1,12 +1,12 @@
-from contextlib import asynccontextmanager
 import os
-import uvicorn
-from fastapi import FastAPI
-from dotenv import load_dotenv
-from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
-from src.db import get_db, DatabaseInitializer
+import uvicorn
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from src.api import router as api_router
+from src.db import DatabaseInitializer, get_db
 from src.utils.logger import get_logger
 
 APP_PATH = "__main__:app"
@@ -40,7 +40,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add CORS middleware
@@ -64,7 +64,7 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs",
         "redoc": "/redoc",
-        "api": "/api"
+        "api": "/api",
     }
 
 
@@ -109,7 +109,7 @@ def main():
         port=port,
         reload=reload,
         log_level=log_level,
-        access_log=True
+        access_log=True,
     )
 
 

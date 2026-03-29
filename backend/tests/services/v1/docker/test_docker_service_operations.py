@@ -1,12 +1,12 @@
 """
 Tests for DockerService container operations.
 """
+
 import json
-from backend.tests.services.v1.docker.base import BaseDockerServiceTest
+
+from backend.src.schemas.v1.docker import ContainerStatus, HealthStatus, RedeployRequest
 from backend.src.services.v1.docker_service import DockerService
-from backend.src.schemas.v1.docker import (
-    ContainerStatus, HealthStatus, RedeployRequest
-)
+from backend.tests.services.v1.docker.base import BaseDockerServiceTest
 
 
 class TestDockerServiceOperations(BaseDockerServiceTest):
@@ -33,14 +33,15 @@ class TestDockerServiceOperations(BaseDockerServiceTest):
     def test_get_container_info_failure(self):
         """Test container info retrieval failure."""
         # Test with a container that likely doesn't exist
-        result = self.run_async(self.service.get_container_info("nonexistent_container_12345"))
+        result = self.run_async(
+            self.service.get_container_info("nonexistent_container_12345")
+        )
 
         # This should fail gracefully
         self.assertIsNotNone(result)
         self.assertIsInstance(result.success, bool)
         if not result.success:
-            self.assertEqual(result.container_name,
-                             "nonexistent_container_12345")
+            self.assertEqual(result.container_name, "nonexistent_container_12345")
 
     def test_list_containers_success(self):
         """Test successful container listing."""
@@ -72,25 +73,13 @@ class TestDockerServiceOperations(BaseDockerServiceTest):
         self.logger.info("Testing Docker container status parsing")
 
         # Test valid statuses
-        self.assertEqual(
-            self.service._parse_status("running"),
-            ContainerStatus.RUNNING
-        )
+        self.assertEqual(self.service._parse_status("running"), ContainerStatus.RUNNING)
         self.logger.info("Running status parsing test passed")
-        self.assertEqual(
-            self.service._parse_status("stopped"),
-            ContainerStatus.STOPPED
-        )
-        self.assertEqual(
-            self.service._parse_status("paused"),
-            ContainerStatus.PAUSED
-        )
+        self.assertEqual(self.service._parse_status("stopped"), ContainerStatus.STOPPED)
+        self.assertEqual(self.service._parse_status("paused"), ContainerStatus.PAUSED)
 
         # Test case insensitive
-        self.assertEqual(
-            self.service._parse_status("RUNNING"),
-            ContainerStatus.RUNNING
-        )
+        self.assertEqual(self.service._parse_status("RUNNING"), ContainerStatus.RUNNING)
 
         # Test unknown status
         self.assertIsNone(self.service._parse_status("unknown"))
@@ -100,34 +89,23 @@ class TestDockerServiceOperations(BaseDockerServiceTest):
         """Test health status parsing."""
         # Test valid health statuses
         self.assertEqual(
-            self.service._parse_health_status("healthy"),
-            HealthStatus.HEALTHY
+            self.service._parse_health_status("healthy"), HealthStatus.HEALTHY
         )
         self.assertEqual(
-            self.service._parse_health_status("unhealthy"),
-            HealthStatus.UNHEALTHY
+            self.service._parse_health_status("unhealthy"), HealthStatus.UNHEALTHY
         )
         self.assertEqual(
-            self.service._parse_health_status("starting"),
-            HealthStatus.STARTING
+            self.service._parse_health_status("starting"), HealthStatus.STARTING
         )
-        self.assertEqual(
-            self.service._parse_health_status("none"),
-            HealthStatus.NONE
-        )
+        self.assertEqual(self.service._parse_health_status("none"), HealthStatus.NONE)
 
         # Test case insensitive
         self.assertEqual(
-            self.service._parse_health_status("HEALTHY"),
-            HealthStatus.HEALTHY
+            self.service._parse_health_status("HEALTHY"), HealthStatus.HEALTHY
         )
 
         # Test unknown status
         self.assertEqual(
-            self.service._parse_health_status("unknown"),
-            HealthStatus.NONE
+            self.service._parse_health_status("unknown"), HealthStatus.NONE
         )
-        self.assertEqual(
-            self.service._parse_health_status(None),
-            HealthStatus.NONE
-        )
+        self.assertEqual(self.service._parse_health_status(None), HealthStatus.NONE)

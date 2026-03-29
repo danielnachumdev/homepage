@@ -1,8 +1,9 @@
 """
 Integration tests for SettingsService.
 """
-from backend.tests.services.v1.base import BaseDatabaseServiceTest
+
 from backend.src.services.v1.settings_service import SettingsService
+from backend.tests.services.v1.base import BaseDatabaseServiceTest
 
 
 class TestSettingsServiceIntegration(BaseDatabaseServiceTest):
@@ -16,15 +17,25 @@ class TestSettingsServiceIntegration(BaseDatabaseServiceTest):
     def test_complete_settings_workflow(self):
         """Test complete settings management workflow."""
         # 1. Create multiple settings
-        self.run_async(self.service.create_or_update_setting(
-            "app_name", "general", "string", "My App", "Application name"
-        ))
-        self.run_async(self.service.create_or_update_setting(
-            "max_connections", "database", "integer", 100, "Maximum database connections"
-        ))
-        self.run_async(self.service.create_or_update_setting(
-            "debug_mode", "general", "boolean", False, "Enable debug mode"
-        ))
+        self.run_async(
+            self.service.create_or_update_setting(
+                "app_name", "general", "string", "My App", "Application name"
+            )
+        )
+        self.run_async(
+            self.service.create_or_update_setting(
+                "max_connections",
+                "database",
+                "integer",
+                100,
+                "Maximum database connections",
+            )
+        )
+        self.run_async(
+            self.service.create_or_update_setting(
+                "debug_mode", "general", "boolean", False, "Enable debug mode"
+            )
+        )
 
         # 2. Get all settings
         all_settings = self.run_async(self.service.get_all_settings())
@@ -32,6 +43,7 @@ class TestSettingsServiceIntegration(BaseDatabaseServiceTest):
 
         # 3. Update a setting
         from backend.src.schemas.v1.settings import SettingUpdateRequest
+
         update_request = SettingUpdateRequest(id="debug_mode", value=True)
         update_result = self.run_async(self.service.update_setting(update_request))
         self.assertTrue(update_result.success)
@@ -42,10 +54,11 @@ class TestSettingsServiceIntegration(BaseDatabaseServiceTest):
 
         # 5. Bulk update multiple settings
         from backend.src.schemas.v1.settings import BulkSettingsUpdateRequest
+
         bulk_request = BulkSettingsUpdateRequest(
             settings=[
                 SettingUpdateRequest(id="app_name", value="Updated App"),
-                SettingUpdateRequest(id="max_connections", value=200)
+                SettingUpdateRequest(id="max_connections", value=200),
             ]
         )
         bulk_result = self.run_async(self.service.bulk_update_settings(bulk_request))
@@ -64,12 +77,18 @@ class TestSettingsServiceIntegration(BaseDatabaseServiceTest):
             "host": "localhost",
             "port": 5432,
             "database": "testdb",
-            "ssl": True
+            "ssl": True,
         }
 
-        result = self.run_async(self.service.create_or_update_setting(
-            "db_config", "database", "object", config_value, "Database configuration"
-        ))
+        result = self.run_async(
+            self.service.create_or_update_setting(
+                "db_config",
+                "database",
+                "object",
+                config_value,
+                "Database configuration",
+            )
+        )
 
         self.assertTrue(result.success)
 
@@ -80,12 +99,16 @@ class TestSettingsServiceIntegration(BaseDatabaseServiceTest):
         # Test with list value
         list_value = ["option1", "option2", "option3"]
 
-        result = self.run_async(self.service.create_or_update_setting(
-            "available_options", "ui", "array", list_value, "Available UI options"
-        ))
+        result = self.run_async(
+            self.service.create_or_update_setting(
+                "available_options", "ui", "array", list_value, "Available UI options"
+            )
+        )
 
         self.assertTrue(result.success)
 
         # Retrieve and verify
-        retrieved_setting = self.run_async(self.service.get_setting("available_options"))
+        retrieved_setting = self.run_async(
+            self.service.get_setting("available_options")
+        )
         self.assertEqual(retrieved_setting.value, list_value)

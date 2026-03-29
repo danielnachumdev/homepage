@@ -4,9 +4,10 @@ Command Line Interface for the deployment system.
 This module provides a CLI class that can be used with Google Fire
 to manage deployment steps and strategies.
 """
+
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 try:
     import fire
@@ -23,22 +24,22 @@ from .utils import setup_logger
 class DeploymentCLI:
     """
     Homepage Deployment CLI
-    
+
     Manage deployment steps and strategies for the homepage application.
-    
+
     Usage:
         python deploy.py step list                    # List available steps
         python deploy.py step install STEP_NAME       # Install a step
         python deploy.py step uninstall STEP_NAME     # Uninstall a step
         python deploy.py step validate STEP_NAME      # Validate a step
         python deploy.py step info STEP_NAME          # Get step information
-        
+
         python deploy.py strategy list                # List available strategies
         python deploy.py strategy install STRATEGY    # Deploy a strategy
         python deploy.py strategy uninstall STRATEGY  # Stop a strategy
         python deploy.py strategy validate STRATEGY   # Validate a strategy
         python deploy.py strategy info STRATEGY       # Get strategy information
-        
+
         python deploy.py info                         # Get CLI information
     """
 
@@ -102,16 +103,17 @@ class DeploymentCLI:
             The kebab-case version of the class name
         """
         import re
+
         # Insert hyphens before uppercase letters (except the first one)
-        kebab = re.sub(r'(?<!^)(?=[A-Z])', '-', class_name)
+        kebab = re.sub(r"(?<!^)(?=[A-Z])", "-", class_name)
         return kebab.lower()
 
     class _Step:
         """
         Step Management Commands
-        
+
         Manage individual deployment steps (backend, frontend, dependencies, etc.)
-        
+
         Commands:
             list                    # List all available steps
             install STEP_NAME       # Install a specific step
@@ -129,7 +131,9 @@ class DeploymentCLI:
             for name, step_class in self._cli._steps_registry.items():
                 try:
                     # Create a temporary instance to get description
-                    temp_instance = step_class(project_root=str(self._cli._project_root))
+                    temp_instance = step_class(
+                        project_root=str(self._cli._project_root)
+                    )
                     description = temp_instance.description
                 except Exception as e:
                     description = f"Error getting description: {e}"
@@ -153,9 +157,9 @@ class DeploymentCLI:
     class _Strategy:
         """
         Strategy Management Commands
-        
+
         Manage deployment strategies (collections of steps)
-        
+
         Commands:
             list                    # List all available strategies
             install STRATEGY_NAME   # Deploy a strategy (install all its steps)
@@ -173,7 +177,9 @@ class DeploymentCLI:
             for name, strategy_class in self._cli._strategies_registry.items():
                 try:
                     # Create a temporary instance to get description
-                    temp_instance = strategy_class(project_root=str(self._cli._project_root))
+                    temp_instance = strategy_class(
+                        project_root=str(self._cli._project_root)
+                    )
                     description = temp_instance.description
                 except Exception as e:
                     description = f"Error getting description: {e}"
@@ -210,8 +216,7 @@ class DeploymentCLI:
 
         if step_name not in self._steps_registry:
             self._logger.error("Unknown step: %s", step_name)
-            self._logger.info("Available steps: %s",
-                              list(self._steps_registry.keys()))
+            self._logger.info("Available steps: %s", list(self._steps_registry.keys()))
             return False
 
         try:
@@ -237,8 +242,7 @@ class DeploymentCLI:
             return success
 
         except Exception as e:
-            self._logger.error(
-                "Unexpected error installing step %s: %s", step_name, e)
+            self._logger.error("Unexpected error installing step %s: %s", step_name, e)
             return False
 
     async def _uninstall_step(self, step_name: str, **kwargs) -> bool:
@@ -256,8 +260,7 @@ class DeploymentCLI:
 
         if step_name not in self._steps_registry:
             self._logger.error("Unknown step: %s", step_name)
-            self._logger.info("Available steps: %s",
-                              list(self._steps_registry.keys()))
+            self._logger.info("Available steps: %s", list(self._steps_registry.keys()))
             return False
 
         try:
@@ -270,8 +273,7 @@ class DeploymentCLI:
             success = await step.uninstall()
 
             if success:
-                self._logger.info(
-                    "Step uninstalled successfully: %s", step_name)
+                self._logger.info("Step uninstalled successfully: %s", step_name)
             else:
                 self._logger.error("Step uninstallation failed: %s", step_name)
 
@@ -279,7 +281,8 @@ class DeploymentCLI:
 
         except Exception as e:
             self._logger.error(
-                "Unexpected error uninstalling step %s: %s", step_name, e)
+                "Unexpected error uninstalling step %s: %s", step_name, e
+            )
             return False
 
     async def _deploy_strategy(self, strategy_name: str, **kwargs) -> bool:
@@ -297,32 +300,31 @@ class DeploymentCLI:
 
         if strategy_name not in self._strategies_registry:
             self._logger.error("Unknown strategy: %s", strategy_name)
-            self._logger.info("Available strategies: %s",
-                              list(self._strategies_registry.keys()))
+            self._logger.info(
+                "Available strategies: %s", list(self._strategies_registry.keys())
+            )
             return False
 
         try:
             # Create strategy instance
             strategy_class = self._strategies_registry[strategy_name]
-            strategy = strategy_class(
-                project_root=str(self._project_root), **kwargs)
+            strategy = strategy_class(project_root=str(self._project_root), **kwargs)
 
             # Install the strategy
             self._logger.info("Installing strategy: %s", strategy_name)
             success = await strategy.install()
 
             if success:
-                self._logger.info(
-                    "Strategy installed successfully: %s", strategy_name)
+                self._logger.info("Strategy installed successfully: %s", strategy_name)
             else:
-                self._logger.error(
-                    "Strategy installation failed: %s", strategy_name)
+                self._logger.error("Strategy installation failed: %s", strategy_name)
 
             return success
 
         except Exception as e:
             self._logger.error(
-                "Unexpected error installing strategy %s: %s", strategy_name, e)
+                "Unexpected error installing strategy %s: %s", strategy_name, e
+            )
             return False
 
     async def _stop_strategy(self, strategy_name: str, **kwargs) -> bool:
@@ -340,15 +342,15 @@ class DeploymentCLI:
 
         if strategy_name not in self._strategies_registry:
             self._logger.error("Unknown strategy: %s", strategy_name)
-            self._logger.info("Available strategies: %s",
-                              list(self._strategies_registry.keys()))
+            self._logger.info(
+                "Available strategies: %s", list(self._strategies_registry.keys())
+            )
             return False
 
         try:
             # Create strategy instance
             strategy_class = self._strategies_registry[strategy_name]
-            strategy = strategy_class(
-                project_root=str(self._project_root), **kwargs)
+            strategy = strategy_class(project_root=str(self._project_root), **kwargs)
 
             # Uninstall the strategy
             self._logger.info("Uninstalling strategy: %s", strategy_name)
@@ -356,16 +358,17 @@ class DeploymentCLI:
 
             if success:
                 self._logger.info(
-                    "Strategy uninstalled successfully: %s", strategy_name)
+                    "Strategy uninstalled successfully: %s", strategy_name
+                )
             else:
-                self._logger.error(
-                    "Strategy uninstallation failed: %s", strategy_name)
+                self._logger.error("Strategy uninstallation failed: %s", strategy_name)
 
             return success
 
         except Exception as e:
             self._logger.error(
-                "Unexpected error uninstalling strategy %s: %s", strategy_name, e)
+                "Unexpected error uninstalling strategy %s: %s", strategy_name, e
+            )
             return False
 
     async def _validate_step(self, step_name: str, **kwargs) -> bool:
@@ -383,8 +386,7 @@ class DeploymentCLI:
 
         if step_name not in self._steps_registry:
             self._logger.error("Unknown step: %s", step_name)
-            self._logger.info("Available steps: %s",
-                              list(self._steps_registry.keys()))
+            self._logger.info("Available steps: %s", list(self._steps_registry.keys()))
             return False
 
         try:
@@ -403,8 +405,7 @@ class DeploymentCLI:
             return success
 
         except Exception as e:
-            self._logger.error(
-                "Unexpected error validating step %s: %s", step_name, e)
+            self._logger.error("Unexpected error validating step %s: %s", step_name, e)
             return False
 
     async def _step_info(self, step_name: str, **kwargs) -> Dict[str, Any]:
@@ -420,8 +421,7 @@ class DeploymentCLI:
         """
         if step_name not in self._steps_registry:
             self._logger.error("Unknown step: %s", step_name)
-            self._logger.info("Available steps: %s",
-                              list(self._steps_registry.keys()))
+            self._logger.info("Available steps: %s", list(self._steps_registry.keys()))
             return {}
 
         try:
@@ -436,7 +436,8 @@ class DeploymentCLI:
 
         except Exception as e:
             self._logger.error(
-                "Unexpected error getting step metadata %s: %s", step_name, e)
+                "Unexpected error getting step metadata %s: %s", step_name, e
+            )
             return {}
 
     async def _validate_strategy(self, strategy_name: str, **kwargs) -> bool:
@@ -454,8 +455,9 @@ class DeploymentCLI:
 
         if strategy_name not in self._strategies_registry:
             self._logger.error("Unknown strategy: %s", strategy_name)
-            self._logger.info("Available strategies: %s",
-                              list(self._strategies_registry.keys()))
+            self._logger.info(
+                "Available strategies: %s", list(self._strategies_registry.keys())
+            )
             return False
 
         try:
@@ -486,7 +488,8 @@ class DeploymentCLI:
 
         except Exception as e:
             self._logger.error(
-                "Unexpected error validating strategy %s: %s", strategy_name, e)
+                "Unexpected error validating strategy %s: %s", strategy_name, e
+            )
             return False
 
     async def _strategy_info(self, strategy_name: str, **kwargs) -> Dict[str, Any]:
@@ -502,8 +505,9 @@ class DeploymentCLI:
         """
         if strategy_name not in self._strategies_registry:
             self._logger.error("Unknown strategy: %s", strategy_name)
-            self._logger.info("Available strategies: %s",
-                              list(self._strategies_registry.keys()))
+            self._logger.info(
+                "Available strategies: %s", list(self._strategies_registry.keys())
+            )
             return {}
 
         try:
@@ -518,7 +522,8 @@ class DeploymentCLI:
 
         except Exception as e:
             self._logger.error(
-                "Unexpected error getting strategy metadata %s: %s", strategy_name, e)
+                "Unexpected error getting strategy metadata %s: %s", strategy_name, e
+            )
             return {}
 
 
@@ -544,6 +549,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-__all__ = [
-    "main"
-]
+__all__ = ["main"]

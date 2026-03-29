@@ -41,12 +41,12 @@ class TestParseCommandString(unittest.TestCase):
 
     def test_mixed_quotes(self):
         """Test parsing with mixed single and double quotes."""
-        result = AsyncCommand._parse_command_string('echo "hello" and \'world\'')
+        result = AsyncCommand._parse_command_string("echo \"hello\" and 'world'")
         self.assertListEqual(["echo", "hello", "and", "world"], result)
 
     def test_nested_quotes(self):
         """Test parsing with nested quotes."""
-        result = AsyncCommand._parse_command_string('echo "He said \'Hello World\'"')
+        result = AsyncCommand._parse_command_string("echo \"He said 'Hello World'\"")
         self.assertListEqual(["echo", "He said 'Hello World'"], result)
 
     @skip("This is implementation specific because we need escape char")
@@ -67,14 +67,28 @@ class TestParseCommandString(unittest.TestCase):
 
     def test_complex_command(self):
         """Test parsing complex command with multiple quoted arguments."""
-        result = AsyncCommand._parse_command_string('git commit -m "fix bug" --author "John Doe"')
-        self.assertListEqual(["git", "commit", "-m", "fix bug", "--author", "John Doe"], result)
+        result = AsyncCommand._parse_command_string(
+            'git commit -m "fix bug" --author "John Doe"'
+        )
+        self.assertListEqual(
+            ["git", "commit", "-m", "fix bug", "--author", "John Doe"], result
+        )
 
     def test_powershell_command(self):
         """Test parsing PowerShell command with complex quoting."""
-        cmd = """powershell -Command "Get-Process | Where-Object {$_.Name -eq 'chrome'}"""""
+        cmd = (
+            """powershell -Command "Get-Process | Where-Object {$_.Name -eq 'chrome'}"""
+            ""
+        )
         result = AsyncCommand._parse_command_string(cmd)
-        self.assertListEqual(["powershell", "-Command", "Get-Process | Where-Object {$_.Name -eq 'chrome'}"], result)
+        self.assertListEqual(
+            [
+                "powershell",
+                "-Command",
+                "Get-Process | Where-Object {$_.Name -eq 'chrome'}",
+            ],
+            result,
+        )
 
     def test_cmd_command(self):
         """Test parsing Windows cmd command."""
@@ -113,7 +127,9 @@ class TestParseCommandString(unittest.TestCase):
 
     def test_special_characters(self):
         """Test parsing with special characters."""
-        result = AsyncCommand._parse_command_string('echo "path/to/file with spaces.txt"')
+        result = AsyncCommand._parse_command_string(
+            'echo "path/to/file with spaces.txt"'
+        )
         self.assertListEqual(["echo", "path/to/file with spaces.txt"], result)
 
     def test_unicode_characters(self):
@@ -155,14 +171,22 @@ class TestParseCommandString(unittest.TestCase):
             "chrome",
             "--user-data-dir=C:\\Users\\User\\AppData\\Local\\Google\\Chrome\\User Data\\Profile 1",
             "--profile-directory=Profile 1",
-            "https://example.com"
+            "https://example.com",
         ]
         self.assertListEqual(expected, result)
 
         # Docker command
         docker_cmd = 'docker run -it --name "my container" ubuntu:latest /bin/bash'
         result = AsyncCommand._parse_command_string(docker_cmd)
-        expected = ["docker", "run", "-it", "--name", "my container", "ubuntu:latest", "/bin/bash"]
+        expected = [
+            "docker",
+            "run",
+            "-it",
+            "--name",
+            "my container",
+            "ubuntu:latest",
+            "/bin/bash",
+        ]
         self.assertListEqual(expected, result)
 
     def test_edge_cases(self):
@@ -185,16 +209,20 @@ class TestParseCommandString(unittest.TestCase):
 
     def test_performance_with_long_command(self):
         """Test performance with a long command string."""
-        long_command = ' '.join(['arg' + str(i) for i in range(1000)])
+        long_command = " ".join(["arg" + str(i) for i in range(1000)])
         result = AsyncCommand._parse_command_string(long_command)
         self.assertEqual(1000, len(result))
         self.assertEqual("arg0", result[0])
         self.assertEqual("arg999", result[-1])
 
     def test_process_list(self):
-        actual = AsyncCommand._parse_command_string('tasklist /FI "IMAGENAME eq {self.app_name}" /FO CSV')
-        self.assertListEqual(["tasklist", "/FI", "IMAGENAME eq {self.app_name}", "/FO", "CSV"], actual)
+        actual = AsyncCommand._parse_command_string(
+            'tasklist /FI "IMAGENAME eq {self.app_name}" /FO CSV'
+        )
+        self.assertListEqual(
+            ["tasklist", "/FI", "IMAGENAME eq {self.app_name}", "/FO", "CSV"], actual
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

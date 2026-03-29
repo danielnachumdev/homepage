@@ -11,10 +11,15 @@ If these tests fail, nothing else will work properly.
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+from backend.src.utils.command import (
+    AsyncCommand,
+    CommandExecutionResult,
+    CommandState,
+    CommandType,
+)
 from backend.tests.utils.command.base import BaseCommandTest
-from backend.src.utils.command import AsyncCommand, CommandType, CommandState, CommandExecutionResult
 
 
 class TestLevel1Basic(BaseCommandTest):
@@ -25,7 +30,7 @@ class TestLevel1Basic(BaseCommandTest):
         cmd = AsyncCommand.cmd("echo test")
 
         # Verify basic properties
-        self.assertEqual(cmd.args, ['cmd', '/c', 'echo', 'test'])
+        self.assertEqual(cmd.args, ["cmd", "/c", "echo", "test"])
         self.assertEqual(cmd.command_type, CommandType.CLI)
         self.assertIsNone(cmd.timeout)
         self.assertIsNone(cmd.cwd)
@@ -43,25 +48,27 @@ class TestLevel1Basic(BaseCommandTest):
     def test_02_command_initialization_with_parameters(self) -> None:
         """Test command initialization with custom parameters."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            def dummy_callback(cmd): pass
+
+            def dummy_callback(cmd):
+                pass
 
             cmd = AsyncCommand.cmd(
                 "echo test",
                 command_type=CommandType.GUI,
                 timeout=5.0,
                 cwd=temp_dir,
-                env={'TEST_VAR': 'test_value'},
+                env={"TEST_VAR": "test_value"},
                 on_start=dummy_callback,
                 on_complete=dummy_callback,
-                on_error=dummy_callback
+                on_error=dummy_callback,
             )
 
             # Verify all parameters are set correctly
-            self.assertEqual(cmd.args, ['cmd', '/c', 'echo', 'test'])
+            self.assertEqual(cmd.args, ["cmd", "/c", "echo", "test"])
             self.assertEqual(cmd.command_type, CommandType.GUI)
             self.assertEqual(cmd.timeout, 5.0)
             self.assertEqual(cmd.cwd, Path(temp_dir))
-            self.assertEqual(cmd.env, {'TEST_VAR': 'test_value'})
+            self.assertEqual(cmd.env, {"TEST_VAR": "test_value"})
             self.assertIsNotNone(cmd.on_start)
             self.assertIsNotNone(cmd.on_complete)
             self.assertIsNotNone(cmd.on_error)
@@ -78,21 +85,21 @@ class TestLevel1Basic(BaseCommandTest):
 
         # Test string representation
         repr_str = repr(cmd)
-        self.assertIn('AsyncCommand', repr_str)
+        self.assertIn("AsyncCommand", repr_str)
         self.assertIn("['cmd', '/c', 'echo', 'test']", repr_str)
-        self.assertIn('pending', repr_str)
+        self.assertIn("pending", repr_str)
 
     def test_04_simple_successful_execution(self) -> None:
         """Test simple successful command execution."""
-        cmd = AsyncCommand.cmd('echo Hello World')
+        cmd = AsyncCommand.cmd("echo Hello World")
         result = self.run_async(cmd.execute())
 
         # Verify execution was successful
         self.assertEqual(result.state, CommandState.COMPLETED)
         self.assertTrue(result.success)
         self.assertEqual(result.return_code, 0)
-        self.assertIn('Hello World', result.stdout)
-        self.assertEqual(result.stderr, '')
+        self.assertIn("Hello World", result.stdout)
+        self.assertEqual(result.stderr, "")
         self.assertGreater(result.execution_time, 0)
         self.assertIsNotNone(result.pid)
         self.assertEqual(result.command, cmd)
@@ -103,40 +110,37 @@ class TestLevel1Basic(BaseCommandTest):
 
     def test_05_command_execution_result_properties(self) -> None:
         """Test CommandExecutionResult properties and methods."""
-        cmd = AsyncCommand.cmd('echo test')
+        cmd = AsyncCommand.cmd("echo test")
         result = self.run_async(cmd.execute())
 
         # Test basic properties
         self.assertTrue(result.success)
         self.assertEqual(result.return_code, 0)
-        self.assertIn('test', result.stdout)
+        self.assertIn("test", result.stdout)
         self.assertEqual(result.command, cmd)
 
         # Test string representation
         str_repr = str(result)
-        self.assertIn('CommandExecutionResult', str_repr)
-        self.assertIn('SUCCESS', str_repr)
-        self.assertIn('test', str_repr)
+        self.assertIn("CommandExecutionResult", str_repr)
+        self.assertIn("SUCCESS", str_repr)
+        self.assertIn("test", str_repr)
 
     def test_06_shell_command_factory(self) -> None:
         """Test shell command factory method."""
-        cmd = AsyncCommand.cmd('echo Hello World')
+        cmd = AsyncCommand.cmd("echo Hello World")
 
         # Verify factory creates correct command
-        self.assertEqual(cmd.args, ['cmd', '/c', 'echo', 'Hello', 'World'])
+        self.assertEqual(cmd.args, ["cmd", "/c", "echo", "Hello", "World"])
         self.assertEqual(cmd.command_type, CommandType.CLI)
 
         # Test execution
         result = self.run_async(cmd.execute())
-        self.assert_command_success(result, 'Hello World')
+        self.assert_command_success(result, "Hello World")
 
     def test_07_command_with_working_directory(self) -> None:
         """Test command execution with working directory."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            cmd = AsyncCommand(
-                ['cmd', '/c', 'echo', '%CD%'],
-                cwd=temp_dir
-            )
+            cmd = AsyncCommand(["cmd", "/c", "echo", "%CD%"], cwd=temp_dir)
             result = self.run_async(cmd.execute())
 
             # Verify command executed in correct directory
@@ -146,17 +150,16 @@ class TestLevel1Basic(BaseCommandTest):
     def test_08_command_with_environment_variables(self) -> None:
         """Test command execution with environment variables."""
         cmd = AsyncCommand(
-            ['cmd', '/c', 'echo', '%TEST_VAR%'],
-            env={'TEST_VAR': 'test_value'}
+            ["cmd", "/c", "echo", "%TEST_VAR%"], env={"TEST_VAR": "test_value"}
         )
         result = self.run_async(cmd.execute())
 
         # Verify environment variable was passed correctly
-        self.assert_command_success(result, 'test_value')
+        self.assert_command_success(result, "test_value")
 
     def test_09_command_execution_failure(self) -> None:
         """Test command execution failure."""
-        cmd = AsyncCommand(['nonexistent_command_12345'])
+        cmd = AsyncCommand(["nonexistent_command_12345"])
         result = self.run_async(cmd.execute())
 
         # Verify execution failed as expected
@@ -170,7 +173,7 @@ class TestLevel1Basic(BaseCommandTest):
 
     def test_10_command_state_after_execution(self) -> None:
         """Test command state after execution."""
-        cmd = AsyncCommand.cmd('echo test')
+        cmd = AsyncCommand.cmd("echo test")
 
         # Before execution
         self.assertEqual(cmd.state, CommandState.PENDING)
@@ -187,6 +190,4 @@ class TestLevel1Basic(BaseCommandTest):
         self.assertEqual(cmd.result, result)
 
 
-__all__ = [
-    "TestLevel1Basic"
-]
+__all__ = ["TestLevel1Basic"]

@@ -8,11 +8,11 @@ This module contains tests for advanced process management scenarios including:
 """
 
 import asyncio
-import time
 import tempfile
+import time
 from typing import Set
 
-from backend.src.utils.command import AsyncCommand, CommandType, CommandState
+from backend.src.utils.command import AsyncCommand, CommandState, CommandType
 from backend.tests.utils.command.base import BaseCommandTest
 from backend.tests.utils.command.process_kill_context import CalculatorKillContext
 
@@ -24,7 +24,9 @@ class TestLevel5ProcessManagement(BaseCommandTest):
         """Get list of currently running calculator process PIDs."""
         try:
             # Use tasklist to find calculator processes
-            cmd = AsyncCommand.powershell('tasklist /FI \"IMAGENAME eq CalculatorApp.exe\" /FO CSV')
+            cmd = AsyncCommand.powershell(
+                'tasklist /FI "IMAGENAME eq CalculatorApp.exe" /FO CSV'
+            )
             result = self.run_async(cmd.execute())
 
             if not result.success:
@@ -32,10 +34,10 @@ class TestLevel5ProcessManagement(BaseCommandTest):
 
             # Parse the CSV output to extract PIDs
             pids = []
-            lines = result.stdout.strip().split('\n')
+            lines = result.stdout.strip().split("\n")
 
             for line in lines[1:]:  # Skip header
-                if 'calculatorapp.exe' in line.lower():
+                if "calculatorapp.exe" in line.lower():
                     # CSV format: "Image Name","PID","Session Name","Session#","Mem Usage"
                     parts = line.split('","')
                     if len(parts) >= 2:
@@ -55,7 +57,7 @@ class TestLevel5ProcessManagement(BaseCommandTest):
         """Test complete calculator process lifecycle: list -> create -> verify -> kill -> verify."""
 
         with CalculatorKillContext(self) as ctx:
-            calc_cmd = AsyncCommand(['calc'], command_type=CommandType.GUI)
+            calc_cmd = AsyncCommand(["calc"], command_type=CommandType.GUI)
             result = self.run_async(calc_cmd.execute())
             self.assertEqual(result.state, CommandState.COMPLETED)
             self.assertTrue(result.success)
@@ -69,7 +71,7 @@ class TestLevel5ProcessManagement(BaseCommandTest):
         with CalculatorKillContext(self) as ctx:
             # Create 3 calculator processes
             for _ in range(3):
-                cmd = AsyncCommand(['calc'], command_type=CommandType.GUI)
+                cmd = AsyncCommand(["calc"], command_type=CommandType.GUI)
                 result = self.run_async(cmd.execute())
 
                 self.assertEqual(result.state, CommandState.COMPLETED)
@@ -87,7 +89,7 @@ class TestLevel5ProcessManagement(BaseCommandTest):
         """Test command state transitions during process lifecycle."""
 
         with CalculatorKillContext(self) as ctx:
-            cmd = AsyncCommand(['calc'], command_type=CommandType.GUI)
+            cmd = AsyncCommand(["calc"], command_type=CommandType.GUI)
 
             # Initial state should be PENDING
             self.assertEqual(cmd.state, CommandState.PENDING)
@@ -106,7 +108,7 @@ class TestLevel5ProcessManagement(BaseCommandTest):
         """Test process cleanup and error handling scenarios."""
 
         # Test killing a non-existent process
-        fake_cmd = AsyncCommand(['calc'], command_type=CommandType.GUI)
+        fake_cmd = AsyncCommand(["calc"], command_type=CommandType.GUI)
         fake_cmd._process = None  # Simulate no process
 
         kill_result = fake_cmd.kill()
@@ -114,7 +116,7 @@ class TestLevel5ProcessManagement(BaseCommandTest):
 
         # Test process creation and automatic cleanup
         with CalculatorKillContext(self) as ctx:
-            cmd = AsyncCommand(['calc'], command_type=CommandType.GUI)
+            cmd = AsyncCommand(["calc"], command_type=CommandType.GUI)
             result = self.run_async(cmd.execute())
 
             # Verify it started successfully
@@ -132,7 +134,7 @@ class TestLevel5ProcessManagement(BaseCommandTest):
             start_time = time.time()
 
             # Create calculator
-            cmd = AsyncCommand(['calc'], command_type=CommandType.GUI)
+            cmd = AsyncCommand(["calc"], command_type=CommandType.GUI)
             result = self.run_async(cmd.execute())
 
             creation_time = time.time() - start_time
@@ -145,7 +147,9 @@ class TestLevel5ProcessManagement(BaseCommandTest):
             self.assertEqual(len(ctx.initial_pids) + 1, len(current_pids))
 
             total_time = time.time() - start_time
-            self.logger.info(f"Process lifecycle timing - Creation: {creation_time:.2f}s, Total: {total_time:.2f}s")
+            self.logger.info(
+                f"Process lifecycle timing - Creation: {creation_time:.2f}s, Total: {total_time:.2f}s"
+            )
 
     def test_66_process_environment_and_working_directory(self) -> None:
         """Test process creation with custom environment and working directory."""
@@ -154,10 +158,10 @@ class TestLevel5ProcessManagement(BaseCommandTest):
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Create calculator with custom working directory
                 cmd = AsyncCommand(
-                    ['calc'],
+                    ["calc"],
                     command_type=CommandType.GUI,
                     cwd=temp_dir,
-                    env={'TEST_VAR': 'calc_test'}
+                    env={"TEST_VAR": "calc_test"},
                 )
 
                 result = self.run_async(cmd.execute())
@@ -177,29 +181,29 @@ class TestLevel5ProcessManagement(BaseCommandTest):
             callbacks_called = []
 
             def start_callback(cmd, result=None):
-                callbacks_called.append('start')
+                callbacks_called.append("start")
 
             def complete_callback(cmd, result=None):
-                callbacks_called.append('complete')
+                callbacks_called.append("complete")
 
             def error_callback(cmd, exception):
-                callbacks_called.append('error')
+                callbacks_called.append("error")
 
             # Create calculator with callbacks
             cmd = AsyncCommand(
-                ['calc'],
+                ["calc"],
                 command_type=CommandType.GUI,
                 on_start=start_callback,
                 on_complete=complete_callback,
-                on_error=error_callback
+                on_error=error_callback,
             )
 
             result = self.run_async(cmd.execute())
 
             # Verify callbacks were called
-            self.assertIn('start', callbacks_called)
-            self.assertIn('complete', callbacks_called)
-            self.assertNotIn('error', callbacks_called)
+            self.assertIn("start", callbacks_called)
+            self.assertIn("complete", callbacks_called)
+            self.assertNotIn("error", callbacks_called)
 
             # Verify we have one more process than initially
             current_pids = ctx.get_app_pids()
@@ -211,9 +215,7 @@ class TestLevel5ProcessManagement(BaseCommandTest):
         with CalculatorKillContext(self) as ctx:
             # Create calculator with very short timeout
             cmd = AsyncCommand(
-                ['calc'],
-                command_type=CommandType.GUI,
-                timeout=1  # Very short timeout
+                ["calc"], command_type=CommandType.GUI, timeout=1  # Very short timeout
             )
 
             result = self.run_async(cmd.execute())
@@ -233,7 +235,7 @@ class TestLevel5ProcessManagement(BaseCommandTest):
         with CalculatorKillContext(self) as ctx:
             # Start multiple processes
             for _ in range(2):
-                cmd = AsyncCommand(['calc'], command_type=CommandType.GUI)
+                cmd = AsyncCommand(["calc"], command_type=CommandType.GUI)
                 result = self.run_async(cmd.execute())
 
                 self.assertEqual(result.state, CommandState.COMPLETED)
@@ -248,23 +250,25 @@ class TestLevel5ProcessManagement(BaseCommandTest):
 
         with CalculatorKillContext(self) as ctx:
             # Process 1: Basic calculator
-            cmd1 = AsyncCommand(['calc'], command_type=CommandType.GUI)
+            cmd1 = AsyncCommand(["calc"], command_type=CommandType.GUI)
             result1 = self.run_async(cmd1.execute())
             self.assertEqual(result1.state, CommandState.COMPLETED)
             self.assertTrue(result1.success)
 
             # Process 2: Calculator with custom working directory
             with tempfile.TemporaryDirectory() as temp_dir:
-                cmd2 = AsyncCommand(['calc'], command_type=CommandType.GUI, cwd=temp_dir)
+                cmd2 = AsyncCommand(
+                    ["calc"], command_type=CommandType.GUI, cwd=temp_dir
+                )
                 result2 = self.run_async(cmd2.execute())
                 self.assertEqual(result2.state, CommandState.COMPLETED)
                 self.assertTrue(result2.success)
 
             # Process 3: Calculator with environment variables
             cmd3 = AsyncCommand(
-                ['calc'],
+                ["calc"],
                 command_type=CommandType.GUI,
-                env={'PROCESS_TEST': 'integration_test'}
+                env={"PROCESS_TEST": "integration_test"},
             )
             result3 = self.run_async(cmd3.execute())
             self.assertEqual(result3.state, CommandState.COMPLETED)
@@ -285,9 +289,9 @@ class TestLevel5ProcessManagement(BaseCommandTest):
         with CalculatorKillContext(self) as ctx:
             # Create multiple AsyncCommand instances
             commands = [
-                AsyncCommand(['calc'], command_type=CommandType.GUI),
-                AsyncCommand(['calc'], command_type=CommandType.GUI),
-                AsyncCommand(['calc'], command_type=CommandType.GUI)
+                AsyncCommand(["calc"], command_type=CommandType.GUI),
+                AsyncCommand(["calc"], command_type=CommandType.GUI),
+                AsyncCommand(["calc"], command_type=CommandType.GUI),
             ]
 
             # Execute all commands concurrently using asyncio.gather
@@ -300,14 +304,24 @@ class TestLevel5ProcessManagement(BaseCommandTest):
             # Verify all commands completed successfully
             self.assertEqual(len(results), 3)
             for i, result in enumerate(results):
-                self.assertEqual(result.state, CommandState.COMPLETED, f"Command {i} failed: {result.stderr}")
+                self.assertEqual(
+                    result.state,
+                    CommandState.COMPLETED,
+                    f"Command {i} failed: {result.stderr}",
+                )
                 self.assertTrue(result.success, f"Command {i} was not successful")
                 self.assertIsNotNone(result.pid, f"Command {i} has no PID")
 
             # Verify all command objects have correct state
             for i, cmd in enumerate(commands):
-                self.assertEqual(cmd.state, CommandState.COMPLETED, f"Command object {i} state is not COMPLETED")
-                self.assertTrue(cmd.result.success, f"Command object {i} success is not True")
+                self.assertEqual(
+                    cmd.state,
+                    CommandState.COMPLETED,
+                    f"Command object {i} state is not COMPLETED",
+                )
+                self.assertTrue(
+                    cmd.result.success, f"Command object {i} success is not True"
+                )
 
             # Verify we have 3 more processes than initially
             current_pids = ctx.get_app_pids()

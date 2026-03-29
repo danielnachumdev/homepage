@@ -1,15 +1,25 @@
+import asyncio
 from typing import List, Optional
 
-from .base_service import BaseService
-from ...utils.command import AsyncCommand, CommandType
 from ...schemas.v1.docker import (
-    ContainerNameRequest, LogsRequest, RemoveContainerRequest, RedeployRequest,
-    ContainerInfoResponse, ContainerListResponse, ContainerOperationResponse,
-    ContainerHealthResponse, ContainerLogsResponse, ContainerRemoveResponse,
-    ContainerRedeployResponse, ContainerStatus, HealthStatus, DockerPsEntry
+    ContainerHealthResponse,
+    ContainerInfoResponse,
+    ContainerListResponse,
+    ContainerLogsResponse,
+    ContainerNameRequest,
+    ContainerOperationResponse,
+    ContainerRedeployResponse,
+    ContainerRemoveResponse,
+    ContainerStatus,
+    DockerPsEntry,
+    HealthStatus,
+    LogsRequest,
+    RedeployRequest,
+    RemoveContainerRequest,
 )
+from ...utils.command import AsyncCommand, CommandType
 from ...utils.logger import get_logger
-import asyncio
+from .base_service import BaseService
 
 
 class DockerService(BaseService):
@@ -30,6 +40,7 @@ class DockerService(BaseService):
                 self.logger.debug("Successfully executed docker inspect command")
                 try:
                     import json
+
                     container_data = json.loads(result.stdout)
                     self.logger.debug("Successfully parsed container data JSON")
 
@@ -40,30 +51,42 @@ class DockerService(BaseService):
                     created = container_data.get("Created", "")
                     state = container_data.get("State", {})
                     status = state.get("Status", "")
-                    health_status = state.get("Health", {}).get("Status") if state.get("Health") else None
+                    health_status = (
+                        state.get("Health", {}).get("Status")
+                        if state.get("Health")
+                        else None
+                    )
 
                     # Extract ports
                     ports = []
                     network_settings = container_data.get("NetworkSettings", {})
                     if "Ports" in network_settings:
-                        for port_binding, host_bindings in network_settings["Ports"].items():
+                        for port_binding, host_bindings in network_settings[
+                            "Ports"
+                        ].items():
                             if host_bindings:
                                 for host_binding in host_bindings:
-                                    ports.append({
-                                        "container_port": port_binding,
-                                        "host_ip": host_binding.get("HostIp", ""),
-                                        "host_port": host_binding.get("HostPort", "")
-                                    })
+                                    ports.append(
+                                        {
+                                            "container_port": port_binding,
+                                            "host_ip": host_binding.get("HostIp", ""),
+                                            "host_port": host_binding.get(
+                                                "HostPort", ""
+                                            ),
+                                        }
+                                    )
 
                     # Extract mounts
                     mounts = []
                     for mount in container_data.get("Mounts", []):
-                        mounts.append({
-                            "source": mount.get("Source", ""),
-                            "destination": mount.get("Destination", ""),
-                            "type": mount.get("Type", ""),
-                            "read_only": mount.get("RW", True)
-                        })
+                        mounts.append(
+                            {
+                                "source": mount.get("Source", ""),
+                                "destination": mount.get("Destination", ""),
+                                "type": mount.get("Type", ""),
+                                "read_only": mount.get("RW", True),
+                            }
+                        )
 
                     # Extract networks
                     networks = []
@@ -73,8 +96,8 @@ class DockerService(BaseService):
                     # Extract environment variables
                     env_vars = {}
                     for env in container_data.get("Config", {}).get("Env", []):
-                        if '=' in env:
-                            key, value = env.split('=', 1)
+                        if "=" in env:
+                            key, value = env.split("=", 1)
                             env_vars[key] = value
 
                     # Extract command and entrypoint
@@ -88,9 +111,13 @@ class DockerService(BaseService):
                     compose_info = self._parse_compose_labels_from_dict(labels)
 
                     # Build deploy command based on available information
-                    deploy_command = self._build_deploy_command_from_inspect(container_data)
+                    deploy_command = self._build_deploy_command_from_inspect(
+                        container_data
+                    )
 
-                    self.logger.info("Successfully retrieved container info for: %s", container_name)
+                    self.logger.info(
+                        "Successfully retrieved container info for: %s", container_name
+                    )
                     return ContainerInfoResponse(
                         success=True,
                         container_name=container_name,
@@ -111,33 +138,45 @@ class DockerService(BaseService):
                         deploy_command=deploy_command,
                         compose_file=compose_info.get("config_files"),
                         compose_service=compose_info.get("service"),
-                        restart_policy=container_data.get("HostConfig", {}).get("RestartPolicy", {}).get("Name"),
-                        error=None
+                        restart_policy=container_data.get("HostConfig", {})
+                        .get("RestartPolicy", {})
+                        .get("Name"),
+                        error=None,
                     )
 
                 except json.JSONDecodeError as e:
-                    self.logger.error("Failed to parse container JSON for %s: %s", container_name, str(e))
+                    self.logger.error(
+                        "Failed to parse container JSON for %s: %s",
+                        container_name,
+                        str(e),
+                    )
                     return ContainerInfoResponse(
                         success=False,
                         container_name=container_name,
                         message=f"Failed to parse container information: {str(e)}",
-                        error=f"JSON decode error: {str(e)}"
+                        error=f"JSON decode error: {str(e)}",
                     )
             else:
-                self.logger.error("Failed to execute docker inspect for %s: %s", container_name, result.stderr)
+                self.logger.error(
+                    "Failed to execute docker inspect for %s: %s",
+                    container_name,
+                    result.stderr,
+                )
                 return ContainerInfoResponse(
                     success=False,
                     container_name=container_name,
                     message=f"Failed to get container information for {container_name}",
-                    error=result.stderr
+                    error=result.stderr,
                 )
         except Exception as e:
-            self.logger.error("Error getting container info for %s: %s", container_name, str(e))
+            self.logger.error(
+                "Error getting container info for %s: %s", container_name, str(e)
+            )
             return ContainerInfoResponse(
                 success=False,
                 container_name=container_name,
                 message=f"Error getting container information for {container_name}",
-                error=str(e)
+                error=str(e),
             )
 
     def _parse_status(self, status_str: Optional[str]) -> Optional[ContainerStatus]:
@@ -153,7 +192,7 @@ class DockerService(BaseService):
             "removing": ContainerStatus.REMOVING,
             "created": ContainerStatus.CREATED,
             "exited": ContainerStatus.EXITED,
-            "dead": ContainerStatus.DEAD
+            "dead": ContainerStatus.DEAD,
         }
 
         return status_mapping.get(status_str.lower(), None)
@@ -163,27 +202,29 @@ class DockerService(BaseService):
         compose_info = {}
 
         for key, value in labels.items():
-            if key.startswith('com.docker.compose.'):
-                if key == 'com.docker.compose.project':
-                    compose_info['project'] = value
-                elif key == 'com.docker.compose.service':
-                    compose_info['service'] = value
-                elif key == 'com.docker.compose.config-hash':
-                    compose_info['config_hash'] = value
-                elif key == 'com.docker.compose.container-number':
-                    compose_info['container_number'] = value
-                elif key == 'com.docker.compose.depends_on':
-                    compose_info['depends_on'] = value
-                elif key == 'com.docker.compose.version':
-                    compose_info['version'] = value
-                elif key == 'com.docker.compose.project.config_files':
-                    compose_info['config_files'] = value
-                elif key == 'com.docker.compose.project.working_dir':
-                    compose_info['working_dir'] = value
+            if key.startswith("com.docker.compose."):
+                if key == "com.docker.compose.project":
+                    compose_info["project"] = value
+                elif key == "com.docker.compose.service":
+                    compose_info["service"] = value
+                elif key == "com.docker.compose.config-hash":
+                    compose_info["config_hash"] = value
+                elif key == "com.docker.compose.container-number":
+                    compose_info["container_number"] = value
+                elif key == "com.docker.compose.depends_on":
+                    compose_info["depends_on"] = value
+                elif key == "com.docker.compose.version":
+                    compose_info["version"] = value
+                elif key == "com.docker.compose.project.config_files":
+                    compose_info["config_files"] = value
+                elif key == "com.docker.compose.project.working_dir":
+                    compose_info["working_dir"] = value
 
         return compose_info
 
-    def _parse_health_status(self, health_status: Optional[str]) -> Optional[HealthStatus]:
+    def _parse_health_status(
+        self, health_status: Optional[str]
+    ) -> Optional[HealthStatus]:
         """Parse health status string to HealthStatus enum"""
         if not health_status:
             return None
@@ -192,7 +233,7 @@ class DockerService(BaseService):
             "healthy": HealthStatus.HEALTHY,
             "unhealthy": HealthStatus.UNHEALTHY,
             "starting": HealthStatus.STARTING,
-            "none": HealthStatus.NONE
+            "none": HealthStatus.NONE,
         }
 
         return status_mapping.get(health_status.lower(), HealthStatus.NONE)
@@ -210,7 +251,7 @@ class DockerService(BaseService):
         cmd_parts = ["docker", "run", "-d"]
 
         # Container name
-        name = container_data.get("Name", "").lstrip('/')
+        name = container_data.get("Name", "").lstrip("/")
         if name:
             cmd_parts.extend(["--name", name])
 
@@ -228,7 +269,9 @@ class DockerService(BaseService):
                         host_ip = host_binding.get("HostIp", "")
                         host_port = host_binding.get("HostPort", "")
                         if host_ip and host_ip != "0.0.0.0":
-                            cmd_parts.extend(["-p", f"{host_ip}:{host_port}:{port_binding}"])
+                            cmd_parts.extend(
+                                ["-p", f"{host_ip}:{host_port}:{port_binding}"]
+                            )
                         else:
                             cmd_parts.extend(["-p", f"{host_port}:{port_binding}"])
 
@@ -250,7 +293,7 @@ class DockerService(BaseService):
 
         # Environment variables
         for env in container_data.get("Config", {}).get("Env", []):
-            if '=' in env:
+            if "=" in env:
                 cmd_parts.extend(["-e", env])
 
         # Working directory
@@ -264,14 +307,19 @@ class DockerService(BaseService):
             cmd_parts.extend(["-u", user])
 
         # Restart policy
-        restart_policy = container_data.get("HostConfig", {}).get(
-            "RestartPolicy", {}).get("Name", "")
+        restart_policy = (
+            container_data.get("HostConfig", {})
+            .get("RestartPolicy", {})
+            .get("Name", "")
+        )
         if restart_policy and restart_policy != "no":
             cmd_parts.extend(["--restart", restart_policy])
 
         return " ".join(cmd_parts)
 
-    async def list_containers(self, all_containers: bool = False) -> ContainerListResponse:
+    async def list_containers(
+        self, all_containers: bool = False
+    ) -> ContainerListResponse:
         """List all Docker containers."""
         self.logger.info("Listing containers (all_containers=%s)", all_containers)
 
@@ -286,11 +334,12 @@ class DockerService(BaseService):
                 self.logger.debug("Successfully executed docker ps command")
                 # Parse JSON output for each container
                 docker_entries = []
-                lines = result.stdout.strip().split('\n')
+                lines = result.stdout.strip().split("\n")
                 for line in lines:
                     if line.strip():
                         try:
                             import json
+
                             container_data = json.loads(line)
                             docker_entries.append(DockerPsEntry(**container_data))
                         except json.JSONDecodeError as e:
@@ -300,7 +349,9 @@ class DockerService(BaseService):
 
                 # Filter out any non-container lines (like headers or errors)
                 docker_entries = [
-                    c for c in docker_entries if c.ID and c.Image and c.Command and c.CreatedAt and c.Status
+                    c
+                    for c in docker_entries
+                    if c.ID and c.Image and c.Command and c.CreatedAt and c.Status
                 ]
 
                 # Track summary information
@@ -318,7 +369,9 @@ class DockerService(BaseService):
                     self._get_container_details(container.ID, container.Names)
                     for container in docker_entries
                 ]
-                container_details_results = await asyncio.gather(*container_details_tasks, return_exceptions=True)
+                container_details_results = await asyncio.gather(
+                    *container_details_tasks, return_exceptions=True
+                )
 
                 for i, container in enumerate(docker_entries):
                     # Get container details (handle any exceptions)
@@ -346,7 +399,9 @@ class DockerService(BaseService):
                         "running_for": container.RunningFor,
                         "size": container.Size,
                         # Additional details from inspect
-                        "container_name": container_details.get("name", container.Names),
+                        "container_name": container_details.get(
+                            "name", container.Names
+                        ),
                         "compose_project": container_details.get("compose_project"),
                         "compose_service": container_details.get("compose_service"),
                         "image_tag": container_details.get("image_tag"),
@@ -358,17 +413,19 @@ class DockerService(BaseService):
                         "local_volumes": container.LocalVolumes,
                         "platform": {
                             "architecture": container.Platform.architecture,
-                            "os": container.Platform.os
+                            "os": container.Platform.os,
                         },
                         # Compose information from labels
                         "compose_project": compose_info.get("project"),
                         "compose_service": compose_info.get("service"),
                         "compose_config_hash": compose_info.get("config_hash"),
-                        "compose_container_number": compose_info.get("container_number"),
+                        "compose_container_number": compose_info.get(
+                            "container_number"
+                        ),
                         "compose_depends_on": compose_info.get("depends_on"),
                         "compose_version": compose_info.get("version"),
                         "compose_config_files": compose_info.get("config_files"),
-                        "compose_working_dir": compose_info.get("working_dir")
+                        "compose_working_dir": compose_info.get("working_dir"),
                     }
                     containers.append(container_info)
 
@@ -382,17 +439,27 @@ class DockerService(BaseService):
                         size_str = container_details["size"]
                         try:
                             if "KB" in size_str:
-                                total_size_bytes += float(
-                                    size_str.replace(" KB", "")) * 1024
+                                total_size_bytes += (
+                                    float(size_str.replace(" KB", "")) * 1024
+                                )
                             elif "MB" in size_str:
-                                total_size_bytes += float(
-                                    size_str.replace(" MB", "")) * 1024 * 1024
+                                total_size_bytes += (
+                                    float(size_str.replace(" MB", "")) * 1024 * 1024
+                                )
                             elif "GB" in size_str:
-                                total_size_bytes += float(
-                                    size_str.replace(" GB", "")) * 1024 * 1024 * 1024
-                            elif "B" in size_str and "KB" not in size_str and "MB" not in size_str and "GB" not in size_str:
-                                total_size_bytes += float(
-                                    size_str.replace(" B", ""))
+                                total_size_bytes += (
+                                    float(size_str.replace(" GB", ""))
+                                    * 1024
+                                    * 1024
+                                    * 1024
+                                )
+                            elif (
+                                "B" in size_str
+                                and "KB" not in size_str
+                                and "MB" not in size_str
+                                and "GB" not in size_str
+                            ):
+                                total_size_bytes += float(size_str.replace(" B", ""))
                         except ValueError:
                             pass
 
@@ -401,8 +468,12 @@ class DockerService(BaseService):
                     else:
                         stopped_count += 1
 
-                self.logger.info("Successfully listed %d containers (%d running, %d stopped)",
-                                 len(containers), running_count, stopped_count)
+                self.logger.info(
+                    "Successfully listed %d containers (%d running, %d stopped)",
+                    len(containers),
+                    running_count,
+                    stopped_count,
+                )
                 return ContainerListResponse(
                     success=True,
                     containers=containers,
@@ -412,22 +483,18 @@ class DockerService(BaseService):
                     compose_projects=list(compose_projects),
                     unique_images=list(unique_images),
                     total_size=None,  # Size is per-container in JSON format
-                    error=None
+                    error=None,
                 )
             else:
-                self.logger.error("Failed to execute docker ps command: %s", result.stderr)
+                self.logger.error(
+                    "Failed to execute docker ps command: %s", result.stderr
+                )
                 return ContainerListResponse(
-                    success=False,
-                    containers=[],
-                    error=result.stderr
+                    success=False, containers=[], error=result.stderr
                 )
         except Exception as e:
             self.logger.error("Error listing containers: %s", str(e))
-            return ContainerListResponse(
-                success=False,
-                containers=[],
-                error=str(e)
-            )
+            return ContainerListResponse(success=False, containers=[], error=str(e))
 
     async def _get_container_details(self, container_id: str, names: str) -> dict:
         """Get additional container details using docker inspect"""
@@ -435,7 +502,7 @@ class DockerService(BaseService):
 
         try:
             # Get container name (first name if multiple)
-            container_names = names.split(',')
+            container_names = names.split(",")
             details["name"] = container_names[0].strip()
 
             # Check if this is a compose container
@@ -443,9 +510,9 @@ class DockerService(BaseService):
                 # Look for compose project and service names
                 for name in container_names:
                     name = name.strip()
-                    if '_' in name and name.count('_') >= 2:
+                    if "_" in name and name.count("_") >= 2:
                         # Typical compose naming: project_service_number
-                        parts = name.split('_')
+                        parts = name.split("_")
                         if len(parts) >= 2:
                             details["compose_project"] = parts[0]
                             details["compose_service"] = parts[1]
@@ -458,7 +525,9 @@ class DockerService(BaseService):
 
             if inspect_result.success:
                 # Extract image tag
-                image_tag_cmd = f"docker inspect --format='{{{{.Config.Image}}}}' {container_id}"
+                image_tag_cmd = (
+                    f"docker inspect --format='{{{{.Config.Image}}}}' {container_id}"
+                )
                 image_cmd = AsyncCommand.cmd(image_tag_cmd)
                 image_result = await image_cmd.execute()
                 if image_result.success:
@@ -510,27 +579,27 @@ class DockerService(BaseService):
             return compose_info
 
         # Split labels by comma and parse each one
-        labels = labels_str.split(',')
+        labels = labels_str.split(",")
         for label in labels:
             label = label.strip()
-            if label.startswith('com.docker.compose.'):
+            if label.startswith("com.docker.compose."):
                 # Extract compose information
-                if 'project=' in label:
-                    compose_info['project'] = label.split('=')[1]
-                elif 'service=' in label:
-                    compose_info['service'] = label.split('=')[1]
-                elif 'config-hash=' in label:
-                    compose_info['config_hash'] = label.split('=')[1]
-                elif 'container-number=' in label:
-                    compose_info['container_number'] = label.split('=')[1]
-                elif 'depends_on=' in label:
-                    compose_info['depends_on'] = label.split('=')[1]
-                elif 'version=' in label:
-                    compose_info['version'] = label.split('=')[1]
-                elif 'config_files=' in label:
-                    compose_info['config_files'] = label.split('=')[1]
-                elif 'working_dir=' in label:
-                    compose_info['working_dir'] = label.split('=')[1]
+                if "project=" in label:
+                    compose_info["project"] = label.split("=")[1]
+                elif "service=" in label:
+                    compose_info["service"] = label.split("=")[1]
+                elif "config-hash=" in label:
+                    compose_info["config_hash"] = label.split("=")[1]
+                elif "container-number=" in label:
+                    compose_info["container_number"] = label.split("=")[1]
+                elif "depends_on=" in label:
+                    compose_info["depends_on"] = label.split("=")[1]
+                elif "version=" in label:
+                    compose_info["version"] = label.split("=")[1]
+                elif "config_files=" in label:
+                    compose_info["config_files"] = label.split("=")[1]
+                elif "working_dir=" in label:
+                    compose_info["working_dir"] = label.split("=")[1]
 
         return compose_info
 
@@ -541,29 +610,33 @@ class DockerService(BaseService):
 
         ports = []
         # Handle multiple port mappings
-        port_mappings = ports_str.split(', ')
+        port_mappings = ports_str.split(", ")
         for mapping in port_mappings:
-            if '->' in mapping:
+            if "->" in mapping:
                 # Format: "0.0.0.0:8080->8010/tcp"
-                parts = mapping.split('->')
+                parts = mapping.split("->")
                 if len(parts) == 2:
                     host_part = parts[0].strip()
                     container_part = parts[1].strip()
 
                     # Extract host and container ports
-                    host_port = host_part.split(
-                        ':')[1] if ':' in host_part else host_part
-                    container_port = container_part.split('/')[0]
-                    protocol = container_part.split(
-                        '/')[1] if '/' in container_part else 'tcp'
+                    host_port = (
+                        host_part.split(":")[1] if ":" in host_part else host_part
+                    )
+                    container_port = container_part.split("/")[0]
+                    protocol = (
+                        container_part.split("/")[1] if "/" in container_part else "tcp"
+                    )
 
-                    ports.append({
-                        "host": host_part,
-                        "container": container_part,
-                        "host_port": host_port,
-                        "container_port": container_port,
-                        "protocol": protocol
-                    })
+                    ports.append(
+                        {
+                            "host": host_part,
+                            "container": container_part,
+                            "host_port": host_port,
+                            "container_port": container_port,
+                            "protocol": protocol,
+                        }
+                    )
             else:
                 # Single port without mapping
                 ports.append({"port": mapping.strip()})
@@ -577,18 +650,15 @@ class DockerService(BaseService):
 
         mounts = []
         # Handle multiple mounts
-        mount_list = mounts_str.split(', ')
+        mount_list = mounts_str.split(", ")
         for mount in mount_list:
-            if ':' in mount:
+            if ":" in mount:
                 # Format: "source:target"
-                parts = mount.split(':')
+                parts = mount.split(":")
                 if len(parts) >= 2:
                     source = parts[0]
-                    target = ':'.join(parts[1:])  # Handle paths with colons
-                    mounts.append({
-                        "source": source,
-                        "target": target
-                    })
+                    target = ":".join(parts[1:])  # Handle paths with colons
+                    mounts.append({"source": source, "target": target})
             else:
                 # Named volume
                 mounts.append({"volume": mount})
@@ -601,7 +671,7 @@ class DockerService(BaseService):
             return []
 
         # Networks are comma-separated
-        return [network.strip() for network in networks_str.split(',')]
+        return [network.strip() for network in networks_str.split(",")]
 
     def _parse_labels(self, labels_str: str) -> dict:
         """Parse all labels into a dictionary"""
@@ -611,18 +681,18 @@ class DockerService(BaseService):
             return labels
 
         # Split labels by comma and parse each one
-        label_pairs = labels_str.split(',')
+        label_pairs = labels_str.split(",")
         for label_pair in label_pairs:
             label_pair = label_pair.strip()
-            if '=' in label_pair:
-                key, value = label_pair.split('=', 1)
+            if "=" in label_pair:
+                key, value = label_pair.split("=", 1)
                 labels[key.strip()] = value.strip()
 
         return labels
 
     def _format_size(self, size_bytes: int) -> str:
         """Format size in bytes to human readable format"""
-        for unit in ['B', 'KB', 'MB', 'GB']:
+        for unit in ["B", "KB", "MB", "GB"]:
             if size_bytes < 1024.0:
                 return f"{size_bytes:.1f} {unit}"
             size_bytes /= 1024.0
@@ -647,16 +717,18 @@ class DockerService(BaseService):
                     previous_status=ContainerStatus.RUNNING,
                     current_status=ContainerStatus.STOPPED,
                     message=f"Container {container_name} stopped successfully",
-                    error=None
+                    error=None,
                 )
             else:
-                self.logger.error("Failed to stop container %s: %s", container_name, result.stderr)
+                self.logger.error(
+                    "Failed to stop container %s: %s", container_name, result.stderr
+                )
                 return ContainerOperationResponse(
                     success=False,
                     container_name=container_name,
                     operation="stop",
                     message=f"Failed to stop container {container_name}",
-                    error=result.stderr
+                    error=result.stderr,
                 )
         except Exception as e:
             self.logger.error("Error stopping container %s: %s", container_name, str(e))
@@ -665,7 +737,7 @@ class DockerService(BaseService):
                 container_name=container_name,
                 operation="stop",
                 message=f"Error stopping container {container_name}",
-                error=str(e)
+                error=str(e),
             )
 
     async def start_container(self, container_name: str) -> ContainerOperationResponse:
@@ -687,16 +759,18 @@ class DockerService(BaseService):
                     previous_status=ContainerStatus.STOPPED,
                     current_status=ContainerStatus.RUNNING,
                     message=f"Container {container_name} started successfully",
-                    error=None
+                    error=None,
                 )
             else:
-                self.logger.error("Failed to start container %s: %s", container_name, result.stderr)
+                self.logger.error(
+                    "Failed to start container %s: %s", container_name, result.stderr
+                )
                 return ContainerOperationResponse(
                     success=False,
                     container_name=container_name,
                     operation="start",
                     message=f"Failed to start container {container_name}",
-                    error=result.stderr
+                    error=result.stderr,
                 )
         except Exception as e:
             self.logger.error("Error starting container %s: %s", container_name, str(e))
@@ -705,10 +779,12 @@ class DockerService(BaseService):
                 container_name=container_name,
                 operation="start",
                 message=f"Error starting container {container_name}",
-                error=str(e)
+                error=str(e),
             )
 
-    async def restart_container(self, container_name: str) -> ContainerOperationResponse:
+    async def restart_container(
+        self, container_name: str
+    ) -> ContainerOperationResponse:
         """Restart a Docker container by name."""
         try:
             command = f"docker restart {container_name}"
@@ -723,7 +799,7 @@ class DockerService(BaseService):
                     previous_status=ContainerStatus.RUNNING,
                     current_status=ContainerStatus.RUNNING,
                     message=f"Container {container_name} restarted successfully",
-                    error=None
+                    error=None,
                 )
             else:
                 return ContainerOperationResponse(
@@ -731,7 +807,7 @@ class DockerService(BaseService):
                     container_name=container_name,
                     operation="restart",
                     message=f"Failed to restart container {container_name}",
-                    error=result.stderr
+                    error=result.stderr,
                 )
         except Exception as e:
             return ContainerOperationResponse(
@@ -739,10 +815,12 @@ class DockerService(BaseService):
                 container_name=container_name,
                 operation="restart",
                 message=f"Error restarting container {container_name}",
-                error=str(e)
+                error=str(e),
             )
 
-    async def health_check_container(self, container_name: str) -> ContainerHealthResponse:
+    async def health_check_container(
+        self, container_name: str
+    ) -> ContainerHealthResponse:
         """Check the health status of a Docker container."""
         try:
             # First check if container exists and get its status
@@ -767,7 +845,7 @@ class DockerService(BaseService):
                         success=True,
                         container_name=container_name,
                         health_status=health_status,
-                        error=None
+                        error=None,
                     )
                 else:
                     # Container exists but no health check configured
@@ -775,24 +853,26 @@ class DockerService(BaseService):
                         success=True,
                         container_name=container_name,
                         health_status=HealthStatus.NONE,
-                        error=None
+                        error=None,
                     )
             else:
                 return ContainerHealthResponse(
                     success=False,
                     container_name=container_name,
                     health_status=HealthStatus.NONE,
-                    error=result.stderr
+                    error=result.stderr,
                 )
         except Exception as e:
             return ContainerHealthResponse(
                 success=False,
                 container_name=container_name,
                 health_status=HealthStatus.NONE,
-                error=str(e)
+                error=str(e),
             )
 
-    async def get_container_logs(self, container_name: str, tail_lines: int = 100) -> ContainerLogsResponse:
+    async def get_container_logs(
+        self, container_name: str, tail_lines: int = 100
+    ) -> ContainerLogsResponse:
         """Get recent logs from a Docker container."""
         try:
             command = f"docker logs --tail {tail_lines} {container_name}"
@@ -800,31 +880,32 @@ class DockerService(BaseService):
             result = await async_cmd.execute()
 
             if result.success:
-                logs = result.stdout.strip().split('\n') if result.stdout.strip() else []
+                logs = (
+                    result.stdout.strip().split("\n") if result.stdout.strip() else []
+                )
                 return ContainerLogsResponse(
                     success=True,
                     container_name=container_name,
                     logs=logs,
                     total_lines=len(logs),
                     tail_lines=tail_lines,
-                    error=None
+                    error=None,
                 )
             else:
                 return ContainerLogsResponse(
                     success=False,
                     container_name=container_name,
                     logs=[],
-                    error=result.stderr
+                    error=result.stderr,
                 )
         except Exception as e:
             return ContainerLogsResponse(
-                success=False,
-                container_name=container_name,
-                logs=[],
-                error=str(e)
+                success=False, container_name=container_name, logs=[], error=str(e)
             )
 
-    async def remove_container(self, container_name: str, force: bool = False) -> ContainerRemoveResponse:
+    async def remove_container(
+        self, container_name: str, force: bool = False
+    ) -> ContainerRemoveResponse:
         """Remove a Docker container by name."""
         try:
             flag = "-f" if force else ""
@@ -839,7 +920,7 @@ class DockerService(BaseService):
                     removed=True,
                     force_used=force,
                     message=f"Container {container_name} removed successfully",
-                    error=None
+                    error=None,
                 )
             else:
                 return ContainerRemoveResponse(
@@ -848,7 +929,7 @@ class DockerService(BaseService):
                     removed=False,
                     force_used=force,
                     message=f"Failed to remove container {container_name}",
-                    error=result.stderr
+                    error=result.stderr,
                 )
         except Exception as e:
             return ContainerRemoveResponse(
@@ -857,10 +938,12 @@ class DockerService(BaseService):
                 removed=False,
                 force_used=force,
                 message=f"Error removing container {container_name}",
-                error=str(e)
+                error=str(e),
             )
 
-    async def redeploy_container(self, request: RedeployRequest) -> ContainerRedeployResponse:
+    async def redeploy_container(
+        self, request: RedeployRequest
+    ) -> ContainerRedeployResponse:
         """Redeploy a container with new configuration."""
         try:
             # Get current container info
@@ -871,7 +954,7 @@ class DockerService(BaseService):
                     container_name=request.container_name,
                     deploy_command="",
                     message=f"Failed to get current container info: {current_info.error}",
-                    error=current_info.error
+                    error=current_info.error,
                 )
 
             old_container_id = current_info.container_id
@@ -884,7 +967,7 @@ class DockerService(BaseService):
                     container_name=request.container_name,
                     deploy_command="",
                     message="No image specified and no current image found",
-                    error="Missing image information"
+                    error="Missing image information",
                 )
 
             # Stop and remove the old container
@@ -895,18 +978,19 @@ class DockerService(BaseService):
                     container_name=request.container_name,
                     deploy_command="",
                     message=f"Failed to stop container: {stop_result.error}",
-                    error=stop_result.error
+                    error=stop_result.error,
                 )
 
             remove_result = await self.remove_container(
-                request.container_name, force=True)
+                request.container_name, force=True
+            )
             if not remove_result.success:
                 return ContainerRedeployResponse(
                     success=False,
                     container_name=request.container_name,
                     deploy_command="",
                     message=f"Failed to remove container: {remove_result.error}",
-                    error=remove_result.error
+                    error=remove_result.error,
                 )
 
             # Build the new deploy command
@@ -924,13 +1008,17 @@ class DockerService(BaseService):
                     new_image=new_image,
                     deploy_command=deploy_command,
                     message=f"Failed to start new container: {run_result.stderr}",
-                    error=run_result.stderr
+                    error=run_result.stderr,
                 )
 
             # Get the new container ID
-            new_id_async_cmd = AsyncCommand.cmd(f"docker inspect --format='{{{{.Id}}}}' {request.container_name}")
+            new_id_async_cmd = AsyncCommand.cmd(
+                f"docker inspect --format='{{{{.Id}}}}' {request.container_name}"
+            )
             new_id_result = await new_id_async_cmd.execute()
-            new_container_id = new_id_result.stdout.strip() if new_id_result.success else None
+            new_container_id = (
+                new_id_result.stdout.strip() if new_id_result.success else None
+            )
 
             return ContainerRedeployResponse(
                 success=True,
@@ -941,7 +1029,7 @@ class DockerService(BaseService):
                 new_image=new_image,
                 deploy_command=deploy_command,
                 message=f"Container {request.container_name} redeployed successfully",
-                error=None
+                error=None,
             )
 
         except Exception as e:
@@ -950,7 +1038,7 @@ class DockerService(BaseService):
                 container_name=request.container_name,
                 deploy_command="",
                 message=f"Error redeploying container: {str(e)}",
-                error=str(e)
+                error=str(e),
             )
 
     def _build_redeploy_command(self, request: RedeployRequest, image: str) -> str:
@@ -993,25 +1081,28 @@ class DockerService(BaseService):
         responses = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                responses.append({
-                    'success': False,
-                    'output': '',
-                    'error': str(result)
-                })
+                responses.append({"success": False, "output": "", "error": str(result)})
             else:
-                responses.append({
-                    'success': result.success,
-                    'output': result.stdout,
-                    'error': result.stderr if not result.success else None
-                })
+                responses.append(
+                    {
+                        "success": result.success,
+                        "output": result.stdout,
+                        "error": result.stderr if not result.success else None,
+                    }
+                )
 
         return responses
 
-    async def batch_container_operations(self, container_names: list[str], operation: str) -> list[
-        ContainerOperationResponse]:
+    async def batch_container_operations(
+        self, container_names: list[str], operation: str
+    ) -> list[ContainerOperationResponse]:
         """Execute the same operation on multiple containers concurrently."""
-        self.logger.info("Starting batch %s operation on %d containers: %s",
-                         operation, len(container_names), container_names)
+        self.logger.info(
+            "Starting batch %s operation on %d containers: %s",
+            operation,
+            len(container_names),
+            container_names,
+        )
 
         if operation == "stop":
             commands = [f"docker stop {name}" for name in container_names]
@@ -1029,44 +1120,70 @@ class DockerService(BaseService):
         responses = []
         for i, result in enumerate(results):
             if operation == "stop":
-                responses.append(ContainerOperationResponse(
-                    success=result.success,
-                    container_name=container_names[i],
-                    operation=operation,
-                    previous_status=ContainerStatus.RUNNING,
-                    current_status=ContainerStatus.STOPPED if result.success else None,
-                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
-                    error=result.error
-                ))
+                responses.append(
+                    ContainerOperationResponse(
+                        success=result.success,
+                        container_name=container_names[i],
+                        operation=operation,
+                        previous_status=ContainerStatus.RUNNING,
+                        current_status=(
+                            ContainerStatus.STOPPED if result.success else None
+                        ),
+                        message=(
+                            f"Container {container_names[i]} {operation}ed successfully"
+                            if result.success
+                            else f"Failed to {operation} container {container_names[i]}"
+                        ),
+                        error=result.error,
+                    )
+                )
             elif operation == "start":
-                responses.append(ContainerOperationResponse(
-                    success=result.success,
-                    container_name=container_names[i],
-                    operation=operation,
-                    previous_status=ContainerStatus.STOPPED,
-                    current_status=ContainerStatus.RUNNING if result.success else None,
-                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
-                    error=result.error
-                ))
+                responses.append(
+                    ContainerOperationResponse(
+                        success=result.success,
+                        container_name=container_names[i],
+                        operation=operation,
+                        previous_status=ContainerStatus.STOPPED,
+                        current_status=(
+                            ContainerStatus.RUNNING if result.success else None
+                        ),
+                        message=(
+                            f"Container {container_names[i]} {operation}ed successfully"
+                            if result.success
+                            else f"Failed to {operation} container {container_names[i]}"
+                        ),
+                        error=result.error,
+                    )
+                )
             elif operation == "restart":
-                responses.append(ContainerOperationResponse(
-                    success=result.success,
-                    container_name=container_names[i],
-                    operation=operation,
-                    previous_status=ContainerStatus.RUNNING,
-                    current_status=ContainerStatus.RUNNING if result.success else None,
-                    message=f"Container {container_names[i]} {operation}ed successfully" if result.success else f"Failed to {operation} container {container_names[i]}",
-                    error=result.error
-                ))
+                responses.append(
+                    ContainerOperationResponse(
+                        success=result.success,
+                        container_name=container_names[i],
+                        operation=operation,
+                        previous_status=ContainerStatus.RUNNING,
+                        current_status=(
+                            ContainerStatus.RUNNING if result.success else None
+                        ),
+                        message=(
+                            f"Container {container_names[i]} {operation}ed successfully"
+                            if result.success
+                            else f"Failed to {operation} container {container_names[i]}"
+                        ),
+                        error=result.error,
+                    )
+                )
 
         success_count = sum(1 for r in responses if r.success)
         failure_count = len(responses) - success_count
-        self.logger.info("Batch %s operation completed: %d successful, %d failed", operation, success_count,
-                         failure_count)
+        self.logger.info(
+            "Batch %s operation completed: %d successful, %d failed",
+            operation,
+            success_count,
+            failure_count,
+        )
 
         return responses
 
 
-__all__ = [
-    "DockerService"
-]
+__all__ = ["DockerService"]

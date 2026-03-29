@@ -1,8 +1,9 @@
-import unittest
 import os
+import unittest
 
 from backend.src.utils.command import AsyncCommand
 from backend.tests.utils.command.base import BaseCommandTest
+
 
 class TestWslFactory(BaseCommandTest):
     """Test cases for AsyncCommand.wsl factory method."""
@@ -15,10 +16,10 @@ class TestWslFactory(BaseCommandTest):
         # Test if WSL is available by running a simple command
         try:
             import subprocess
-            result = subprocess.run(['wsl', 'echo', 'test'],
-                                    capture_output=True,
-                                    text=True,
-                                    timeout=10)
+
+            result = subprocess.run(
+                ["wsl", "echo", "test"], capture_output=True, text=True, timeout=10
+            )
             if result.returncode != 0:
                 raise unittest.SkipTest("WSL is not available or not working properly")
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
@@ -218,4 +219,3 @@ class TestWslFactory(BaseCommandTest):
         result = self.run_async(cmd.execute())
         self.assertTrue(result.success, f"Command failed with stderr: {result.stderr}")
         # Should return current working directory
-

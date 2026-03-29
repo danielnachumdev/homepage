@@ -1,10 +1,12 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class ContainerStatus(str, Enum):
     """Container status enumeration."""
+
     RUNNING = "running"
     STOPPED = "stopped"
     PAUSED = "paused"
@@ -17,6 +19,7 @@ class ContainerStatus(str, Enum):
 
 class HealthStatus(str, Enum):
     """Container health status enumeration."""
+
     HEALTHY = "healthy"
     UNHEALTHY = "unhealthy"
     STARTING = "starting"
@@ -25,18 +28,19 @@ class HealthStatus(str, Enum):
 
 class PlatformInfo(BaseModel):
     """Platform information for a container."""
+
     architecture: str
     os: str
 
 
 class DockerPsEntry(BaseModel):
     """Represents a single container entry from docker ps --format json."""
+
     ID: str = Field(..., description="Container ID")
     Image: str = Field(..., description="Container image")
     Command: str = Field(..., description="Container command")
     CreatedAt: str = Field(..., description="Container creation time")
-    State: str = Field(...,
-                       description="Container state (running, exited, etc.)")
+    State: str = Field(..., description="Container state (running, exited, etc.)")
     Status: str = Field(..., description="Container status description")
     Ports: str = Field(..., description="Port mappings")
     Names: str = Field(..., description="Container names")
@@ -45,19 +49,20 @@ class DockerPsEntry(BaseModel):
     Mounts: str = Field(..., description="Volume mounts")
     Networks: str = Field(..., description="Network connections")
     Platform: PlatformInfo = Field(..., description="Platform information")
-    RunningFor: str = Field(...,
-                            description="How long container has been running")
+    RunningFor: str = Field(..., description="How long container has been running")
     Size: str = Field(..., description="Container size")
 
 
 # Legacy schemas for backward compatibility
 class DockerRequest(BaseModel):
     """Legacy Docker request schema."""
+
     container_name: str
 
 
 class DockerResponse(BaseModel):
     """Legacy Docker response schema."""
+
     success: bool
     message: str
     error: Optional[str] = None
@@ -66,23 +71,27 @@ class DockerResponse(BaseModel):
 # Request schemas
 class ContainerNameRequest(BaseModel):
     """Request schema for container operations by name."""
+
     container_name: str
 
 
 class LogsRequest(BaseModel):
     """Request schema for getting container logs."""
+
     container_name: str
     tail_lines: int = 100
 
 
 class RemoveContainerRequest(BaseModel):
     """Request schema for removing a container."""
+
     container_name: str
     force: bool = False
 
 
 class RedeployRequest(BaseModel):
     """Request schema for redeploying a container."""
+
     container_name: str
     image: Optional[str] = None
     environment_vars: Optional[Dict[str, str]] = None
@@ -93,6 +102,7 @@ class RedeployRequest(BaseModel):
 # Response schemas
 class ContainerInfoResponse(BaseModel):
     """Response schema for container information."""
+
     success: bool
     container_name: str
     container_id: Optional[str] = None
@@ -119,6 +129,7 @@ class ContainerInfoResponse(BaseModel):
 
 class ContainerListResponse(BaseModel):
     """Response schema for container list."""
+
     success: bool
     containers: List[Dict[str, Any]]
     total_count: int
@@ -132,6 +143,7 @@ class ContainerListResponse(BaseModel):
 
 class ContainerOperationResponse(BaseModel):
     """Response schema for container operations."""
+
     success: bool
     container_name: str
     operation: str
@@ -143,6 +155,7 @@ class ContainerOperationResponse(BaseModel):
 
 class ContainerHealthResponse(BaseModel):
     """Response schema for container health check."""
+
     success: bool
     container_name: str
     health_status: HealthStatus
@@ -151,6 +164,7 @@ class ContainerHealthResponse(BaseModel):
 
 class ContainerLogsResponse(BaseModel):
     """Response schema for container logs."""
+
     success: bool
     container_name: str
     logs: List[str]
@@ -161,6 +175,7 @@ class ContainerLogsResponse(BaseModel):
 
 class ContainerRemoveResponse(BaseModel):
     """Response schema for container removal."""
+
     success: bool
     container_name: str
     removed: bool
@@ -171,6 +186,7 @@ class ContainerRemoveResponse(BaseModel):
 
 class ContainerRedeployResponse(BaseModel):
     """Response schema for container redeployment."""
+
     success: bool
     container_name: str
     old_container_id: Optional[str] = None

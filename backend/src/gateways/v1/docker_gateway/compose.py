@@ -6,6 +6,7 @@ import json
 import logging
 import os
 from typing import List, Optional
+
 from ....utils.command import AsyncCommand
 from ....utils.logger import get_logger
 from .models import ComposeProjectInfo, ComposeServiceInfo, DockerCommandResult
@@ -13,6 +14,7 @@ from .models import ComposeProjectInfo, ComposeServiceInfo, DockerCommandResult
 
 class DockerComposeGateway:
     """Gateway for Docker Compose project operations."""
+
     logger: logging.Logger = get_logger(__name__)
 
     def __init__(self, compose_file: str, project_dir: Optional[str] = None):
@@ -27,8 +29,13 @@ class DockerComposeGateway:
         self.project_dir = project_dir or os.path.dirname(compose_file)
 
     @classmethod
-    async def up(cls, compose_file: str, project_dir: Optional[str] = None,
-                 detached: bool = True, build: bool = False) -> DockerCommandResult:
+    async def up(
+        cls,
+        compose_file: str,
+        project_dir: Optional[str] = None,
+        detached: bool = True,
+        build: bool = False,
+    ) -> DockerCommandResult:
         """Start compose services."""
         cls.logger.info("Starting compose project: %s", compose_file)
 
@@ -53,13 +60,17 @@ class DockerComposeGateway:
                 "compose_file": compose_file,
                 "project_dir": project_dir,
                 "detached": detached,
-                "build": build
-            }
+                "build": build,
+            },
         )
 
     @classmethod
-    async def down(cls, compose_file: str, project_dir: Optional[str] = None,
-                   remove_volumes: bool = False) -> DockerCommandResult:
+    async def down(
+        cls,
+        compose_file: str,
+        project_dir: Optional[str] = None,
+        remove_volumes: bool = False,
+    ) -> DockerCommandResult:
         """Stop and remove compose services."""
         cls.logger.info("Stopping compose project: %s", compose_file)
 
@@ -81,12 +92,14 @@ class DockerComposeGateway:
             parsed_data={
                 "compose_file": compose_file,
                 "project_dir": project_dir,
-                "remove_volumes": remove_volumes
-            }
+                "remove_volumes": remove_volumes,
+            },
         )
 
     @classmethod
-    async def restart(cls, compose_file: str, project_dir: Optional[str] = None) -> DockerCommandResult:
+    async def restart(
+        cls, compose_file: str, project_dir: Optional[str] = None
+    ) -> DockerCommandResult:
         """Restart compose services."""
         cls.logger.info("Restarting compose project: %s", compose_file)
 
@@ -103,14 +116,13 @@ class DockerComposeGateway:
         return DockerCommandResult(
             raw=result,
             operation="restart",
-            parsed_data={
-                "compose_file": compose_file,
-                "project_dir": project_dir
-            }
+            parsed_data={"compose_file": compose_file, "project_dir": project_dir},
         )
 
     @classmethod
-    async def stop(cls, compose_file: str, project_dir: Optional[str] = None) -> DockerCommandResult:
+    async def stop(
+        cls, compose_file: str, project_dir: Optional[str] = None
+    ) -> DockerCommandResult:
         """Stop compose services."""
         cls.logger.info("Stopping compose project: %s", compose_file)
 
@@ -127,14 +139,13 @@ class DockerComposeGateway:
         return DockerCommandResult(
             raw=result,
             operation="stop",
-            parsed_data={
-                "compose_file": compose_file,
-                "project_dir": project_dir
-            }
+            parsed_data={"compose_file": compose_file, "project_dir": project_dir},
         )
 
     @classmethod
-    async def start(cls, compose_file: str, project_dir: Optional[str] = None) -> DockerCommandResult:
+    async def start(
+        cls, compose_file: str, project_dir: Optional[str] = None
+    ) -> DockerCommandResult:
         """Start compose services."""
         cls.logger.info("Starting compose project: %s", compose_file)
 
@@ -151,14 +162,13 @@ class DockerComposeGateway:
         return DockerCommandResult(
             raw=result,
             operation="start",
-            parsed_data={
-                "compose_file": compose_file,
-                "project_dir": project_dir
-            }
+            parsed_data={"compose_file": compose_file, "project_dir": project_dir},
         )
 
     @classmethod
-    async def pull(cls, compose_file: str, project_dir: Optional[str] = None) -> DockerCommandResult:
+    async def pull(
+        cls, compose_file: str, project_dir: Optional[str] = None
+    ) -> DockerCommandResult:
         """Pull compose service images."""
         cls.logger.info("Pulling images for compose project: %s", compose_file)
 
@@ -175,14 +185,13 @@ class DockerComposeGateway:
         return DockerCommandResult(
             raw=result,
             operation="pull",
-            parsed_data={
-                "compose_file": compose_file,
-                "project_dir": project_dir
-            }
+            parsed_data={"compose_file": compose_file, "project_dir": project_dir},
         )
 
     @classmethod
-    async def build(cls, compose_file: str, project_dir: Optional[str] = None) -> DockerCommandResult:
+    async def build(
+        cls, compose_file: str, project_dir: Optional[str] = None
+    ) -> DockerCommandResult:
         """Build compose service images."""
         cls.logger.info("Building images for compose project: %s", compose_file)
 
@@ -199,10 +208,7 @@ class DockerComposeGateway:
         return DockerCommandResult(
             raw=result,
             operation="build",
-            parsed_data={
-                "compose_file": compose_file,
-                "project_dir": project_dir
-            }
+            parsed_data={"compose_file": compose_file, "project_dir": project_dir},
         )
 
     @classmethod
@@ -220,7 +226,7 @@ class DockerComposeGateway:
             return []
 
         projects = []
-        lines = result.stdout.strip().split('\n')
+        lines = result.stdout.strip().split("\n")
 
         for line in lines:
             if line.strip():
@@ -229,15 +235,15 @@ class DockerComposeGateway:
                     # Handle case where project_data might be a list
                     if isinstance(project_data, list):
                         continue
-                    
+
                     project_info = ComposeProjectInfo(
-                        name=project_data.get('Name', ''),
-                        status=project_data.get('Status', ''),
-                        config_files=project_data.get('ConfigFiles', []),
-                        working_dir=project_data.get('WorkingDir', ''),
-                        services=project_data.get('Services', []),
-                        networks=project_data.get('Networks', []),
-                        volumes=project_data.get('Volumes', [])
+                        name=project_data.get("Name", ""),
+                        status=project_data.get("Status", ""),
+                        config_files=project_data.get("ConfigFiles", []),
+                        working_dir=project_data.get("WorkingDir", ""),
+                        services=project_data.get("Services", []),
+                        networks=project_data.get("Networks", []),
+                        volumes=project_data.get("Volumes", []),
                     )
                     projects.append(project_info)
                 except json.JSONDecodeError:
@@ -268,11 +274,13 @@ class DockerComposeGateway:
                 "compose_file": self.compose_file,
                 "project_dir": self.project_dir,
                 "service": service,
-                "executed_command": command
-            }
+                "executed_command": command,
+            },
         )
 
-    async def logs(self, service: Optional[str] = None, tail_lines: int = 100) -> DockerCommandResult:
+    async def logs(
+        self, service: Optional[str] = None, tail_lines: int = 100
+    ) -> DockerCommandResult:
         """Get logs from compose services."""
         self.logger.info("Getting logs for compose project: %s", self.compose_file)
 
@@ -295,8 +303,8 @@ class DockerComposeGateway:
                 "compose_file": self.compose_file,
                 "project_dir": self.project_dir,
                 "service": service,
-                "tail_lines": tail_lines
-            }
+                "tail_lines": tail_lines,
+            },
         )
 
     async def ps(self) -> List[ComposeServiceInfo]:
@@ -318,33 +326,33 @@ class DockerComposeGateway:
             return []
 
         services = []
-        lines = result.stdout.strip().split('\n')
+        lines = result.stdout.strip().split("\n")
 
         for line in lines:
             if line.strip():
                 try:
                     service_data = json.loads(line)
                     # Ensure ports, networks, and depends_on are lists
-                    ports = service_data.get('Ports', [])
+                    ports = service_data.get("Ports", [])
                     if isinstance(ports, str):
                         ports = [ports] if ports else []
-                    
-                    networks = service_data.get('Networks', [])
+
+                    networks = service_data.get("Networks", [])
                     if isinstance(networks, str):
                         networks = [networks] if networks else []
-                    
-                    depends_on = service_data.get('DependsOn', [])
+
+                    depends_on = service_data.get("DependsOn", [])
                     if isinstance(depends_on, str):
                         depends_on = [depends_on] if depends_on else []
-                    
+
                     service_info = ComposeServiceInfo(
-                        name=service_data.get('Name', ''),
-                        project=service_data.get('Project', ''),
-                        status=service_data.get('State', ''),
-                        image=service_data.get('Image', ''),
+                        name=service_data.get("Name", ""),
+                        project=service_data.get("Project", ""),
+                        status=service_data.get("State", ""),
+                        image=service_data.get("Image", ""),
                         ports=ports,
                         networks=networks,
-                        depends_on=depends_on
+                        depends_on=depends_on,
                     )
                     services.append(service_info)
                 except json.JSONDecodeError:
@@ -355,6 +363,4 @@ class DockerComposeGateway:
         return services
 
 
-__all__ = [
-    "DockerComposeGateway"
-]
+__all__ = ["DockerComposeGateway"]

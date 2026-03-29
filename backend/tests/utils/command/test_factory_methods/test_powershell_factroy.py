@@ -104,7 +104,9 @@ class TestPowerShellFactory(BaseCommandTest):
 
     def test_echo_with_path_and_spaces(self):
         """Test echo with path containing spaces."""
-        cmd = AsyncCommand.powershell('Write-Host "C:\\Program Files\\Test App\\file.txt"')
+        cmd = AsyncCommand.powershell(
+            'Write-Host "C:\\Program Files\\Test App\\file.txt"'
+        )
         result = self.run_async(cmd.execute())
         self.assertTrue(result.success, f"Command failed with stderr: {result.stderr}")
         self.assertIn("C:\\Program Files\\Test App\\file.txt", result.stdout.strip())
@@ -145,7 +147,8 @@ class TestPowerShellFactory(BaseCommandTest):
     def test_complex_combination(self):
         """Test complex combination of quotes, paths, and redirection."""
         cmd = AsyncCommand.powershell(
-            'Write-Host "C:\\Program Files\\Test" | Out-File -FilePath output.txt; Get-Content output.txt')
+            'Write-Host "C:\\Program Files\\Test" | Out-File -FilePath output.txt; Get-Content output.txt'
+        )
         result = self.run_async(cmd.execute())
         self.assertTrue(result.success, f"Command failed with stderr: {result.stderr}")
         self.assertIn("C:\\Program Files\\Test", result.stdout.strip())
@@ -163,7 +166,9 @@ class TestPowerShellFactory(BaseCommandTest):
 
     def test_special_characters(self):
         """Test echo with special characters."""
-        cmd = AsyncCommand.powershell('Write-Host "Special chars: !@#$%^&*()_+-=[]{}|;:,.<>?"')
+        cmd = AsyncCommand.powershell(
+            'Write-Host "Special chars: !@#$%^&*()_+-=[]{}|;:,.<>?"'
+        )
         result = self.run_async(cmd.execute())
         self.assertTrue(result.success, f"Command failed with stderr: {result.stderr}")
         self.assertIn("Special chars", result.stdout.strip())
@@ -205,7 +210,7 @@ class TestPowerShellFactory(BaseCommandTest):
 
     def test_escaped_quotes(self):
         """Test powershell factory with escaped quotes."""
-        cmd = AsyncCommand.powershell('Write-Host "He said \"Hello World\""')
+        cmd = AsyncCommand.powershell('Write-Host "He said "Hello World""')
         result = self.run_async(cmd.execute())
         self.assertTrue(result.success, f"Command failed with stderr: {result.stderr}")
         self.assertIn("He said", result.stdout.strip())

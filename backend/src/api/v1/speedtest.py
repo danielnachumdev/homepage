@@ -1,8 +1,11 @@
 from fastapi import APIRouter, HTTPException
-from ...services.v1.speedtest_service import SpeedTestService
+
 from ...schemas.v1.speedtest import (
-    SpeedTestRequest, SpeedTestResponse, SpeedTestConfigResponse
+    SpeedTestConfigResponse,
+    SpeedTestRequest,
+    SpeedTestResponse,
 )
+from ...services.v1.speedtest_service import SpeedTestService
 
 router = APIRouter(prefix="/speedtest", tags=["speedtest"])
 speedtest_service = SpeedTestService()
@@ -60,10 +63,22 @@ async def get_status():
     result_response = await speedtest_service.get_last_result()
 
     return {
-        "is_running": config_response.config.get("is_running", False) if config_response.config else False,
-        "interval_seconds": config_response.config.get("interval_seconds", 1) if config_response.config else 1,
+        "is_running": (
+            config_response.config.get("is_running", False)
+            if config_response.config
+            else False
+        ),
+        "interval_seconds": (
+            config_response.config.get("interval_seconds", 1)
+            if config_response.config
+            else 1
+        ),
         "has_result": result_response.success,
-        "last_test_time": result_response.result.timestamp.isoformat() if result_response.result else None
+        "last_test_time": (
+            result_response.result.timestamp.isoformat()
+            if result_response.result
+            else None
+        ),
     }
 
 
@@ -76,6 +91,4 @@ async def get_partial_result():
     return response
 
 
-__all__ = [
-    "router"
-]
+__all__ = ["router"]

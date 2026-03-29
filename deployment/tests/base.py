@@ -1,12 +1,13 @@
 """
 Common base test classes for deployment tests.
 """
-import asyncio
-import unittest
-import logging
-from typing import Any, Union, TypeVar, Awaitable, Coroutine
 
-T = TypeVar('T')
+import asyncio
+import logging
+import unittest
+from typing import Any, Awaitable, Coroutine, TypeVar, Union
+
+T = TypeVar("T")
 
 
 class BaseTest(unittest.TestCase):
@@ -15,7 +16,7 @@ class BaseTest(unittest.TestCase):
     def _setup_test_logger(self):
         """Set up a unique logger for this test method."""
         test_class_name = self.__class__.__name__
-        test_method_name = getattr(self, '_testMethodName', 'unknown_test')
+        test_method_name = getattr(self, "_testMethodName", "unknown_test")
         logger_name = f"{test_class_name}.{test_method_name}"
 
         self.logger = logging.getLogger(logger_name)
@@ -26,7 +27,8 @@ class BaseTest(unittest.TestCase):
             handler = logging.StreamHandler()
             # Include filename and line number for better debugging
             formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s')
+                "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
+            )
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
 
@@ -47,7 +49,9 @@ class BaseTest(unittest.TestCase):
 
         # Run the loop to process cancellations
         if pending:
-            self.loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            self.loop.run_until_complete(
+                asyncio.gather(*pending, return_exceptions=True)
+            )
 
         # Close the loop
         self.loop.close()
@@ -57,6 +61,4 @@ class BaseTest(unittest.TestCase):
         return self.loop.run_until_complete(coro)
 
 
-__all__ = [
-    "BaseTest"
-]
+__all__ = ["BaseTest"]

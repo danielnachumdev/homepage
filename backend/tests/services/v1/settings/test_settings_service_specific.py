@@ -1,8 +1,9 @@
 """
 Tests for SettingsService specific setting methods.
 """
-from backend.tests.services.v1.base import BaseDatabaseServiceTest
+
 from backend.src.services.v1.settings_service import SettingsService
+from backend.tests.services.v1.base import BaseDatabaseServiceTest
 
 
 class TestSettingsServiceSpecific(BaseDatabaseServiceTest):
@@ -43,12 +44,14 @@ class TestSettingsServiceSpecific(BaseDatabaseServiceTest):
 
     def test_update_chrome_profile_setting(self):
         """Test updating Chrome profile setting."""
-        result = self.run_async(self.service.update_chrome_profile_setting(
-            profile_id="profile1",
-            display_name="Work Profile",
-            icon="work_icon",
-            enabled=True
-        ))
+        result = self.run_async(
+            self.service.update_chrome_profile_setting(
+                profile_id="profile1",
+                display_name="Work Profile",
+                icon="work_icon",
+                enabled=True,
+            )
+        )
 
         self.assertTrue(result.success)
         self.assertIn("created successfully", result.message)
@@ -58,9 +61,12 @@ class TestSettingsServiceSpecific(BaseDatabaseServiceTest):
         self.assertIsNotNone(setting)
         self.assertEqual(setting["category"], "chrome_profiles")
         self.assertEqual(setting["setting_type"], "profile_display")
-        self.assertEqual(setting["value"], {
-            "profile_id": "profile1",
-            "display_name": "Work Profile",
-            "icon": "work_icon",
-            "enabled": True
-        })
+        self.assertEqual(
+            setting["value"],
+            {
+                "profile_id": "profile1",
+                "display_name": "Work Profile",
+                "icon": "work_icon",
+                "enabled": True,
+            },
+        )

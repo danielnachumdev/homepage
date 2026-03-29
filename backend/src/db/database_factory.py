@@ -1,12 +1,13 @@
-from danielutils.abstractions.db import DatabaseFactory as BaseDatabaseFactory, Database
+from danielutils.abstractions.db import Database
+from danielutils.abstractions.db import DatabaseFactory as BaseDatabaseFactory
 
 
 class DatabaseFactory(BaseDatabaseFactory):
     @classmethod
     def get_database_from_settings(cls) -> Database:
-        return cls.get_database(db_type="persistent_memory", db_kwargs=dict(data_dir="./", auto_save=True))
+        return cls.get_database(
+            db_type="persistent_memory", db_kwargs=dict(data_dir="./", auto_save=True)
+        )
 
 
-__all__ = [
-    "DatabaseFactory"
-]
+__all__ = ["DatabaseFactory"]

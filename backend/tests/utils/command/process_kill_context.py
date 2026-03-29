@@ -7,11 +7,11 @@ It tracks PIDs before entering the context and cleans up any new processes on ex
 
 import asyncio
 import time
-from typing import Set, List
 from contextlib import asynccontextmanager
+from typing import List, Set
 
 from backend.src import get_logger
-from backend.src.utils.command import AsyncCommand, CommandType, CommandState
+from backend.src.utils.command import AsyncCommand, CommandState, CommandType
 from backend.tests.utils.command.base import BaseCommandTest
 
 
@@ -42,7 +42,16 @@ class ProcessKillContext:
         try:
             # Use tasklist to find application processes
             cmd = AsyncCommand(
-                ["powershell", "-Command", "tasklist", "/FI", f"\"IMAGENAME eq {self.app_name}\"", "/FO", "CSV"])
+                [
+                    "powershell",
+                    "-Command",
+                    "tasklist",
+                    "/FI",
+                    f'"IMAGENAME eq {self.app_name}"',
+                    "/FO",
+                    "CSV",
+                ]
+            )
             result = self.test_instance.run_async(cmd.execute())
 
             if not result.success:
@@ -50,7 +59,7 @@ class ProcessKillContext:
 
             # Parse the CSV output to extract PIDs
             pids = []
-            lines = result.stdout.strip().split('\n')
+            lines = result.stdout.strip().split("\n")
 
             for line in lines[1:]:  # Skip header
                 if self.app_name.lower() in line.lower():
@@ -72,7 +81,7 @@ class ProcessKillContext:
     def _kill_pid(self, pid: int) -> bool:
         """Kill a specific process by PID."""
         try:
-            kill_cmd = AsyncCommand.powershell(f'taskkill /PID {pid} /F')
+            kill_cmd = AsyncCommand.powershell(f"taskkill /PID {pid} /F")
             result = self.test_instance.run_async(kill_cmd.execute())
             return result.success
         except Exception as e:
@@ -84,10 +93,12 @@ class ProcessKillContext:
         if pid not in self.initial_pids:
             self.created_pids.append(pid)
 
-    def __enter__(self) -> 'ProcessKillContext':
+    def __enter__(self) -> "ProcessKillContext":
         """Enter the context and record initial PIDs."""
         self.initial_pids = self.get_app_pids()
-        self.logger.info(f"ProcessContext: Initial {self.app_name} PIDs: {self.initial_pids}")
+        self.logger.info(
+            f"ProcessContext: Initial {self.app_name} PIDs: {self.initial_pids}"
+        )
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -97,7 +108,9 @@ class ProcessKillContext:
 
         # Get current PIDs
         current_pids = self.get_app_pids()
-        self.logger.info(f"ProcessContext: Current {self.app_name} PIDs: {current_pids}")
+        self.logger.info(
+            f"ProcessContext: Current {self.app_name} PIDs: {current_pids}"
+        )
         new_pids = current_pids - self.initial_pids
 
         # Add any tracked PIDs that might not be in current_pids yet
@@ -105,7 +118,9 @@ class ProcessKillContext:
             if pid not in current_pids:
                 new_pids.add(pid)
 
-        self.logger.info(f"ProcessContext: Cleaning up {len(new_pids)} new {self.app_name} processes: {new_pids}")
+        self.logger.info(
+            f"ProcessContext: Cleaning up {len(new_pids)} new {self.app_name} processes: {new_pids}"
+        )
 
         # Kill all new processes
         for pid in new_pids:
@@ -119,14 +134,15 @@ class ProcessKillContext:
 
         if remaining_new:
             self.logger.warning(
-                f"ProcessContext: {len(remaining_new)} processes still running after cleanup: {remaining_new}")
+                f"ProcessContext: {len(remaining_new)} processes still running after cleanup: {remaining_new}"
+            )
             for pid in remaining_new:
                 self._kill_pid(pid)
 
 
 class CalculatorKillContext(ProcessKillContext):
     def __init__(self, test_instance: BaseCommandTest) -> None:
-        super().__init__('CalculatorApp.exe', test_instance)
+        super().__init__("CalculatorApp.exe", test_instance)
 
 
 __all__ = [

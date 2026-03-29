@@ -3,12 +3,17 @@ Tests for DockerComposeGateway using real Docker Compose projects.
 """
 
 import asyncio
-import tempfile
 import os
+import tempfile
 from pathlib import Path
-from backend.tests.base import BaseTest
+
 from backend.src.gateways.v1.docker_gateway.compose import DockerComposeGateway
-from backend.src.gateways.v1.docker_gateway.models import ComposeProjectInfo, ComposeServiceInfo, DockerCommandResult
+from backend.src.gateways.v1.docker_gateway.models import (
+    ComposeProjectInfo,
+    ComposeServiceInfo,
+    DockerCommandResult,
+)
+from backend.tests.base import BaseTest
 
 
 class TestDockerComposeGateway(BaseTest):
@@ -48,7 +53,7 @@ services:
       - com.docker.compose.service=test-service
 """
 
-        with open(self.compose_file, 'w') as f:
+        with open(self.compose_file, "w") as f:
             f.write(compose_content)
 
         return self.compose_file
@@ -58,14 +63,17 @@ services:
         try:
             # First, stop and remove compose services
             self.run_async(DockerComposeGateway.down(compose_file))
-            
+
             # Then, remove any remaining containers with the project name
             from backend.src.gateways.v1.docker_gateway.docker import DockerGateway
+
             containers = self.run_async(DockerGateway.list())
             for container in containers:
                 if self.test_project_name in container.names:
                     try:
-                        self.run_async(DockerGateway.delete(container.names, force=True))
+                        self.run_async(
+                            DockerGateway.delete(container.names, force=True)
+                        )
                     except Exception:
                         pass  # Container might already be removed
         except Exception:
@@ -89,7 +97,9 @@ services:
 
         try:
             # Test up operation
-            result = self.run_async(DockerComposeGateway.up(compose_file, detached=True))
+            result = self.run_async(
+                DockerComposeGateway.up(compose_file, detached=True)
+            )
             self.assertIsInstance(result, DockerCommandResult)
             self.assertEqual(result.operation, "up")
             self.assertIn("compose_file", result.parsed_data)
@@ -142,14 +152,18 @@ services:
             gateway = DockerComposeGateway(compose_file)
 
             # Test exec
-            exec_result = self.run_async(gateway.exec("test-service", "echo 'test command'"))
+            exec_result = self.run_async(
+                gateway.exec("test-service", "echo 'test command'")
+            )
             self.assertIsInstance(exec_result, DockerCommandResult)
             self.assertEqual(exec_result.operation, "exec")
             self.assertIn("service", exec_result.parsed_data)
             self.assertEqual(exec_result.parsed_data["service"], "test-service")
 
             # Test logs with service
-            logs_result = self.run_async(gateway.logs(service="test-service", tail_lines=5))
+            logs_result = self.run_async(
+                gateway.logs(service="test-service", tail_lines=5)
+            )
             self.assertIsInstance(logs_result, DockerCommandResult)
             self.assertEqual(logs_result.operation, "logs")
             self.assertIn("service", logs_result.parsed_data)
@@ -166,7 +180,9 @@ services:
         compose_file = self._create_test_compose_file()
 
         try:
-            result = self.run_async(DockerComposeGateway.up(compose_file, detached=True))
+            result = self.run_async(
+                DockerComposeGateway.up(compose_file, detached=True)
+            )
             self.assertIsInstance(result, DockerCommandResult)
 
             # Test convenience properties
@@ -264,7 +280,9 @@ services:
 
         try:
             # Start projects concurrently
-            up_tasks = [DockerComposeGateway.up(f, detached=True) for f in compose_files]
+            up_tasks = [
+                DockerComposeGateway.up(f, detached=True) for f in compose_files
+            ]
             results = self.run_async(asyncio.gather(*up_tasks))
 
             # Verify all operations completed
@@ -287,11 +305,11 @@ services:
 
         try:
             # Test with custom project directory
-            result = self.run_async(DockerComposeGateway.up(
-                compose_file,
-                project_dir=project_dir,
-                detached=True
-            ))
+            result = self.run_async(
+                DockerComposeGateway.up(
+                    compose_file, project_dir=project_dir, detached=True
+                )
+            )
             self.assertIsInstance(result, DockerCommandResult)
             self.assertIn("project_dir", result.parsed_data)
             self.assertEqual(result.parsed_data["project_dir"], project_dir)
@@ -334,12 +352,10 @@ services:
     command: sleep 300
 """
 
-        with open(compose_file, 'w') as f:
+        with open(compose_file, "w") as f:
             f.write(invalid_content)
 
         return compose_file
 
 
-__all__ = [
-    "TestDockerComposeGateway"
-]
+__all__ = ["TestDockerComposeGateway"]

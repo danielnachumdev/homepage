@@ -1,10 +1,12 @@
 """
 Tests for SpeedTestService basic functionality.
 """
+
+from backend.src.schemas.v1.speedtest import SpeedTestRequest, SpeedTestResult
+from backend.src.services.v1.speedtest_service import SpeedTestService
+
 # No additional imports needed for real testing
 from backend.tests.services.v1.speedtest.base import BaseSpeedTestServiceTest
-from backend.src.services.v1.speedtest_service import SpeedTestService
-from backend.src.schemas.v1.speedtest import SpeedTestRequest, SpeedTestResult
 
 
 class TestSpeedTestServiceBasic(BaseSpeedTestServiceTest):
@@ -19,8 +21,7 @@ class TestSpeedTestServiceBasic(BaseSpeedTestServiceTest):
         """Test service initialization."""
         self.logger.info("Testing SpeedTestService initialization")
         self.assertIsNotNone(self.service.logger)
-        self.logger.info(
-            "SpeedTestService initialization test completed successfully")
+        self.logger.info("SpeedTestService initialization test completed successfully")
         # Note: We don't test private attributes directly in real testing
 
     def test_initial_config(self):

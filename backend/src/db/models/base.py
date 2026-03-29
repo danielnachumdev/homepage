@@ -1,5 +1,6 @@
+from typing import Any, Dict
+
 from sqlalchemy.orm import DeclarativeBase
-from typing import Dict, Any
 
 
 class Base(DeclarativeBase):

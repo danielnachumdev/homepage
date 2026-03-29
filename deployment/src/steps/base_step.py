@@ -6,7 +6,8 @@ Each step should be self-contained and reversible.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, List, Type
+from typing import Any, Dict, List, Optional, Type
+
 from ..utils.logger import setup_logger
 
 
@@ -19,7 +20,7 @@ class Step(ABC):
     """
 
     # Registry of all concrete step classes
-    _steps: List[Type['Step']] = []
+    _steps: List[Type["Step"]] = []
 
     def __init_subclass__(cls, **kwargs):
         """
@@ -31,14 +32,14 @@ class Step(ABC):
         super().__init_subclass__(**kwargs)
 
         # Check if this is a concrete class (not abstract)
-        if not getattr(cls, '__abstractmethods__', None):
+        if not getattr(cls, "__abstractmethods__", None):
             # Add to registry if not already present
             if cls not in cls._steps:
                 cls._steps.append(cls)
         cls.logger = setup_logger(cls.__module__)
 
     @classmethod
-    def get_registered_steps(cls) -> List[Type['Step']]:
+    def get_registered_steps(cls) -> List[Type["Step"]]:
         """
         Get all registered concrete step classes.
 
@@ -72,8 +73,7 @@ class Step(ABC):
         Returns:
             bool: True if installation was successful, False otherwise
         """
-        raise NotImplementedError(
-            "Subclasses must implement install method")
+        raise NotImplementedError("Subclasses must implement install method")
 
     @abstractmethod
     async def uninstall(self) -> bool:
@@ -83,8 +83,7 @@ class Step(ABC):
         Returns:
             bool: True if uninstallation was successful, False otherwise
         """
-        raise NotImplementedError(
-            "Subclasses must implement uninstall method")
+        raise NotImplementedError("Subclasses must implement uninstall method")
 
     @abstractmethod
     async def validate(self) -> bool:
@@ -94,8 +93,7 @@ class Step(ABC):
         Returns:
             bool: True if validation passes, False otherwise
         """
-        raise NotImplementedError(
-            "Subclasses must implement validate method")
+        raise NotImplementedError("Subclasses must implement validate method")
 
     async def get_metadata(self) -> Dict[str, Any]:
         """
@@ -108,7 +106,7 @@ class Step(ABC):
             "name": self.name,
             "description": self.description,
             "installed": self._installed,
-            "type": self.__class__.__name__
+            "type": self.__class__.__name__,
         }
 
     def _mark_installed(self) -> None:
@@ -131,6 +129,4 @@ class Step(ABC):
         return f"{self.__class__.__name__}(name='{self.name}', description='{self.description}', installed={self._installed})"
 
 
-__all__ = [
-    "Step"
-]
+__all__ = ["Step"]
