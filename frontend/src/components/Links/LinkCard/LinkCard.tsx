@@ -14,15 +14,73 @@ import {
     MoreVert as MoreVertIcon,
     Link as LinkIcon
 } from '@mui/icons-material';
-import type { LinkCardProps } from '../../../types/link';
+import type { LinkCardProps, LinkSubItem } from '../../../types/link';
 import styles from './LinkCard.module.css';
 
-export function LinkCard({ link, onLinkClick, onChromeProfileClick }: LinkCardProps) {
+function SubLinkRow({
+    sub,
+    onActivate
+}: {
+    sub: LinkSubItem;
+    onActivate: () => void;
+}) {
+    const [iconIndex, setIconIndex] = useState(0);
+    const src = Array.isArray(sub.icon) ? sub.icon[iconIndex] ?? sub.icon[0] : sub.icon;
+    const hasMoreIcons = Array.isArray(sub.icon) && iconIndex < sub.icon.length - 1;
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onActivate();
+        }
+    };
+
+    const row = (
+        <Box
+            className={styles.sublinkRow}
+            onClick={(e) => {
+                e.stopPropagation();
+                onActivate();
+            }}
+            onKeyDown={handleKeyDown}
+            role="button"
+            tabIndex={0}
+            aria-label={sub.description ? `${sub.title}: ${sub.description}` : sub.title}
+        >
+            <Avatar
+                src={src}
+                alt=""
+                className={styles.sublinkIcon}
+                variant="rounded"
+                onError={() => {
+                    if (hasMoreIcons) setIconIndex((i) => i + 1);
+                }}
+            >
+                {!hasMoreIcons && <LinkIcon sx={{ fontSize: 18 }} />}
+            </Avatar>
+            <Typography variant="body2" component="span" className={styles.sublinkTitle} noWrap>
+                {sub.title}
+            </Typography>
+        </Box>
+    );
+
+    if (sub.description) {
+        return (
+            <Tooltip title={sub.description} placement="left" arrow>
+                {row}
+            </Tooltip>
+        );
+    }
+    return row;
+}
+
+export function LinkCard({ link, onLinkClick, onChromeProfileClick, onSublinkClick }: LinkCardProps) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [isHovered, setIsHovered] = useState(false);
     const [currentIconIndex, setCurrentIconIndex] = useState(0);
 
-    // Get the current icon to try
+    const sublinks = link.sublinks?.length ? link.sublinks : null;
+
     const getCurrentIcon = () => {
         if (Array.isArray(link.icon)) {
             return link.icon[currentIconIndex] || link.icon[0];
@@ -60,14 +118,16 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick }: LinkCardPr
 
     const handleIconError = () => {
         if (hasMoreIcons) {
-            // Try the next icon in the array
-            setCurrentIconIndex(prev => prev + 1);
+            setCurrentIconIndex((prev) => prev + 1);
         }
-        // If no more icons to try, the Avatar will show the fallback LinkIcon
     };
 
-    const CardContent = (
-        <MuiCardContent className={styles.cardContent}>
+    const handleSublinkActivate = (sub: LinkSubItem) => {
+        onSublinkClick?.(link, sub);
+    };
+
+    const MainColumn = (
+        <>
             <Box className={styles.cardHeader}>
                 <Box className={styles.titleSection}>
                     <Avatar
@@ -105,25 +165,50 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick }: LinkCardPr
                 <Tooltip title={link.description} placement="top" arrow>
                     <Typography
                         variant="body2"
-                        className={styles.description}
+                        className={sublinks ? styles.descriptionCompact : styles.description}
                     >
-                        {truncateDescription(link.description)}
+                        {truncateDescription(link.description, sublinks ? 48 : 60)}
                     </Typography>
                 </Tooltip>
             )}
-        </MuiCardContent>
+        </>
     );
 
     return (
         <>
             <Card
-                className={`${styles.card} ${isHovered ? styles.cardHovered : ''}`}
-                onClick={handleCardClick}
+                className={`${styles.card} ${sublinks ? styles.cardWithSublinks : ''} ${isHovered ? styles.cardHovered : ''}`}
+                onClick={sublinks ? undefined : handleCardClick}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 elevation={isHovered ? 4 : 1}
             >
-                {CardContent}
+                <MuiCardContent
+                    className={sublinks ? `${styles.cardContent} ${styles.cardContentSplit}` : styles.cardContent}
+                >
+                    {sublinks ? (
+                        <Box className={styles.splitRow}>
+                            <Box className={styles.mainHalf} onClick={handleCardClick}>
+                                {MainColumn}
+                            </Box>
+                            <Box className={styles.sublinksHalf}>
+                                <Box className={styles.sublinksScroll}>
+                                    {sublinks.map((sub, i) => (
+                                        <SubLinkRow
+                                            key={`${sub.title}-${i}`}
+                                            sub={sub}
+                                            onActivate={() => handleSublinkActivate(sub)}
+                                        />
+                                    ))}
+                                </Box>
+                            </Box>
+                        </Box>
+                    ) : (
+                        <Box onClick={handleCardClick} className={styles.singleColumn}>
+                            {MainColumn}
+                        </Box>
+                    )}
+                </MuiCardContent>
             </Card>
 
             {link.chromeProfileEnabled && link.chromeProfiles && link.chromeProfiles.length > 0 && (

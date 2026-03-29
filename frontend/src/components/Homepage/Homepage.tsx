@@ -4,7 +4,7 @@ import { LinksSection } from '../Links';
 import { links } from '../../data/links';
 import { useComponentLogger } from '../../hooks/useLogger';
 import type { SearchEngineStrategy } from '../Search/SearchEngineStrategy';
-import type { LinkData } from '../../types/link';
+import type { LinkData, LinkSubItem } from '../../types/link';
 import styles from './Homepage.module.css';
 
 interface HomepageProps {
@@ -53,6 +53,15 @@ export function Homepage({ }: HomepageProps) {
     });
   };
 
+  const handleSublinkClick = (parent: LinkData, sub: LinkSubItem) => {
+    logger.info('Sublink clicked', {
+      parentTitle: parent.title,
+      title: sub.title,
+      url: sub.url,
+      timestamp: new Date().toISOString()
+    });
+  };
+
   const SearchSection = (
     <Box className={styles.searchSection}>
       <SearchComponent
@@ -68,6 +77,7 @@ export function Homepage({ }: HomepageProps) {
         links={links}
         onLinkClick={handleLinkClick}
         onChromeProfileClick={handleChromeProfileClick}
+        onSublinkClick={handleSublinkClick}
       />
     </Box>
   );

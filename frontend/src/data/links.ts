@@ -63,27 +63,36 @@ export const PYPI_MANAGE_LINK: LinkData = {
     url: 'https://pypi.org/manage/projects/'
 };
 
-const LOCALHOST_SVG = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23007acc"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
 const LOCALHOST_SVG_WHITE_BG = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="white"/><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="%23007acc"/></svg>';
+
+/** Full link objects reused as Localhost sublinks (not listed in `links` on their own). */
 export const LOCALHOST_3000_LINK: LinkData = {
     title: 'Localhost:3000',
     icon: LOCALHOST_SVG_WHITE_BG,
     description: 'Local development server on port 3000',
-    url: 'http://localhost:3000'
+    url: 'http://localhost:3000',
 };
 
 export const LOCALHOST_8000_LINK: LinkData = {
     title: 'Localhost:8000',
     icon: LOCALHOST_SVG_WHITE_BG,
     description: 'Local development server on port 8000',
-    url: 'http://localhost:8000'
+    url: 'http://localhost:8000',
 };
 
 export const LOCALHOST_5173_LINK: LinkData = {
     title: 'Localhost:5173',
     icon: LOCALHOST_SVG_WHITE_BG,
     description: 'Vite development server on port 5173',
-    url: 'http://localhost:5173'
+    url: 'http://localhost:5173',
+};
+
+export const LOCALHOST_BUNDLE_LINK: LinkData = {
+    title: 'Localhost',
+    icon: LOCALHOST_SVG_WHITE_BG,
+    description: 'Common local development ports (Vite, app, API)',
+    url: LOCALHOST_5173_LINK.url,
+    sublinks: [LOCALHOST_5173_LINK, LOCALHOST_3000_LINK, LOCALHOST_8000_LINK],
 };
 
 export const CHATGPT_LINK: LinkData = {
@@ -106,15 +115,10 @@ export const AWS_CONSOLE_LINK: LinkData = {
 };
 
 const GCP_CONSOLE_ICON = '/src/data/gcp-console.svg';
-export const GCP_CONSOLE_LINK: LinkData = {
-    title: 'GCP',
-    icon: [GCP_CONSOLE_ICON],
-    description: 'Google Cloud Platform console',
-    url: 'https://console.cloud.google.com/',
-    chromeProfileEnabled: true,
-};
-
 const CLOUD_RUN_ICON = '/src/data/cloud-run.svg';
+const CLOUD_STORAGE_ICON = '/src/data/cloud-storage.svg';
+
+/** Full link objects reused as GCP sublinks (not listed in `links` on their own). */
 export const GCP_CLOUD_RUN_LINK: LinkData = {
     title: 'Cloud Run',
     icon: [CLOUD_RUN_ICON],
@@ -123,13 +127,21 @@ export const GCP_CLOUD_RUN_LINK: LinkData = {
     chromeProfileEnabled: true,
 };
 
-const CLOUD_STORAGE_ICON = '/src/data/cloud-storage.svg';
 export const GCP_CLOUD_STORAGE_LINK: LinkData = {
     title: 'Cloud Storage',
     icon: [CLOUD_STORAGE_ICON],
     description: 'Google Cloud Storage buckets in the console',
     url: 'https://console.cloud.google.com/storage/browser',
     chromeProfileEnabled: true,
+};
+
+export const GCP_CONSOLE_LINK: LinkData = {
+    title: 'GCP',
+    icon: [GCP_CONSOLE_ICON],
+    description: 'Google Cloud Platform console',
+    url: 'https://console.cloud.google.com/',
+    chromeProfileEnabled: true,
+    sublinks: [GCP_CLOUD_RUN_LINK, GCP_CLOUD_STORAGE_LINK],
 };
 
 const LINKEDIN_SVG_BLUE = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%230077b5"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>';
@@ -176,14 +188,10 @@ export const links: LinkData[] = [
     GOOGLE_CALENDAR_LINK,
     GOOGLE_DRIVE_LINK,
     PYPI_MANAGE_LINK,
-    LOCALHOST_3000_LINK,
-    LOCALHOST_8000_LINK,
-    LOCALHOST_5173_LINK,
+    LOCALHOST_BUNDLE_LINK,
     CHATGPT_LINK,
     AWS_CONSOLE_LINK,
     GCP_CONSOLE_LINK,
-    GCP_CLOUD_RUN_LINK,
-    GCP_CLOUD_STORAGE_LINK,
     LINKEDIN_LINK,
     YOUTUBE_LINK,
     YOUTUBE_STUDIO_LINK,

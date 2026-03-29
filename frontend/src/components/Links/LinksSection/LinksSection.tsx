@@ -1,16 +1,22 @@
 import { Box, Typography } from '@mui/material';
 import { LinkCard } from '../LinkCard/LinkCard';
-import type { LinksSectionProps } from '../../../types/link';
+import type { LinksSectionProps, LinkSubItem } from '../../../types/link';
 import { useComponentLogger } from '../../../hooks/useLogger';
 import styles from './LinksSection.module.css';
 
-export function LinksSection({ links, onLinkClick, onChromeProfileClick }: LinksSectionProps) {
+export function LinksSection({ links, onLinkClick, onChromeProfileClick, onSublinkClick }: LinksSectionProps) {
     const logger = useComponentLogger('LinksSection');
 
     const handleLinkClick = (link: any) => {
         logger.info('Opening link', { title: link.title, url: link.url });
         window.open(link.url, '_blank');
         onLinkClick(link);
+    };
+
+    const handleSublinkClick = (parent: any, sub: LinkSubItem) => {
+        logger.info('Opening sublink', { parentTitle: parent.title, title: sub.title, url: sub.url });
+        window.open(sub.url, '_blank');
+        onSublinkClick?.(parent, sub);
     };
 
     const handleChromeProfileClick = (link: any, profile: string) => {
@@ -43,6 +49,7 @@ export function LinksSection({ links, onLinkClick, onChromeProfileClick }: Links
                         link={link}
                         onLinkClick={handleLinkClick}
                         onChromeProfileClick={handleChromeProfileClick}
+                        onSublinkClick={handleSublinkClick}
                     />
                 </Box>
             ))}
