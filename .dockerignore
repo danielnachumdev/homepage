@@ -1,0 +1,13 @@
+# Used when: docker build -f backend/Dockerfile .
+# Keeps context small; backend code still comes from backend/
+
+frontend/
+extension/
+.git/
+**/node_modules/
+backend/venv/
+backend/**/__pycache__/
+**/.pytest_cache/
+.env
+.env.*
+*.log

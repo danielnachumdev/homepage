@@ -2,7 +2,10 @@ name: homepage
 
 services:
   homepage-backend:
-    build: ./backend
+    # Dockerfile copies pyproject.toml, uv.lock, and backend/ — build context must be repo root.
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: homepage-backend
     ports:
       - "8000:8000"  # Keep external port for direct access if needed

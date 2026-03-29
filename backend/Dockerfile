@@ -1,17 +1,25 @@
-FROM python:3.11-slim
+# Build from homepage repo root (directory that contains pyproject.toml and uv.lock):
+#   docker build -f backend/Dockerfile .
+#
+FROM python:3.11-slim-bookworm
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+COPY pyproject.toml uv.lock README.md ./
 
-COPY requirements.txt .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project
 
-ARG CACHEBUSTER=1
-RUN pip install --no-cache-dir -r requirements.txt
-RUN #pip install -r requirements.txt
+COPY backend/ ./backend/
 
-COPY . .
+WORKDIR /app/backend
 
 EXPOSE 8000
 
-CMD ["python", "__main__.py"]
+CMD ["uv", "run", "--project", "/app", "python", "__main__.py"]

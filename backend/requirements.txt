@@ -1,8 +1,0 @@
-fastapi
-uvicorn[standard]
-pydantic
-danielutils
-dotenv
-jsonpath-ng
-sqlalchemy
-speedtest-cli
