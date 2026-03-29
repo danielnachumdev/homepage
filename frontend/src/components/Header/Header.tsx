@@ -1,12 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, lazy, Suspense } from 'react';
 import { BackendStatus } from './BackendStatus';
 import { StatusBadges } from './StatusBadges';
 import { Clock } from './Clock';
 import { ChromeProfileSwitcher } from './ChromeProfileSwitcher';
 import { SettingsIcon } from './SettingsIcon';
-import { SettingsModal } from '../Settings';
 import { useComponentLogger } from '../../hooks/useLogger';
 import styles from './Header.module.css';
+
+const LazySettingsModal = lazy(() =>
+    import('../Settings/SettingsModal').then((m) => ({ default: m.SettingsModal }))
+);
 
 export const Header: React.FC = () => {
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -54,10 +57,14 @@ export const Header: React.FC = () => {
                 </div>
             </div>
 
-            <SettingsModal
-                open={settingsOpen}
-                onClose={() => setSettingsOpen(false)}
-            />
+            {settingsOpen && (
+                <Suspense fallback={null}>
+                    <LazySettingsModal
+                        open={settingsOpen}
+                        onClose={() => setSettingsOpen(false)}
+                    />
+                </Suspense>
+            )}
         </header>
     );
 };

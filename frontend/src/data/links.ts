@@ -105,9 +105,10 @@ export const AWS_CONSOLE_LINK: LinkData = {
     url: 'https://console.aws.amazon.com'
 };
 
+const GCP_CONSOLE_ICON = '/src/data/gcp-console.svg';
 export const GCP_CONSOLE_LINK: LinkData = {
     title: 'GCP',
-    icon: ['https://www.gstatic.com/pantheon/images/googleCloudColoredLogo.svg'],
+    icon: [GCP_CONSOLE_ICON],
     description: 'Google Cloud Platform console',
     url: 'https://console.cloud.google.com/',
     chromeProfileEnabled: true,
