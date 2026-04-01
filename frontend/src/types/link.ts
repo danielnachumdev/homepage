@@ -3,15 +3,30 @@ export interface LinkData {
     icon: string | string[]; // URL, icon name, or array of fallback URLs
     description?: string; // Optional description
     url: string;
-    /** Optional embedded live audio stream (renders a player in the card). */
-    audioStreamUrl?: string;
-    /** Optional mime type for the audio stream source (defaults to audio/mpeg). */
-    audioMimeType?: string;
+    /** Optional, typed addon rendered inside the card (specialized UI). */
+    addon?: LinkCardAddon;
     chromeProfileEnabled?: boolean; // Defaults to false
     chromeProfiles?: string[]; // Available Chrome profiles for this link
-    /** When set, card splits: main link on the left, sublinks stacked (scroll if more than 3). */
-    sublinks?: LinkSubItem[];
 }
+
+export type LinkCardLeafAddon =
+    | {
+          type: 'audioPlayer';
+          streamUrl: string;
+          mimeType?: string;
+      }
+    | {
+          type: 'sublinks';
+          items: LinkSubItem[];
+      };
+
+export type LinkCardCompositeAddon = {
+    type: 'composite';
+    layout: 'stack';
+    addons: LinkCardLeafAddon[];
+};
+
+export type LinkCardAddon = LinkCardLeafAddon | LinkCardCompositeAddon;
 
 /**
  * Same shape as LinkData for reuse (e.g. spread a full link or build a minimal object).

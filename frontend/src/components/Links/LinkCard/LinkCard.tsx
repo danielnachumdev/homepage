@@ -14,7 +14,7 @@ import {
     MoreVert as MoreVertIcon,
     Link as LinkIcon
 } from '@mui/icons-material';
-import type { LinkCardProps, LinkSubItem } from '../../../types/link';
+import type { LinkCardAddon, LinkCardCompositeAddon, LinkCardLeafAddon, LinkCardProps, LinkSubItem } from '../../../types/link';
 import styles from './LinkCard.module.css';
 
 function SubLinkRow({
@@ -79,7 +79,9 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick, onSublinkCli
     const [isHovered, setIsHovered] = useState(false);
     const [currentIconIndex, setCurrentIconIndex] = useState(0);
 
-    const sublinks = link.sublinks?.length ? link.sublinks : null;
+    const sublinksAddon =
+        link.addon?.type === 'sublinks' && link.addon.items.length > 0 ? link.addon : null;
+    const isSplitLayout = Boolean(sublinksAddon);
 
     const getCurrentIcon = () => {
         if (Array.isArray(link.icon)) {
@@ -126,6 +128,91 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick, onSublinkCli
         onSublinkClick?.(link, sub);
     };
 
+    type AddonType = LinkCardAddon['type'];
+    type AddonRendererMap = {
+        [K in AddonType]: (addon: Extract<LinkCardAddon, { type: K }>) => React.ReactNode;
+    };
+
+    const stopCardInteraction = (e: React.SyntheticEvent) => {
+        e.stopPropagation();
+    };
+
+    const leafAddonRenderers = {
+        audioPlayer: (a: Extract<LinkCardLeafAddon, { type: 'audioPlayer' }>, key: string) => (
+            <Box
+                key={key}
+                className={styles.audioContainer}
+                onClick={stopCardInteraction}
+                onMouseDown={stopCardInteraction}
+                onKeyDown={stopCardInteraction}
+            >
+                <audio className={styles.audio} controls preload="none">
+                    <source src={a.streamUrl} type={a.mimeType ?? 'audio/mpeg'} />
+                    Your browser does not support the audio element.
+                </audio>
+            </Box>
+        ),
+        sublinks: (a: Extract<LinkCardLeafAddon, { type: 'sublinks' }>) => (
+            <Box className={styles.sublinksScroll} onClick={stopCardInteraction} onMouseDown={stopCardInteraction}>
+                {a.items.map((sub, i) => (
+                    <SubLinkRow
+                        key={`${sub.title}-${i}`}
+                        sub={sub}
+                        onActivate={() => handleSublinkActivate(sub)}
+                    />
+                ))}
+            </Box>
+        ),
+    } as const;
+
+    const renderLeafAddon = (addon: LinkCardLeafAddon, key: string) => {
+        switch (addon.type) {
+            case 'audioPlayer':
+                return leafAddonRenderers.audioPlayer(addon, key);
+            case 'sublinks':
+                return leafAddonRenderers.sublinks(addon);
+            default: {
+                const _exhaustive: never = addon;
+                return _exhaustive;
+            }
+        }
+    };
+
+    const addonRenderFactory = {
+        audioPlayer: (addon: Extract<LinkCardAddon, { type: 'audioPlayer' }>) => renderLeafAddon(addon, addon.type),
+        sublinks: (addon: Extract<LinkCardAddon, { type: 'sublinks' }>) => renderLeafAddon(addon, addon.type),
+        composite: (addon: LinkCardCompositeAddon) => {
+            switch (addon.layout) {
+                case 'stack':
+                    return (
+                        <Box className={styles.addonStack} onClick={stopCardInteraction} onMouseDown={stopCardInteraction}>
+                            {addon.addons.map((leaf, i) => renderLeafAddon(leaf, `${leaf.type}-${i}`))}
+                        </Box>
+                    );
+                default: {
+                    const _exhaustive: never = addon.layout;
+                    return _exhaustive;
+                }
+            }
+        },
+    } satisfies AddonRendererMap;
+
+    const renderAddon = (addon: LinkCardAddon | undefined) => {
+        if (!addon) return null;
+        switch (addon.type) {
+            case 'audioPlayer':
+                return addonRenderFactory.audioPlayer(addon);
+            case 'sublinks':
+                return addonRenderFactory.sublinks(addon);
+            case 'composite':
+                return addonRenderFactory.composite(addon);
+            default: {
+                const _exhaustive: never = addon;
+                return _exhaustive;
+            }
+        }
+    };
+
     const MainColumn = (
         <>
             <Box className={styles.cardHeader}>
@@ -165,59 +252,36 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick, onSublinkCli
                 <Tooltip title={link.description} placement="top" arrow>
                     <Typography
                         variant="body2"
-                        className={sublinks ? styles.descriptionCompact : styles.description}
+                        className={isSplitLayout ? styles.descriptionCompact : styles.description}
                     >
-                        {truncateDescription(link.description, sublinks ? 48 : 60)}
+                        {truncateDescription(link.description, isSplitLayout ? 48 : 60)}
                     </Typography>
                 </Tooltip>
             )}
 
-            {link.audioStreamUrl && (
-                <Box
-                    className={styles.audioContainer}
-                    onClick={(e) => e.stopPropagation()}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                >
-                    <audio className={styles.audio} controls preload="none">
-                        <source
-                            src={link.audioStreamUrl}
-                            type={link.audioMimeType ?? 'audio/mpeg'}
-                        />
-                        Your browser does not support the audio element.
-                    </audio>
-                </Box>
-            )}
+            {!isSplitLayout && renderAddon(link.addon)}
         </>
     );
 
     return (
         <>
             <Card
-                className={`${styles.card} ${sublinks ? styles.cardWithSublinks : ''} ${isHovered ? styles.cardHovered : ''}`}
-                onClick={sublinks ? undefined : handleCardClick}
+                className={`${styles.card} ${isSplitLayout ? styles.cardWithSublinks : ''} ${isHovered ? styles.cardHovered : ''}`}
+                onClick={isSplitLayout ? undefined : handleCardClick}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 elevation={isHovered ? 4 : 1}
             >
                 <MuiCardContent
-                    className={sublinks ? `${styles.cardContent} ${styles.cardContentSplit}` : styles.cardContent}
+                    className={isSplitLayout ? `${styles.cardContent} ${styles.cardContentSplit}` : styles.cardContent}
                 >
-                    {sublinks ? (
+                    {isSplitLayout ? (
                         <Box className={styles.splitRow}>
                             <Box className={styles.mainHalf} onClick={handleCardClick}>
                                 {MainColumn}
                             </Box>
                             <Box className={styles.sublinksHalf}>
-                                <Box className={styles.sublinksScroll}>
-                                    {sublinks.map((sub, i) => (
-                                        <SubLinkRow
-                                            key={`${sub.title}-${i}`}
-                                            sub={sub}
-                                            onActivate={() => handleSublinkActivate(sub)}
-                                        />
-                                    ))}
-                                </Box>
+                                {sublinksAddon && leafAddonRenderers.sublinks(sublinksAddon)}
                             </Box>
                         </Box>
                     ) : (
