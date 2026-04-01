@@ -9,6 +9,7 @@ import {
 import type { AudioVisualizerMode, LinkCardLeafAddon } from '../../../../types/link';
 import styles from './AudioVisualizerAddon.module.css';
 import { createAudioVisualizerRenderer } from './audioVisualizerModes/factory';
+import type { AudioVisualizerRenderer } from './audioVisualizerModes/types';
 
 type AudioVisualizerAddonConfig = Extract<LinkCardLeafAddon, { type: 'audioVisualizer' }>;
 
@@ -28,6 +29,16 @@ export function AudioVisualizerAddon({
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+    const inlineRendererRef = useRef<{
+        key: string;
+        curve?: (x: number) => number;
+        renderer: AudioVisualizerRenderer;
+    } | null>(null);
+    const fullscreenRendererRef = useRef<{
+        key: string;
+        curve?: (x: number) => number;
+        renderer: AudioVisualizerRenderer;
+    } | null>(null);
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [lastError, setLastError] = useState<string | null>(null);
@@ -77,11 +88,24 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
         const ctx2d = canvas.getContext('2d');
         if (!ctx2d) return;
 
+        const spectroMax = addon.spectrogramMaxOpacity ?? 0.8;
+        const spectroCurve = addon.spectrogramOpacityCurve;
         const selectedMode: AudioVisualizerMode = isFullscreen ? modeFullscreen : modeInline;
-        const renderer = createAudioVisualizerRenderer(selectedMode, {
-            spectrogramOpacityCurve: addon.spectrogramOpacityCurve,
-            spectrogramMaxOpacity: addon.spectrogramMaxOpacity ?? 0.8,
-        });
+        const rendererKey = `${selectedMode}|${spectroMax}`;
+        const slot = isFullscreen ? fullscreenRendererRef : inlineRendererRef;
+
+        if (!slot.current || slot.current.key !== rendererKey || slot.current.curve !== spectroCurve) {
+            slot.current = {
+                key: rendererKey,
+                curve: spectroCurve,
+                renderer: createAudioVisualizerRenderer(selectedMode, {
+                    spectrogramOpacityCurve: spectroCurve,
+                    spectrogramMaxOpacity: spectroMax,
+                }),
+            };
+        }
+
+        const renderer = slot.current.renderer;
 
         const analyser = analyserRef.current;
         const buffer = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
