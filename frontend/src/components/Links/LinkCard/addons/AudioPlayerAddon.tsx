@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import type { LinkCardLeafAddon } from '../../../../types/link';
-import styles from '../LinkCard.module.css';
+import styles from './AudioPlayerAddon.module.css';
 
 type AudioPlayerAddonConfig = Extract<LinkCardLeafAddon, { type: 'audioPlayer' }>;
 

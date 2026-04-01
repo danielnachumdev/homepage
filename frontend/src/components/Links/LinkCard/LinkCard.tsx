@@ -17,6 +17,7 @@ import {
 import type { LinkCardLeafAddon, LinkCardProps, LinkSubItem } from '../../../types/link';
 import { renderLinkCardAddon } from './addons';
 import styles from './LinkCard.module.css';
+import sublinksStyles from './addons/SublinksAddon.module.css';
 
 function SubLinkRow({
     sub,
@@ -38,7 +39,7 @@ function SubLinkRow({
 
     const row = (
         <Box
-            className={styles.sublinkRow}
+            className={sublinksStyles.sublinkRow}
             onClick={(e) => {
                 e.stopPropagation();
                 onActivate();
@@ -51,7 +52,7 @@ function SubLinkRow({
             <Avatar
                 src={src}
                 alt=""
-                className={styles.sublinkIcon}
+                className={sublinksStyles.sublinkIcon}
                 variant="rounded"
                 onError={() => {
                     if (hasMoreIcons) setIconIndex((i) => i + 1);
@@ -59,7 +60,7 @@ function SubLinkRow({
             >
                 {!hasMoreIcons && <LinkIcon sx={{ fontSize: 18 }} />}
             </Avatar>
-            <Typography variant="body2" component="span" className={styles.sublinkTitle} noWrap>
+            <Typography variant="body2" component="span" className={sublinksStyles.sublinkTitle} noWrap>
                 {sub.title}
             </Typography>
         </Box>
@@ -191,21 +192,21 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick, onSublinkCli
     return (
         <>
             <Card
-                className={`${styles.card} ${isSplitLayout ? styles.cardWithSublinks : ''} ${isHovered ? styles.cardHovered : ''}`}
+                className={`${styles.card} ${isSplitLayout ? sublinksStyles.cardWithSublinks : ''} ${isHovered ? styles.cardHovered : ''}`}
                 onClick={isSplitLayout ? undefined : handleCardClick}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 elevation={isHovered ? 4 : 1}
             >
                 <MuiCardContent
-                    className={isSplitLayout ? `${styles.cardContent} ${styles.cardContentSplit}` : styles.cardContent}
+                    className={isSplitLayout ? `${styles.cardContent} ${sublinksStyles.cardContentSplit}` : styles.cardContent}
                 >
                     {isSplitLayout ? (
-                        <Box className={styles.splitRow}>
-                            <Box className={styles.mainHalf} onClick={handleCardClick}>
+                        <Box className={sublinksStyles.splitRow}>
+                            <Box className={sublinksStyles.mainHalf} onClick={handleCardClick}>
                                 {MainColumn}
                             </Box>
-                            <Box className={styles.sublinksHalf}>
+                            <Box className={sublinksStyles.sublinksHalf}>
                                 {sublinksAddon &&
                                     renderLinkCardAddon(sublinksAddon, {
                                         stopCardInteraction,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import type { LinkCardCompositeAddon, LinkCardLeafAddon } from '../../../../types/link';
-import styles from '../LinkCard.module.css';
+import styles from './CompositeAddon.module.css';
 
 export function CompositeAddon({
     addon,

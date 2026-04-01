@@ -10,10 +10,6 @@
     overflow: hidden;
 }
 
-.cardWithSublinks {
-    cursor: default;
-}
-
 .card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
@@ -34,117 +30,12 @@
     box-sizing: border-box;
 }
 
-.cardContentSplit {
-    padding: 12px 10px 12px 14px;
-    gap: 0;
-    min-height: 132px;
-}
-
 .singleColumn {
     display: flex;
     flex-direction: column;
     gap: 12px;
     flex: 1;
     min-height: 0;
-}
-
-.splitRow {
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    flex: 1;
-    min-height: 0;
-    gap: 0;
-}
-
-.mainHalf {
-    flex: 1 1 50%;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    justify-content: flex-start;
-    padding-right: 8px;
-    cursor: pointer;
-}
-
-.sublinksHalf {
-    flex: 1 1 50%;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid rgba(255, 255, 255, 0.14);
-    padding-left: 8px;
-}
-
-.sublinksScroll {
-    /* ~3 sublink rows (icon row ~46px) + gaps */
-    max-height: calc(3 * 46px + 2 * 6px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding-right: 2px;
-    flex: 1;
-    min-height: 0;
-}
-
-.sublinksScroll::-webkit-scrollbar {
-    width: 6px;
-}
-
-.sublinksScroll::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.22);
-    border-radius: 3px;
-}
-
-.sublinksScroll::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.sublinkRow {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    cursor: pointer;
-    flex-shrink: 0;
-    min-height: 40px;
-    outline: none;
-    transition: background-color 0.15s ease;
-}
-
-.sublinkRow:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-.sublinkRow:focus-visible {
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
-}
-
-.sublinkIcon {
-    width: 24px !important;
-    height: 24px !important;
-    flex-shrink: 0;
-    border-radius: 4px !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-.sublinkIcon img {
-    object-fit: contain;
-}
-
-.sublinkTitle {
-    font-weight: 600;
-    color: #ffffff;
-    flex: 1;
-    min-width: 0;
-    font-size: 0.8rem;
-    line-height: 1.2;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .cardHeader {
@@ -220,125 +111,6 @@
     font-size: 0.8rem;
 }
 
-.audioContainer {
-    width: 100%;
-    display: flex;
-}
-
-.audio {
-    width: 100%;
-    height: 32px;
-}
-
-.visualizerRoot {
-    width: 100%;
-    height: 110px;
-    border-radius: 10px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
-    background-color: rgba(0, 0, 0, 0.16);
-}
-
-.visualizerCanvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
-.visualizerOverlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 180ms ease;
-}
-
-.visualizerRoot:hover .visualizerOverlay,
-.visualizerRoot:focus-within .visualizerOverlay {
-    opacity: 1;
-}
-
-.visualizerCenterButton {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.visualizerFullscreenButton {
-    position: absolute;
-    right: 8px;
-    bottom: 8px;
-}
-
-.visualizerButton {
-    pointer-events: auto;
-    color: rgba(255, 255, 255, 0.92) !important;
-    background: rgba(0, 0, 0, 0.28) !important;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-}
-
-.visualizerButton:hover {
-    background: rgba(0, 0, 0, 0.40) !important;
-}
-
-.visualizerModalBackdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.82);
-}
-
-.visualizerModalContent {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    box-sizing: border-box;
-}
-
-.visualizerModalFrame {
-    width: min(1200px, 100%);
-    height: min(760px, 100%);
-    border-radius: 16px;
-    overflow: hidden;
-    position: relative;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-    background-color: rgba(0, 0, 0, 0.18);
-}
-
-.visualizerModalFrame .visualizerRoot {
-    height: 100%;
-    border-radius: 16px;
-}
-
-.visualizerError {
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    top: 10px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    background: rgba(180, 40, 40, 0.25);
-    border: 1px solid rgba(255, 120, 120, 0.25);
-    backdrop-filter: blur(6px);
-}
-
-.visualizerErrorText {
-    color: rgba(255, 220, 220, 0.92);
-    font-weight: 600;
-}
-
-.addonStack {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
 .menuHeader {
     padding: 8px 16px 4px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -398,24 +170,5 @@
 }
 
 @media (max-width: 600px) {
-    .splitRow {
-        flex-direction: column;
-    }
-
-    .mainHalf {
-        padding-right: 0;
-        padding-bottom: 8px;
-    }
-
-    .sublinksHalf {
-        border-left: none;
-        border-top: 1px solid rgba(255, 255, 255, 0.14);
-        padding-left: 0;
-        padding-top: 8px;
-        max-height: none;
-    }
-
-    .sublinksScroll {
-        max-height: calc(3 * 46px + 2 * 6px);
-    }
+    /* addon-specific responsive rules live with their addon */
 }

@@ -7,7 +7,7 @@ import {
     PlayArrow as PlayArrowIcon
 } from '@mui/icons-material';
 import type { LinkCardLeafAddon } from '../../../../types/link';
-import styles from '../LinkCard.module.css';
+import styles from './AudioVisualizerAddon.module.css';
 
 type AudioVisualizerAddonConfig = Extract<LinkCardLeafAddon, { type: 'audioVisualizer' }>;
 

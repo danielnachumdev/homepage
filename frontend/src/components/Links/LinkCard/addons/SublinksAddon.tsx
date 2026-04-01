@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import type { LinkCardLeafAddon, LinkSubItem } from '../../../../types/link';
-import styles from '../LinkCard.module.css';
+import styles from './SublinksAddon.module.css';
 
 type SublinksAddonConfig = Extract<LinkCardLeafAddon, { type: 'sublinks' }>;
 
