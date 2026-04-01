@@ -3,6 +3,10 @@ export interface LinkData {
     icon: string | string[]; // URL, icon name, or array of fallback URLs
     description?: string; // Optional description
     url: string;
+    /** Optional embedded live audio stream (renders a player in the card). */
+    audioStreamUrl?: string;
+    /** Optional mime type for the audio stream source (defaults to audio/mpeg). */
+    audioMimeType?: string;
     chromeProfileEnabled?: boolean; // Defaults to false
     chromeProfiles?: string[]; // Available Chrome profiles for this link
     /** When set, card splits: main link on the left, sublinks stacked (scroll if more than 3). */

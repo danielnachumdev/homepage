@@ -52,8 +52,10 @@ const RADIO_WAVES_SVG = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/s
 export const GALGALATZ_LINK: LinkData = {
     title: 'גלגלצ',
     icon: [GLZ_BRAND_SVG, RADIO_WAVES_SVG],
-    description: 'Israeli radio – Galgalatz (GLZ) live stream and site',
-    url: 'https://glz.co.il/%D7%92%D7%9C%D7%92%D7%9C%D7%A6'
+    description: 'Israeli radio – Galgalatz (GLGLZ) live stream and site',
+    url: 'https://glz.co.il/%D7%92%D7%9C%D7%92%D7%9C%D7%A6',
+    audioStreamUrl: 'https://glzwizzlv.bynetcdn.com/glglz_mp3?awCollectionId=misc&awEpisodeId=glglz',
+    audioMimeType: 'audio/mpeg',
 };
 
 export const PYPI_MANAGE_LINK: LinkData = {

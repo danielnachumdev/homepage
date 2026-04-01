@@ -171,6 +171,23 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick, onSublinkCli
                     </Typography>
                 </Tooltip>
             )}
+
+            {link.audioStreamUrl && (
+                <Box
+                    className={styles.audioContainer}
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                >
+                    <audio className={styles.audio} controls preload="none">
+                        <source
+                            src={link.audioStreamUrl}
+                            type={link.audioMimeType ?? 'audio/mpeg'}
+                        />
+                        Your browser does not support the audio element.
+                    </audio>
+                </Box>
+            )}
         </>
     );
 
