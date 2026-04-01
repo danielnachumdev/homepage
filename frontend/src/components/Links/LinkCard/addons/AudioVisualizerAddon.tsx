@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
-import { Pause as PauseIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
+import { Box, IconButton, Modal, Tooltip, Typography } from '@mui/material';
+import {
+    Fullscreen as FullscreenIcon,
+    FullscreenExit as FullscreenExitIcon,
+    Pause as PauseIcon,
+    PlayArrow as PlayArrowIcon
+} from '@mui/icons-material';
 import type { LinkCardLeafAddon } from '../../../../types/link';
 import styles from '../LinkCard.module.css';
 
@@ -14,7 +19,9 @@ export function AudioVisualizerAddon({
     stopCardInteraction: (e: React.SyntheticEvent) => void;
 }) {
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const inlineCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const fullscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const activeCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const rafRef = useRef<number | null>(null);
 
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -23,6 +30,7 @@ export function AudioVisualizerAddon({
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [lastError, setLastError] = useState<string | null>(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const accent = addon.accentColor ?? '#66e3ff';
     const backgroundGradient = useMemo(() => {
@@ -60,7 +68,7 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
     };
 
     const startRendering = () => {
-        const canvas = canvasRef.current;
+        const canvas = activeCanvasRef.current;
         if (!canvas) return;
 
         const ctx2d = canvas.getContext('2d');
@@ -171,6 +179,11 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
         rafRef.current = window.requestAnimationFrame(draw);
     };
 
+    useEffect(() => {
+        activeCanvasRef.current = inlineCanvasRef.current;
+        startRendering();
+    }, []);
+
     const stopRendering = () => {
         if (rafRef.current) {
             window.cancelAnimationFrame(rafRef.current);
@@ -204,6 +217,69 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
         stopCardInteraction(e);
         void handleTogglePlay();
     };
+
+    const handleToggleFullscreen = (e: React.SyntheticEvent) => {
+        stopCardInteraction(e);
+        setIsFullscreen((v) => !v);
+    };
+
+    useEffect(() => {
+        const target = isFullscreen ? fullscreenCanvasRef : inlineCanvasRef;
+
+        // Modal content mounts asynchronously; wait at least a frame so ref is set and layout is computed.
+        const raf1 = window.requestAnimationFrame(() => {
+            const raf2 = window.requestAnimationFrame(() => {
+                activeCanvasRef.current = target.current;
+                startRendering();
+            });
+            // store raf2 in closure; cancel via raf1's cleanup below by capturing in outer scope
+            (rafRef as any).currentModalSwapRaf2 = raf2;
+        });
+
+        return () => {
+            window.cancelAnimationFrame(raf1);
+            const raf2 = (rafRef as any).currentModalSwapRaf2 as number | undefined;
+            if (raf2) window.cancelAnimationFrame(raf2);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isFullscreen]);
+
+    const OverlayButtons = ({ mode }: { mode: 'inline' | 'fullscreen' }) => (
+        <Box className={styles.visualizerOverlay}>
+            <Box className={styles.visualizerCenterButton}>
+                <Tooltip title={isPlaying ? 'Pause' : 'Play'} arrow>
+                    <IconButton
+                        size="small"
+                        onClick={(e) => {
+                            stopCardInteraction(e);
+                            void handleTogglePlay();
+                        }}
+                        className={styles.visualizerButton}
+                        aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
+                    >
+                        {isPlaying ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
+                    </IconButton>
+                </Tooltip>
+            </Box>
+
+            <Box className={styles.visualizerFullscreenButton}>
+                <Tooltip title={mode === 'fullscreen' ? 'Exit fullscreen' : 'Fullscreen'} arrow>
+                    <IconButton
+                        size="small"
+                        onClick={handleToggleFullscreen}
+                        className={styles.visualizerButton}
+                        aria-label={mode === 'fullscreen' ? 'Exit fullscreen' : 'Enter fullscreen'}
+                    >
+                        {mode === 'fullscreen' ? (
+                            <FullscreenExitIcon fontSize="small" />
+                        ) : (
+                            <FullscreenIcon fontSize="small" />
+                        )}
+                    </IconButton>
+                </Tooltip>
+            </Box>
+        </Box>
+    );
 
     useEffect(() => {
         const audioEl = audioRef.current;
@@ -247,46 +323,70 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
     }, []);
 
     return (
-        <Box
-            className={styles.visualizerRoot}
-            onClick={handleRootToggle}
-            onMouseDown={stopCardInteraction}
-            onKeyDown={stopCardInteraction}
-            style={
-                {
-                    ['--visualizer-accent' as any]: accent,
-                    backgroundImage: backgroundGradient,
-                } as React.CSSProperties
-            }
-        >
-            <audio ref={audioRef} src={addon.streamUrl} preload="none" crossOrigin="anonymous" />
+        <>
+            <Box
+                className={styles.visualizerRoot}
+                onClick={handleRootToggle}
+                onMouseDown={stopCardInteraction}
+                onKeyDown={stopCardInteraction}
+                style={
+                    {
+                        ['--visualizer-accent' as any]: accent,
+                        backgroundImage: backgroundGradient,
+                    } as React.CSSProperties
+                }
+            >
+                <audio ref={audioRef} src={addon.streamUrl} preload="none" crossOrigin="anonymous" />
 
-            <canvas ref={canvasRef} className={styles.visualizerCanvas} />
+                <canvas ref={inlineCanvasRef} className={styles.visualizerCanvas} />
 
-            <Box className={styles.visualizerOverlay}>
-                <Tooltip title={isPlaying ? 'Pause' : 'Play'} arrow>
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            stopCardInteraction(e);
-                            void handleTogglePlay();
-                        }}
-                        className={styles.visualizerButton}
-                        aria-label={isPlaying ? 'Pause audio' : 'Play audio'}
-                    >
-                        {isPlaying ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
-                    </IconButton>
-                </Tooltip>
+                <OverlayButtons mode="inline" />
+
+                {lastError && (
+                    <Box className={styles.visualizerError}>
+                        <Typography variant="caption" className={styles.visualizerErrorText}>
+                            {lastError}
+                        </Typography>
+                    </Box>
+                )}
             </Box>
 
-            {lastError && (
-                <Box className={styles.visualizerError}>
-                    <Typography variant="caption" className={styles.visualizerErrorText}>
-                        {lastError}
-                    </Typography>
+            <Modal
+                open={isFullscreen}
+                onClose={(_, reason) => {
+                    if (reason === 'escapeKeyDown') setIsFullscreen(false);
+                }}
+                closeAfterTransition={false}
+                BackdropProps={{ className: styles.visualizerModalBackdrop }}
+            >
+                <Box className={styles.visualizerModalContent}>
+                    <Box className={styles.visualizerModalFrame}>
+                        <Box
+                            className={styles.visualizerRoot}
+                            onClick={handleRootToggle}
+                            onMouseDown={stopCardInteraction}
+                            onKeyDown={stopCardInteraction}
+                            style={
+                                {
+                                    ['--visualizer-accent' as any]: accent,
+                                    backgroundImage: backgroundGradient,
+                                } as React.CSSProperties
+                            }
+                        >
+                            <canvas ref={fullscreenCanvasRef} className={styles.visualizerCanvas} />
+                            <OverlayButtons mode="fullscreen" />
+                            {lastError && (
+                                <Box className={styles.visualizerError}>
+                                    <Typography variant="caption" className={styles.visualizerErrorText}>
+                                        {lastError}
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
+                    </Box>
                 </Box>
-            )}
-        </Box>
+            </Modal>
+        </>
     );
 }
 
