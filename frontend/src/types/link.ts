@@ -21,7 +21,8 @@ export type LinkCardLeafAddon =
           type: 'audioVisualizer';
           streamUrl: string;
           mimeType?: string;
-          mode?: AudioVisualizerMode;
+          modeInline?: AudioVisualizerMode;
+          modeFullscreen?: AudioVisualizerMode;
           /** Optional accent color (CSS color string). */
           accentColor?: string;
       }

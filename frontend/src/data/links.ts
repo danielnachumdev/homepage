@@ -58,7 +58,8 @@ export const GALGALATZ_LINK: LinkData = {
         type: 'audioVisualizer',
         streamUrl: 'https://glzwizzlv.bynetcdn.com/glglz_mp3?awCollectionId=misc&awEpisodeId=glglz',
         mimeType: 'audio/mpeg',
-        mode: 'waveform',
+        modeInline: 'waveform',
+        modeFullscreen: 'radial',
         accentColor: '#7cf7c3',
     },
 };

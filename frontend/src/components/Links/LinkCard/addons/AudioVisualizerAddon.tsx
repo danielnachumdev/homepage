@@ -34,7 +34,8 @@ export function AudioVisualizerAddon({
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     const accent = addon.accentColor ?? '#66e3ff';
-    const mode: AudioVisualizerMode = addon.mode ?? 'radial';
+    const modeInline: AudioVisualizerMode = addon.modeInline ?? 'waveform';
+    const modeFullscreen: AudioVisualizerMode = addon.modeFullscreen ?? 'radial';
     const backgroundGradient = useMemo(() => {
         return `radial-gradient(120% 120% at 50% 15%, rgba(255,255,255,0.10) 0%, rgba(0,0,0,0.0) 60%),
 linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255,255,255,0.06) 100%)`;
@@ -76,7 +77,8 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
         const ctx2d = canvas.getContext('2d');
         if (!ctx2d) return;
 
-        const renderer = createAudioVisualizerRenderer(mode);
+        const selectedMode: AudioVisualizerMode = isFullscreen ? modeFullscreen : modeInline;
+        const renderer = createAudioVisualizerRenderer(selectedMode);
 
         const analyser = analyserRef.current;
         const buffer = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
