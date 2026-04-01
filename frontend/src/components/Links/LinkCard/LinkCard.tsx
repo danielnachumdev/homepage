@@ -14,8 +14,8 @@ import {
     MoreVert as MoreVertIcon,
     Link as LinkIcon
 } from '@mui/icons-material';
-import type { LinkCardAddon, LinkCardCompositeAddon, LinkCardLeafAddon, LinkCardProps, LinkSubItem } from '../../../types/link';
-import { AudioVisualizerAddon } from './AudioVisualizerAddon';
+import type { LinkCardLeafAddon, LinkCardProps, LinkSubItem } from '../../../types/link';
+import { renderLinkCardAddon } from './addons';
 import styles from './LinkCard.module.css';
 
 function SubLinkRow({
@@ -129,97 +129,8 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick, onSublinkCli
         onSublinkClick?.(link, sub);
     };
 
-    type AddonType = LinkCardAddon['type'];
-    type AddonRendererMap = {
-        [K in AddonType]: (addon: Extract<LinkCardAddon, { type: K }>) => React.ReactNode;
-    };
-
     const stopCardInteraction = (e: React.SyntheticEvent) => {
         e.stopPropagation();
-    };
-
-    const leafAddonRenderers = {
-        audioPlayer: (a: Extract<LinkCardLeafAddon, { type: 'audioPlayer' }>, key: string) => (
-            <Box
-                key={key}
-                className={styles.audioContainer}
-                onClick={stopCardInteraction}
-                onMouseDown={stopCardInteraction}
-                onKeyDown={stopCardInteraction}
-            >
-                <audio className={styles.audio} controls preload="none">
-                    <source src={a.streamUrl} type={a.mimeType ?? 'audio/mpeg'} />
-                    Your browser does not support the audio element.
-                </audio>
-            </Box>
-        ),
-        audioVisualizer: (a: Extract<LinkCardLeafAddon, { type: 'audioVisualizer' }>) => (
-            <AudioVisualizerAddon addon={a} stopCardInteraction={stopCardInteraction} />
-        ),
-        sublinks: (a: Extract<LinkCardLeafAddon, { type: 'sublinks' }>) => (
-            <Box className={styles.sublinksScroll} onClick={stopCardInteraction} onMouseDown={stopCardInteraction}>
-                {a.items.map((sub, i) => (
-                    <SubLinkRow
-                        key={`${sub.title}-${i}`}
-                        sub={sub}
-                        onActivate={() => handleSublinkActivate(sub)}
-                    />
-                ))}
-            </Box>
-        ),
-    } as const;
-
-    const renderLeafAddon = (addon: LinkCardLeafAddon, key: string) => {
-        switch (addon.type) {
-            case 'audioPlayer':
-                return leafAddonRenderers.audioPlayer(addon, key);
-            case 'audioVisualizer':
-                return leafAddonRenderers.audioVisualizer(addon);
-            case 'sublinks':
-                return leafAddonRenderers.sublinks(addon);
-            default: {
-                const _exhaustive: never = addon;
-                return _exhaustive;
-            }
-        }
-    };
-
-    const addonRenderFactory = {
-        audioPlayer: (addon: Extract<LinkCardAddon, { type: 'audioPlayer' }>) => renderLeafAddon(addon, addon.type),
-        audioVisualizer: (addon: Extract<LinkCardAddon, { type: 'audioVisualizer' }>) => renderLeafAddon(addon, addon.type),
-        sublinks: (addon: Extract<LinkCardAddon, { type: 'sublinks' }>) => renderLeafAddon(addon, addon.type),
-        composite: (addon: LinkCardCompositeAddon) => {
-            switch (addon.layout) {
-                case 'stack':
-                    return (
-                        <Box className={styles.addonStack} onClick={stopCardInteraction} onMouseDown={stopCardInteraction}>
-                            {addon.addons.map((leaf, i) => renderLeafAddon(leaf, `${leaf.type}-${i}`))}
-                        </Box>
-                    );
-                default: {
-                    const _exhaustive: never = addon.layout;
-                    return _exhaustive;
-                }
-            }
-        },
-    } satisfies AddonRendererMap;
-
-    const renderAddon = (addon: LinkCardAddon | undefined) => {
-        if (!addon) return null;
-        switch (addon.type) {
-            case 'audioPlayer':
-                return addonRenderFactory.audioPlayer(addon);
-            case 'audioVisualizer':
-                return addonRenderFactory.audioVisualizer(addon);
-            case 'sublinks':
-                return addonRenderFactory.sublinks(addon);
-            case 'composite':
-                return addonRenderFactory.composite(addon);
-            default: {
-                const _exhaustive: never = addon;
-                return _exhaustive;
-            }
-        }
     };
 
     const MainColumn = (
@@ -268,7 +179,12 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick, onSublinkCli
                 </Tooltip>
             )}
 
-            {!isSplitLayout && renderAddon(link.addon)}
+            {!isSplitLayout &&
+                renderLinkCardAddon(link.addon, {
+                    stopCardInteraction,
+                    onSublinkActivate: handleSublinkActivate,
+                    SubLinkRow,
+                })}
         </>
     );
 
@@ -290,7 +206,12 @@ export function LinkCard({ link, onLinkClick, onChromeProfileClick, onSublinkCli
                                 {MainColumn}
                             </Box>
                             <Box className={styles.sublinksHalf}>
-                                {sublinksAddon && leafAddonRenderers.sublinks(sublinksAddon)}
+                                {sublinksAddon &&
+                                    renderLinkCardAddon(sublinksAddon, {
+                                        stopCardInteraction,
+                                        onSublinkActivate: handleSublinkActivate,
+                                        SubLinkRow,
+                                    })}
                             </Box>
                         </Box>
                     ) : (

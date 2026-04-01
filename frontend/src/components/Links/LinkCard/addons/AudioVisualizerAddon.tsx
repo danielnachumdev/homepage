@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { Pause as PauseIcon, PlayArrow as PlayArrowIcon, VolumeUp as VolumeUpIcon } from '@mui/icons-material';
-import type { LinkCardLeafAddon } from '../../../types/link';
-import styles from './LinkCard.module.css';
+import type { LinkCardLeafAddon } from '../../../../types/link';
+import styles from '../LinkCard.module.css';
 
 type AudioVisualizerAddonConfig = Extract<LinkCardLeafAddon, { type: 'audioVisualizer' }>;
 
