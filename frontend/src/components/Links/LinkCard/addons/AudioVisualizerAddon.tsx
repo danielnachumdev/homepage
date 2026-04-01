@@ -296,6 +296,12 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
                 BackdropProps={{ className: styles.visualizerModalBackdrop }}
             >
                 <Box className={styles.visualizerModalContent}>
+                    <Box
+                        className={styles.visualizerClickShield}
+                        onClick={stopCardInteraction}
+                        onMouseDown={stopCardInteraction}
+                        onKeyDown={stopCardInteraction}
+                    />
                     <Box className={styles.visualizerModalFrame}>
                         <Box
                             className={styles.visualizerRoot}

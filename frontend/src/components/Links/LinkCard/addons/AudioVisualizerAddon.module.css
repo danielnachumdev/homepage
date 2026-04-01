@@ -68,12 +68,20 @@
     box-sizing: border-box;
 }
 
+.visualizerClickShield {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    pointer-events: auto;
+}
+
 .visualizerModalFrame {
     width: min(1200px, 100%);
     height: min(760px, 100%);
     border-radius: 16px;
     overflow: hidden;
     position: relative;
+    z-index: 1;
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
     background-color: rgba(0, 0, 0, 1);
 }
