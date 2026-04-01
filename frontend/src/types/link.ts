@@ -16,6 +16,13 @@ export type LinkCardLeafAddon =
           mimeType?: string;
       }
     | {
+          type: 'audioVisualizer';
+          streamUrl: string;
+          mimeType?: string;
+          /** Optional accent color (CSS color string). */
+          accentColor?: string;
+      }
+    | {
           type: 'sublinks';
           items: LinkSubItem[];
       };

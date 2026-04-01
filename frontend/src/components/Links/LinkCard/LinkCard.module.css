@@ -230,6 +230,81 @@
     height: 32px;
 }
 
+.visualizerRoot {
+    width: 100%;
+    height: 110px;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+    background-color: rgba(0, 0, 0, 0.16);
+}
+
+.visualizerCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.visualizerOverlay {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.visualizerButton {
+    pointer-events: auto;
+    color: rgba(255, 255, 255, 0.92) !important;
+    background: rgba(0, 0, 0, 0.28) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+.visualizerButton:hover {
+    background: rgba(0, 0, 0, 0.40) !important;
+}
+
+.visualizerMeta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.24);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    pointer-events: none;
+}
+
+.visualizerLabel {
+    color: rgba(255, 255, 255, 0.92);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.visualizerError {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 10px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(180, 40, 40, 0.25);
+    border: 1px solid rgba(255, 120, 120, 0.25);
+    backdrop-filter: blur(6px);
+}
+
+.visualizerErrorText {
+    color: rgba(255, 220, 220, 0.92);
+    font-weight: 600;
+}
+
 .addonStack {
     width: 100%;
     display: flex;

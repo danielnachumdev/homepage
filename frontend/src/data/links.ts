@@ -55,9 +55,10 @@ export const GALGALATZ_LINK: LinkData = {
     description: 'Israeli radio – Galgalatz (GLGLZ) live stream and site',
     url: 'https://glz.co.il/%D7%92%D7%9C%D7%92%D7%9C%D7%A6',
     addon: {
-        type: 'audioPlayer',
+        type: 'audioVisualizer',
         streamUrl: 'https://glzwizzlv.bynetcdn.com/glglz_mp3?awCollectionId=misc&awEpisodeId=glglz',
         mimeType: 'audio/mpeg',
+        accentColor: '#7cf7c3',
     },
 };
 
