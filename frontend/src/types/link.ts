@@ -9,6 +9,8 @@ export interface LinkData {
     chromeProfiles?: string[]; // Available Chrome profiles for this link
 }
 
+export type AudioVisualizerMode = 'radial' | 'waveform' | 'spectrogram';
+
 export type LinkCardLeafAddon =
     | {
           type: 'audioPlayer';
@@ -19,6 +21,7 @@ export type LinkCardLeafAddon =
           type: 'audioVisualizer';
           streamUrl: string;
           mimeType?: string;
+          mode?: AudioVisualizerMode;
           /** Optional accent color (CSS color string). */
           accentColor?: string;
       }
