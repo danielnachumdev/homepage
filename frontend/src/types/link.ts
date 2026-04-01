@@ -9,7 +9,7 @@ export interface LinkData {
     chromeProfiles?: string[]; // Available Chrome profiles for this link
 }
 
-export type AudioVisualizerMode = 'radial' | 'waveform' | 'spectrogram';
+export type AudioVisualizerMode = 'radial' | 'waveform' | 'spectrogram' | 'radialOverSpectrogram';
 
 export type LinkCardLeafAddon =
     | {
@@ -23,6 +23,14 @@ export type LinkCardLeafAddon =
           mimeType?: string;
           modeInline?: AudioVisualizerMode;
           modeFullscreen?: AudioVisualizerMode;
+          /**
+           * Opacity curve for spectrogram masking in composite modes.
+           * Function over x in [0..1] returning y in [0..1].
+           * Example: (x) => 1 - x
+           */
+          spectrogramOpacityCurve?: (x: number) => number;
+          /** Max overall opacity multiplier for the spectrogram mask (0..1). */
+          spectrogramMaxOpacity?: number;
           /** Optional accent color (CSS color string). */
           accentColor?: string;
       }

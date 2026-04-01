@@ -78,7 +78,10 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
         if (!ctx2d) return;
 
         const selectedMode: AudioVisualizerMode = isFullscreen ? modeFullscreen : modeInline;
-        const renderer = createAudioVisualizerRenderer(selectedMode);
+        const renderer = createAudioVisualizerRenderer(selectedMode, {
+            spectrogramOpacityCurve: addon.spectrogramOpacityCurve,
+            spectrogramMaxOpacity: addon.spectrogramMaxOpacity ?? 0.8,
+        });
 
         const analyser = analyserRef.current;
         const buffer = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
