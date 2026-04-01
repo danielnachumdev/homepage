@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
-import { Pause as PauseIcon, PlayArrow as PlayArrowIcon, VolumeUp as VolumeUpIcon } from '@mui/icons-material';
+import { Pause as PauseIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import type { LinkCardLeafAddon } from '../../../../types/link';
 import styles from '../LinkCard.module.css';
 
@@ -84,7 +84,7 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
 
             const pad = Math.round(10 * dpr);
             const cx = w / 2;
-            const cy = h / 2 + Math.round(4 * dpr);
+            const cy = h / 2;
 
             let energy = 0;
             if (analyser && buffer && timeBuffer) {
@@ -200,6 +200,11 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
         }
     };
 
+    const handleRootToggle = (e: React.SyntheticEvent) => {
+        stopCardInteraction(e);
+        void handleTogglePlay();
+    };
+
     useEffect(() => {
         const audioEl = audioRef.current;
         if (!audioEl) return;
@@ -244,7 +249,7 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
     return (
         <Box
             className={styles.visualizerRoot}
-            onClick={stopCardInteraction}
+            onClick={handleRootToggle}
             onMouseDown={stopCardInteraction}
             onKeyDown={stopCardInteraction}
             style={
@@ -272,13 +277,6 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
                         {isPlaying ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
                     </IconButton>
                 </Tooltip>
-
-                <Box className={styles.visualizerMeta}>
-                    <VolumeUpIcon sx={{ fontSize: 14, opacity: 0.9 }} />
-                    <Typography variant="caption" className={styles.visualizerLabel}>
-                        Live
-                    </Typography>
-                </Box>
             </Box>
 
             {lastError && (
