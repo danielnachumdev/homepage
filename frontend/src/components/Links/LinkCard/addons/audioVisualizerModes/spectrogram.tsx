@@ -1,15 +1,9 @@
 import type { AudioVisualizerRenderer } from './types';
+import type { AudioVisualizerRendererOptions } from './factory';
+import { getLogBinIndex } from './math';
 
-function getLogBinIndex(frac01: number, nBins: number): number {
-    const minBin = 2;
-    const maxBin = Math.max(minBin, nBins - 1);
-    const f = Math.min(1, Math.max(0, frac01));
-    const logMin = Math.log(minBin);
-    const logMax = Math.log(maxBin);
-    return Math.floor(Math.exp(logMin + f * (logMax - logMin)));
-}
-
-export function createSpectrogramRenderer(): AudioVisualizerRenderer {
+export function createSpectrogramRenderer(options?: AudioVisualizerRendererOptions): AudioVisualizerRenderer {
+    const logBase = options?.frequencyLogBase ?? Math.E;
     const state = {
         imageData: null as ImageData | null,
         lastW: 0,
@@ -48,7 +42,7 @@ export function createSpectrogramRenderer(): AudioVisualizerRenderer {
             for (let y = 0; y < usableH; y++) {
                 // bottom = low freqs, top = high freqs, sampled logarithmically
                 const frac = 1 - y / (usableH - 1);
-                const bin = freqData ? getLogBinIndex(frac, freqData.length) : 0;
+                const bin = freqData ? getLogBinIndex(frac, freqData.length, logBase) : 0;
                 const mag = freqData ? freqData[bin] / 255 : 0;
 
                 // teal -> white

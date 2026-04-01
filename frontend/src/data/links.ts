@@ -60,6 +60,7 @@ export const GALGALATZ_LINK: LinkData = {
         mimeType: 'audio/mpeg',
         modeInline: 'waveform',
         modeFullscreen: 'radialOverSpectrogram',
+        frequencyLogBase: 2,
         spectrogramOpacityCurve: (x) => x ** 4,
         spectrogramMaxOpacity: 1,
         accentColor: '#7cf7c3',

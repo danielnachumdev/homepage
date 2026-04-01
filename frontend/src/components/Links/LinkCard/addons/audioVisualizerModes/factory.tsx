@@ -6,6 +6,7 @@ import { createSpectrogramRenderer } from './spectrogram';
 import { createWaveformRenderer } from './waveform';
 
 export type AudioVisualizerRendererOptions = {
+    frequencyLogBase?: number;
     spectrogramOpacityCurve?: (x: number) => number;
     spectrogramMaxOpacity?: number;
 };

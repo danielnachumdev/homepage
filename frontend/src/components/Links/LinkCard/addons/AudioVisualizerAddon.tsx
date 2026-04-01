@@ -99,6 +99,7 @@ linear-gradient(135deg, rgba(102,227,255,0.12) 0%, rgba(0,0,0,0.0) 40%, rgba(255
                 key: rendererKey,
                 curve: spectroCurve,
                 renderer: createAudioVisualizerRenderer(selectedMode, {
+                    frequencyLogBase: addon.frequencyLogBase,
                     spectrogramOpacityCurve: spectroCurve,
                     spectrogramMaxOpacity: spectroMax,
                 }),

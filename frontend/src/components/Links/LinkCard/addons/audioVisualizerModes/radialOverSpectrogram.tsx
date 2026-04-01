@@ -4,8 +4,8 @@ import { createSpectrogramRenderer } from './spectrogram';
 import type { AudioVisualizerRendererOptions } from './factory';
 
 export function createRadialOverSpectrogramRenderer(options?: AudioVisualizerRendererOptions): AudioVisualizerRenderer {
-    const spectrogram = createSpectrogramRenderer();
-    const radial = createRadialRenderer();
+    const spectrogram = createSpectrogramRenderer(options);
+    const radial = createRadialRenderer(options);
     const maxOpacity = Math.min(1, Math.max(0, options?.spectrogramMaxOpacity ?? 0.8));
     const curveFn = options?.spectrogramOpacityCurve ?? ((x: number) => 1 - x);
 

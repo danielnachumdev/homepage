@@ -1,17 +1,9 @@
 import type { AudioVisualizerRenderer } from './types';
+import type { AudioVisualizerRendererOptions } from './factory';
+import { getLogBinIndex } from './math';
 
-function getLogBinIndex(frac01: number, nBins: number): number {
-    // Map 0..1 -> [minBin..maxBin] logarithmically.
-    // Emphasizes low/mid freqs so high end isn't visually "empty".
-    const minBin = 2;
-    const maxBin = Math.max(minBin, nBins - 1);
-    const f = Math.min(1, Math.max(0, frac01));
-    const logMin = Math.log(minBin);
-    const logMax = Math.log(maxBin);
-    return Math.floor(Math.exp(logMin + f * (logMax - logMin)));
-}
-
-export function createRadialRenderer(): AudioVisualizerRenderer {
+export function createRadialRenderer(options?: AudioVisualizerRendererOptions): AudioVisualizerRenderer {
+    const logBase = options?.frequencyLogBase ?? Math.E;
     return {
         mode: 'radial',
         renderFrame: ({ t, w, h, dpr, ctx2d, analyser, freqData, timeData }) => {
@@ -47,7 +39,7 @@ export function createRadialRenderer(): AudioVisualizerRenderer {
             ctx2d.save();
             ctx2d.translate(cx, cy);
             for (let i = 0; i < bars; i++) {
-                const bin = freqData ? getLogBinIndex(i / (bars - 1), freqData.length) : 0;
+                const bin = freqData ? getLogBinIndex(i / (bars - 1), freqData.length, logBase) : 0;
                 const f = freqData ? freqData[bin] / 255 : 0;
                 const a = i * barW;
                 const len = maxR * (0.08 + 0.18 * f + 0.14 * drive);

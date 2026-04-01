@@ -23,6 +23,8 @@ export type LinkCardLeafAddon =
           mimeType?: string;
           modeInline?: AudioVisualizerMode;
           modeFullscreen?: AudioVisualizerMode;
+          /** Curvature control for log frequency scaling (>= 1). Default matches current behavior. */
+          frequencyLogBase?: number;
           /**
            * Opacity curve for spectrogram masking in composite modes.
            * Function over x in [0..1] returning y in [0..1].
