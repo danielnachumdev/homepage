@@ -131,6 +131,8 @@ export const AWS_CONSOLE_LINK: LinkData = {
 const GCP_CONSOLE_ICON = '/src/data/gcp-console.svg';
 const CLOUD_RUN_ICON = '/src/data/cloud-run.svg';
 const CLOUD_STORAGE_ICON = '/src/data/cloud-storage.svg';
+const GCP_STORAGE_BUCKETS_ICON_SVG =
+    'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" data-icon-name="storageSectionIcon" viewBox="0 0 24 24" fill="%231976d2" fill-rule="evenodd" aria-hidden="true"><path d="M4 4h1v7H4zm0 9h1v7H4zm15-9h1v7h-1zm0 9h1v7h-1z" opacity=".6"/><path d="M5 11h14V4H5zm8-3H7V7h6zm3 .5a1 1 0 110-2 1 1 0 010 2M5 20h14v-7H5zm8-3H7v-1h6zm3 .5a1 1 0 110-2 1 1 0 010 2"/></svg>';
 const GCP_BILLING_ICON_SVG = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" data-icon-name="billingSectionIcon" viewBox="0 0 24 24" width="24" height="24" fill="%231976d2" fill-rule="evenodd" aria-hidden="true"><path d="M3 7h9v2H3z" opacity=".4"/><path d="M12 7h9v2h-9z" opacity=".3"/><path d="M5 11h14v2H5z" opacity=".6"/><path d="M4 5a1 1 0 00-1 1v1h9V5z"/><path d="M20 5h-8v2h9V6a1 1 0 00-1-1" opacity=".9"/><path d="M12 11V9H3v9a1 1 0 001 1l8-.004V13H5v-2zm-4 4v2H5v-2z"/><path d="M5 15h3v2H5z" opacity=".4"/><path d="M12 9v2h7v2h-7v5.996l8-.004a1 1 0 001-1V9zm3 7h-1v-1h1zm3 0h-1v-1h1z" opacity=".9"/><path d="M14 15h1v1h-1zm3 0h1v1h-1z" opacity=".6"/></svg>';
 
 /** Full link objects reused as GCP sublinks (not listed in `links` on their own). */
@@ -146,6 +148,14 @@ export const GCP_CLOUD_STORAGE_LINK: LinkData = {
     title: 'Cloud Storage',
     icon: [CLOUD_STORAGE_ICON],
     description: 'Google Cloud Storage buckets in the console',
+    url: 'https://console.cloud.google.com/storage/browser',
+    chromeProfileEnabled: true,
+};
+
+export const GCP_BUCKETS_LINK: LinkData = {
+    title: 'Buckets',
+    icon: [GCP_STORAGE_BUCKETS_ICON_SVG, CLOUD_STORAGE_ICON],
+    description: 'GCS buckets in the Cloud console',
     url: 'https://console.cloud.google.com/storage/browser',
     chromeProfileEnabled: true,
 };
@@ -185,6 +195,7 @@ export const GCP_CONSOLE_LINK: LinkData = {
         items: [
             GCP_CLOUD_RUN_LINK,
             GCP_CLOUD_STORAGE_LINK,
+            GCP_BUCKETS_LINK,
             GCP_BILLING_LINK,
             GCP_BILLING_REPORT_BY_PROJECT_LINK,
             GCP_BILLING_REPORT_BY_SERVICE_LINK,
