@@ -1,6 +1,6 @@
 ---
 name: docker-deploy-windows-powershell
-description: Deploys the homepage stack locally via Docker using the deployment CLI on native Windows PowerShell with a Windows uv environment (not WSL or Linux). Use when the user asks for Docker deploy, deploy.py, docker-deploy-strategy, or running deployment on Windows outside WSL.
+description: Deploys the homepage stack locally via Docker using the deployment CLI on native Windows PowerShell with a Windows uv environment (not WSL or Linux). Ensures .venv is Windows-shaped (Scripts\python.exe, not bin/python). Use when the user asks for Docker deploy, deploy.py, docker-deploy-strategy, Windows venv issues, or running deployment on Windows outside WSL.
 ---
 
 # Homepage Docker deploy (Windows PowerShell, native uv)
@@ -15,6 +15,34 @@ description: Deploys the homepage stack locally via Docker using the deployment 
 
 - The project path, `.venv`, and `uv` must align with **Windows** Python so subprocesses and Docker Desktop integration match how the strategy invokes `docker` / `docker compose`.
 - Mixing WSL `uv` with a repo checked out on `/mnt/c/...` or duplicating venvs causes confusing failures; keep one canonical environment on Windows for this deploy path.
+
+## Verify `.venv` is a Windows virtualenv
+
+`uv sync` / `uv run` on Windows expect a **Windows** layout. If `.venv` was created by **Linux or WSL** `uv`/`python` on the same repo, Windows `uv` may fail with **Access is denied** (e.g. on `.venv\lib64`) or odd repair errors.
+
+**Check from PowerShell** at the repo root:
+
+```powershell
+# Windows venv — this path must exist
+Test-Path .\.venv\Scripts\python.exe
+
+# Linux/WSL venv — if this is True and Scripts\python.exe is False, the venv is wrong for Windows
+Test-Path .\.venv\bin\python
+```
+
+| Layout | Meaning |
+|--------|--------|
+| `Scripts\python.exe` exists | OK for Windows `uv run` |
+| `bin\python` (or `bin\python3`) exists, no `Scripts\python.exe` | Linux/WSL venv — **not** valid for this workflow |
+
+**Fix:** Close anything using that `.venv` (WSL shells, editors). In **PowerShell** at the repo root, remove the venv and recreate it with Windows `uv` only:
+
+```powershell
+Remove-Item -Recurse -Force .\.venv
+uv sync
+```
+
+Then run the deploy command again. Avoid running `uv sync` from WSL on the same Windows working copy if you rely on PowerShell deploys.
 
 ## Prerequisites
 
@@ -68,6 +96,7 @@ uv run python .\deploy.py strategy uninstall docker-deploy-strategy
 
 - [ ] Instruct **Windows PowerShell** and **Windows `uv`**, explicitly **not WSL**.
 - [ ] Working directory = homepage root (`deploy.py` visible).
+- [ ] If `uv sync` / `uv run` fails with **Access is denied** on `.venv` or similar, have the user confirm **`.venv\Scripts\python.exe`** exists; if only **`bin\python`** exists, remove `.venv` on Windows and **`uv sync`** again from PowerShell (see **Verify `.venv` is a Windows virtualenv**).
 - [ ] `uv sync` (or `--group dev`) mentioned if `deploy.py` fails on missing `fire`.
 - [ ] Docker Desktop running before `strategy install`.
 - [ ] Strategy id is **`docker-deploy-strategy`** (kebab-case from `DockerDeployStrategy`), not `docker-deploy` unless the user’s CLI/registry differs—verify with `strategy list` if unsure.
