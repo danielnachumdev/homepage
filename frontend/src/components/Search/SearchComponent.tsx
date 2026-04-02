@@ -48,7 +48,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
         if (!hasInitiallyFocused.current) {
             // Use setTimeout to ensure the DOM is fully rendered
             const focusTimeout = setTimeout(() => {
-                focus(searchInputRef.current);
+                focus(searchInputRef.current, { preventScroll: true });
                 hasInitiallyFocused.current = true;
             }, 100);
 
@@ -56,16 +56,18 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
         }
     }, []); // Empty dependency array - only run once on mount
 
-    // Re-focus when selectedEngine changes (in case it affects input readiness)
+    // Re-focus only when selectedEngine changes (in case it affects input readiness).
+    // Do not depend on isFocused: blurring the field (e.g. clicking a link card) would retrigger this effect and
+    // programmatically refocus the search input, scrolling the page back to the top.
     useEffect(() => {
-        if (searchInputRef.current && !isFocused && hasInitiallyFocused.current) {
+        if (searchInputRef.current && hasInitiallyFocused.current) {
             const focusTimeout = setTimeout(() => {
-                focus(searchInputRef.current);
+                focus(searchInputRef.current, { preventScroll: true });
             }, 50);
 
             return () => clearTimeout(focusTimeout);
         }
-    }, [selectedEngine, isFocused]); // Removed focus from dependencies
+    }, [selectedEngine, focus]);
 
     // Global keyboard listener to focus search input on any keypress
     useEffect(() => {
@@ -77,7 +79,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                 target.contentEditable === 'true';
 
             if (!isInputElement && searchInputRef.current && !isFocused) {
-                focus(searchInputRef.current);
+                focus(searchInputRef.current, { preventScroll: true });
             }
         };
 
